@@ -9,12 +9,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EditorUploadController;
 use App\Http\Controllers\GridPreferenceController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectSwitchController;
 use App\Http\Controllers\SprintController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketMenuController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/locale/{locale}', LocaleController::class)->name('locale');
@@ -51,11 +53,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/ticket-menus/{ticketMenu}', [TicketMenuController::class, 'update'])->name('ticket-menus.update');
     Route::delete('/ticket-menus/{ticketMenu}', [TicketMenuController::class, 'destroy'])->name('ticket-menus.destroy');
 
+    // Transactions: payments + costs of done tickets. Customers see theirs read-only.
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
     // Projects are visible to members; managing them needs admin/developer (checked by the policy).
     Route::resource('projects', ProjectController::class);
 
     Route::middleware('role:admin,developer')->group(function () {
         Route::resource('sprints', SprintController::class)->except('show');
+        Route::resource('payments', PaymentController::class)->except(['index', 'show']);
     });
 
     Route::middleware('role:developer')->group(function () {

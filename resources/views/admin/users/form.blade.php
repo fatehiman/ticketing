@@ -11,7 +11,7 @@
         @csrf
         @if ($user->exists) @method('PUT') @endif
         @include('partials.user-fields', ['subject' => $user, 'showRole' => true, 'projectsHint' => ''])
-        <div class="mt-3"><button class="btn btn-gradient px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button></div>
+        <div class="mt-3"><button class="btn btn-primary px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button></div>
     </form>
 @endsection
 

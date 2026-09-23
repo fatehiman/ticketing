@@ -84,9 +84,9 @@ class TicketingTest extends TestCase
             foreach (['fa', 'en'] as $locale) {
                 $user->update(['locale' => $locale, 'calendar' => $locale === 'fa' ? 'jalali' : 'gregorian']);
                 $this->actingAs($user->fresh());
-                $pages = ['/', '/tickets', '/tickets/create', '/tickets/'.$ticket->number, '/profile', '/projects/'.$this->project->id];
+                $pages = ['/', '/tickets', '/tickets/create', '/tickets/'.$ticket->number, '/profile', '/projects/'.$this->project->id, '/transactions'];
                 if ($user->isStaff()) {
-                    $pages = array_merge($pages, ['/tickets/'.$ticket->number.'/edit', '/projects', '/projects/create',
+                    $pages = array_merge($pages, ['/payments/create', '/tickets/'.$ticket->number.'/edit', '/projects', '/projects/create',
                         '/projects/'.$this->project->id.'/edit', '/sprints', '/sprints/create']);
                 }
                 if ($user->isDeveloper()) {

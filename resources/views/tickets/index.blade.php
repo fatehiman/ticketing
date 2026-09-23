@@ -27,7 +27,7 @@
                 {{ $projectContext->current()?->name ?? __('app.all_projects') }} · {{ __('app.results', ['count' => $tickets->total()]) }}
             </div>
         </div>
-        <a href="{{ route('tickets.create') }}" class="btn btn-gradient"><i class="bi bi-plus-lg"></i> {{ __('tickets.new') }}</a>
+        <a href="{{ route('tickets.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('tickets.new') }}</a>
     </div>
 
     {{-- Filter box --}}
@@ -216,6 +216,7 @@
                     <tr><td colspan="{{ count($grid->columns) }}" class="empty-state"><i class="bi bi-inbox"></i>{{ __('app.no_results') }}</td></tr>
                 @endforelse
                 </tbody>
+                @include('partials.grid-totals', ['grid' => $grid])
             </table>
         </div>
         @if ($tickets->hasPages())

@@ -23,7 +23,7 @@
         <div class="d-flex gap-2">
             <a href="{{ route('tickets.index', ['project_id' => $project->id]) }}" class="btn btn-outline-primary"><i class="bi bi-list-task"></i> {{ __('projects.view_tickets') }}</a>
             @can('update', $project)
-                <a href="{{ route('projects.edit', $project) }}" class="btn btn-gradient"><i class="bi bi-pencil"></i> {{ __('app.edit') }}</a>
+                <a href="{{ route('projects.edit', $project) }}" class="btn btn-primary"><i class="bi bi-pencil"></i> {{ __('app.edit') }}</a>
             @endcan
         </div>
     </div>

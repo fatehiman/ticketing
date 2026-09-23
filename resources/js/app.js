@@ -83,11 +83,31 @@ function initInputs() {
             const raw = toLatin(input.value).replace(/[^\d.]/g, '');
             if (raw === '') { input.value = ''; return; }
             const [int, dec] = raw.split('.');
-            input.value = Number(int).toLocaleString('en-US') + (dec !== undefined ? `.${dec.slice(0, 2)}` : '');
+            // data-money="int": whole numbers only (no decimal point).
+            const keepDec = dec !== undefined && input.dataset.money !== 'int';
+            input.value = Number(int || 0).toLocaleString('en-US') + (keepDec ? `.${dec.slice(0, 2)}` : '');
         };
         input.addEventListener('input', format);
         format();
     });
+}
+
+/* ---------- Payment form: projects follow the customer ---------- */
+function initPaymentForm() {
+    const customer = document.querySelector('[data-customer-select]');
+    const project = document.querySelector('[data-follows-customer]');
+    if (!customer || !project) return;
+    const sync = () => {
+        const ids = (customer.selectedOptions[0]?.dataset.projects || '').split(',');
+        project.querySelectorAll('option[data-project]').forEach((opt) => {
+            const ok = ids.includes(opt.dataset.project);
+            opt.hidden = !ok;
+            opt.disabled = !ok;
+            if (!ok && opt.selected) project.value = '';
+        });
+    };
+    customer.addEventListener('change', sync);
+    sync();
 }
 
 /* ---------- Grid column chooser (saved on the server) ---------- */
@@ -100,6 +120,11 @@ function initGrids() {
             const box = e.target.closest('input[data-col]');
             if (!box) return;
             table?.querySelectorAll(`[data-col="${box.dataset.col}"]`).forEach((cell) => cell.classList.toggle('d-none', !box.checked));
+            // The totals row is shown only while a column with a total is visible.
+            const totals = table?.querySelector('.grid-totals');
+            if (totals) {
+                totals.classList.toggle('d-none', !totals.querySelector('[data-total]:not(.d-none)'));
+            }
             clearTimeout(timer);
             timer = setTimeout(() => {
                 const columns = [...chooser.querySelectorAll('input[data-col]:checked')].map((i) => i.dataset.col);
@@ -150,6 +175,18 @@ function initTicketFilter() {
 
     // Changing page size or sort submits right away.
     form.querySelectorAll('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => form.requestSubmit()));
+}
+
+/* ---------- Other filter forms: skip empty fields, auto-submit page size ---------- */
+function initFilterForms() {
+    document.querySelectorAll('form[data-clean-submit]').forEach((form) => {
+        form.addEventListener('submit', () => {
+            form.querySelectorAll('input, select').forEach((el) => {
+                if (el.name && el.type !== 'checkbox' && el.type !== 'radio' && el.value === '') el.disabled = true;
+            });
+        });
+        form.querySelectorAll('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => form.requestSubmit()));
+    });
 }
 
 /* ---------- Edit custom menu (modal) ---------- */
@@ -246,8 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initConfirm();
     initDatePickers();
     initInputs();
+    initPaymentForm();
     initGrids();
     initTicketFilter();
+    initFilterForms();
     initMenuEdit();
     initTicketForm();
     initEditors();

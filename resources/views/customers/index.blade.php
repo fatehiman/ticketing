@@ -9,7 +9,7 @@
             <h1><i class="bi bi-people text-brand"></i> {{ __('users.customers_title') }}</h1>
             <div class="sub">{{ __('app.results', ['count' => $customers->total()]) }}</div>
         </div>
-        <a href="{{ route('customers.create') }}" class="btn btn-gradient"><i class="bi bi-plus-lg"></i> {{ __('users.new_customer') }}</a>
+        <a href="{{ route('customers.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('users.new_customer') }}</a>
     </div>
 
     <div class="card">

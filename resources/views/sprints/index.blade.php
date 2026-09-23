@@ -9,7 +9,7 @@
             <h1><i class="bi bi-lightning-charge text-brand"></i> {{ __('sprints.title') }}</h1>
             <div class="sub">{{ $projectContext->current()?->name ?? __('app.all_projects') }} · {{ __('app.results', ['count' => $sprints->total()]) }}</div>
         </div>
-        <a href="{{ route('sprints.create') }}" class="btn btn-gradient"><i class="bi bi-plus-lg"></i> {{ __('sprints.new') }}</a>
+        <a href="{{ route('sprints.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('sprints.new') }}</a>
     </div>
 
     <div class="card">

@@ -42,7 +42,7 @@
                     <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1">
                     <label class="form-check-label" for="remember">{{ __('auth.remember') }}</label>
                 </div>
-                <button class="btn btn-gradient w-100 py-2 fw-semibold">
+                <button class="btn btn-primary w-100 py-2 fw-semibold">
                     <i class="bi bi-box-arrow-in-{{ app()->getLocale() === 'fa' ? 'left' : 'right' }}"></i> {{ __('auth.sign_in') }}
                 </button>
             </form>

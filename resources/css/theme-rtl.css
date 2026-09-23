@@ -10,37 +10,42 @@
 :root {
     --app-font: 'Vazirmatn FD', Tahoma, sans-serif;
     --mono-font: 'Vazirmatn FD', monospace;
-    --app-bg: #f6f4fe;
-    --app-text: #1e1b3a;
-    --muted: #6b6891;
-    --line: #e9e5fb;
+    --app-bg: linear-gradient(160deg, #fbf9ff 0%, #f5f1ff 45%, #effbf8 100%);
+    --app-text: #2a2550;
+    --muted: #77739b;
+    --line: #ece8fb;
 
-    --brand: #7c3aed;
-    --brand-dark: #6425d3;
-    --brand-soft: rgba(124, 58, 237, .1);
-    --brand-gradient: linear-gradient(135deg, #7c3aed 0%, #c026d3 55%, #14b8a6 130%);
+    --brand: #8b5cf6;
+    --brand-dark: #7c3aed;
+    --brand-soft: rgba(139, 92, 246, .11);
+    --brand-gradient: linear-gradient(135deg, #ddd0ff 0%, #f5d5ff 55%, #c8f5ea 120%);
 
-    --sidebar-bg: linear-gradient(170deg, #2e1065 0%, #5b21b6 55%, #0f766e 120%);
-    --sidebar-text: rgba(255, 255, 255, .86);
+    --sidebar-bg: linear-gradient(170deg, #f4efff 0%, #f1e6ff 50%, #e2f8f2 110%);
+    --sidebar-text: #4f4578;
+    --sidebar-brand-text: #4c1d95;
+    --sidebar-hover-bg: rgba(139, 92, 246, .10);
     --sidebar-active-bg: #fff;
-    --sidebar-active-text: #4c1d95;
+    --sidebar-active-text: #6d28d9;
+    --sidebar-badge-bg: rgba(139, 92, 246, .13);
+    --sidebar-badge-text: #6d28d9;
     --side-radius: 14px;
 
-    --topbar-bg: rgba(246, 244, 254, .82);
+    --topbar-bg: rgba(251, 249, 255, .82);
     --card-radius: 18px;
     --card-border: transparent;
-    --card-shadow: 0 8px 30px -14px rgba(76, 29, 149, .25);
+    --card-shadow: 0 8px 30px -16px rgba(124, 58, 237, .22);
     --table-head-bg: #faf8ff;
-    --row-hover: #faf7ff;
-    --auth-bg: radial-gradient(circle at 80% 10%, #c4b5fd 0, transparent 40%),
-               radial-gradient(circle at 10% 90%, #99f6e4 0, transparent 40%),
-               #f6f4fe;
+    --row-hover: #f8f4ff;
+    --total-bg: #f4efff;
+    --auth-bg: radial-gradient(circle at 80% 10%, #e3d9ff 0, transparent 42%),
+               radial-gradient(circle at 10% 90%, #cdf7ec 0, transparent 42%),
+               #faf8ff;
 
     --bs-body-font-family: var(--app-font);
-    --bs-link-color: var(--brand);
-    --bs-link-hover-color: var(--brand-dark);
-    --bs-primary: #7c3aed;
-    --bs-primary-rgb: 124, 58, 237;
+    --bs-link-color: var(--brand-dark);
+    --bs-link-hover-color: var(--brand);
+    --bs-primary: #8b5cf6;
+    --bs-primary-rgb: 139, 92, 246;
 }
 
 body { font-feature-settings: "ss01"; }

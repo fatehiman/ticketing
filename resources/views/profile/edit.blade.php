@@ -119,7 +119,7 @@
                         </div>
                     </div>
                     <div class="card-footer bg-transparent">
-                        <button class="btn btn-gradient px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
+                        <button class="btn btn-primary px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
                     </div>
                 </div>
             </form>

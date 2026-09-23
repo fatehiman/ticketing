@@ -78,6 +78,16 @@
             </a>
         @endif
 
+        <div class="nav-section">{{ __('app.finance') }}</div>
+        <a href="{{ route('transactions.index') }}" @class(['side-link', 'active' => request()->routeIs('transactions.*')])>
+            <i class="bi bi-cash-coin"></i><span>{{ __('transactions.title') }}</span>
+        </a>
+        @if ($user->isStaff())
+            <a href="{{ route('payments.create') }}" @class(['side-link', 'active' => request()->routeIs('payments.*')])>
+                <i class="bi bi-wallet2"></i><span>{{ __('transactions.new_payment') }}</span>
+            </a>
+        @endif
+
         <div class="nav-section">{{ __('app.profile') }}</div>
         <a href="{{ route('profile.edit') }}" @class(['side-link', 'active' => request()->routeIs('profile.*')])>
             <i class="bi bi-person-circle"></i><span>{{ __('app.profile') }}</span>

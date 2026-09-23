@@ -11,6 +11,6 @@
         @csrf
         @if ($customer->exists) @method('PUT') @endif
         @include('partials.user-fields', ['subject' => $customer, 'projectsHint' => __('users.projects_hint_developer')])
-        <div class="mt-3"><button class="btn btn-gradient px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button></div>
+        <div class="mt-3"><button class="btn btn-primary px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button></div>
     </form>
 @endsection

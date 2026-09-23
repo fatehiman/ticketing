@@ -21,7 +21,7 @@
     @endif
 
     <div class="ms-auto d-flex align-items-center gap-2">
-        <a href="{{ route('tickets.create') }}" class="btn btn-gradient d-none d-sm-inline-flex align-items-center gap-1">
+        <a href="{{ route('tickets.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center gap-1">
             <i class="bi bi-plus-lg"></i> {{ __('app.new_ticket') }}
         </a>
 

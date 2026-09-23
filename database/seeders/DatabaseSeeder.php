@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\Role;
 use App\Enums\TicketStatus;
+use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Sprint;
 use App\Models\User;
@@ -114,6 +115,22 @@ class DatabaseSeeder extends Seeder
 
             $ticket->timestamps = false;
             $ticket->forceFill(['created_at' => now()->subDays(40 - $i), 'updated_at' => now()->subDays(max(0, 20 - $i))])->saveQuietly();
+        }
+
+        // Customer payments (shown on the transactions page next to the costs of done tickets).
+        foreach ([
+            [$cust1, $shop, 5000000, 30, 'پیش‌پرداخت فاز اول'],
+            [$cust1, $shop, 3500000, 12, 'پرداخت قسط دوم'],
+            [$cust1, $crm, 4000000, 8, 'پیش‌پرداخت CRM'],
+            [$cust1, null, 1000000, 3, 'پرداخت علی‌الحساب'],
+            [$cust2, $shop, 2000000, 5, null],
+            [$cust3, $app, 800, 20, 'Advance payment'],
+        ] as [$customer, $project, $amount, $daysAgo, $description]) {
+            Payment::create([
+                'customer_id' => $customer->id, 'project_id' => $project?->id, 'amount' => $amount,
+                'paid_on' => now()->subDays($daysAgo)->toDateString(), 'description' => $description,
+                'created_by' => $project?->developers()->value('users.id') ?? $dev1->id,
+            ]);
         }
     }
 }

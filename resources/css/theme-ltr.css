@@ -14,40 +14,44 @@
 :root {
     --app-font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --mono-font: ui-monospace, 'SFMono-Regular', Consolas, monospace;
-    --app-bg: #f1f5f9;
-    --app-text: #0f172a;
+    --app-bg: linear-gradient(160deg, #f8faff 0%, #f1f5ff 50%, #eefbfd 100%);
+    --app-text: #1e293b;
     --muted: #64748b;
-    --line: #e2e8f0;
+    --line: #e5e9f2;
 
-    --brand: #4f46e5;
-    --brand-dark: #4338ca;
-    --brand-soft: rgba(79, 70, 229, .09);
-    --brand-gradient: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    --brand: #6366f1;
+    --brand-dark: #4f46e5;
+    --brand-soft: rgba(99, 102, 241, .10);
+    --brand-gradient: linear-gradient(135deg, #dfe3ff 0%, #cdf3fb 100%);
 
-    --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
-    --sidebar-text: rgba(226, 232, 240, .82);
-    --sidebar-active-bg: linear-gradient(90deg, #4f46e5, #06b6d4);
-    --sidebar-active-text: #fff;
+    --sidebar-bg: linear-gradient(180deg, #eff2ff 0%, #e6f6fb 100%);
+    --sidebar-text: #3b4a63;
+    --sidebar-brand-text: #312e81;
+    --sidebar-hover-bg: rgba(99, 102, 241, .09);
+    --sidebar-active-bg: linear-gradient(90deg, #e0e4ff, #d3f4fb);
+    --sidebar-active-text: #4338ca;
+    --sidebar-badge-bg: rgba(99, 102, 241, .12);
+    --sidebar-badge-text: #4338ca;
     --side-radius: 8px;
 
     --topbar-bg: rgba(255, 255, 255, .85);
     --card-radius: 10px;
-    --card-border: #e2e8f0;
-    --card-shadow: 0 1px 3px rgba(15, 23, 42, .06);
-    --table-head-bg: #f8fafc;
-    --row-hover: #f8fafc;
-    --auth-bg: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0e7490 100%);
+    --card-border: #e5e9f2;
+    --card-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+    --table-head-bg: #f8faff;
+    --row-hover: #f5f7ff;
+    --total-bg: #eef1ff;
+    --auth-bg: linear-gradient(135deg, #eef1ff 0%, #e4f3fd 50%, #dcfaf4 100%);
 
     --bs-body-font-family: var(--app-font);
-    --bs-link-color: var(--brand);
-    --bs-link-hover-color: var(--brand-dark);
-    --bs-primary: #4f46e5;
-    --bs-primary-rgb: 79, 70, 229;
+    --bs-link-color: var(--brand-dark);
+    --bs-link-hover-color: var(--brand);
+    --bs-primary: #6366f1;
+    --bs-primary-rgb: 99, 102, 241;
 }
 
 body { letter-spacing: -.005em; }
 .card { border-top: 3px solid transparent; }
 .card.card-accent { border-top-color: var(--brand); }
-.side-link.active .side-badge { background: rgba(255, 255, 255, .25); }
 .page-head h1 { letter-spacing: -.02em; }
 .stat-card { border-radius: 12px; }

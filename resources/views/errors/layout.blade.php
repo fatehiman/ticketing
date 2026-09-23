@@ -6,7 +6,7 @@
         <div class="card-body p-5">
             <div class="display-3 fw-bold text-brand mb-2">{{ $code }}</div>
             <p class="text-muted mb-4">{{ $message }}</p>
-            <a href="{{ url('/') }}" class="btn btn-gradient"><i class="bi bi-house"></i> {{ __('app.errors.home') }}</a>
+            <a href="{{ url('/') }}" class="btn btn-primary"><i class="bi bi-house"></i> {{ __('app.errors.home') }}</a>
         </div>
     </div>
 @endsection

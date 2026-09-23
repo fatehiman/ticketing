@@ -26,6 +26,16 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Demo seeder
 - [x] Deploy to deb10 (`ticketing.localkimia.com`)
 
+## Phase 1.1 — Finance and UI polish
+
+- [x] Lighter, colourful themes (pastel gradients for backgrounds/cards, solid-colour buttons)
+- [x] Tickets grid default columns: number, title, type, status, priority, sprint, cost (saved choices reset once)
+- [x] Grid totals row (money / number / HH:MM) over all filtered records, shown only when such a column is visible
+- [x] Customer payments: add / edit / delete by developers of the customer and admins
+- [x] Transactions page: payments + costs of done tickets (live, no copied rows), filters, totals,
+      remaining, per-project summary; read-only for customers
+- [x] Deploy to deb10 and to the waybill VPS (`ticketing.kimiasoft.ir`)
+
 ## Phase 2 — Collaboration
 
 - [ ] Rich-text comments with mentions and inline images

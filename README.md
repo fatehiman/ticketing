@@ -10,7 +10,11 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
   due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
 - Full ticket **history** (every edit is saved as a revision) and **soft delete**.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
-- Every grid has a **column chooser**; the choice is saved on the server.
+- Every grid has a **column chooser**; the choice is saved on the server. Grids with money or `HH:MM`
+  columns have a **totals row** (sums of all filtered records, not only the current page).
+- **Transactions**: staff add customer payments; each done ticket with a cost and a due date is shown as a
+  cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
+- Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
 
 Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md)
 
@@ -54,10 +58,20 @@ php artisan test
 | History and soft delete | `app/Services/TicketService.php`, `ticket_revisions` table |
 | Ticket number (`id × 100 + 2 random digits`) | `app/Models/Ticket.php` |
 | Jalali / Gregorian dates | `app/Support/Dates.php`, `resources/views/components/date-input.blade.php` |
-| Grid column chooser | `app/Support/Grid.php`, `resources/views/components/grid-columns.blade.php` |
+| Grid column chooser + totals row | `app/Support/Grid.php`, `resources/views/components/grid-columns.blade.php`, `resources/views/partials/grid-totals.blade.php` |
+| Transactions (payments + ticket costs) | `app/Support/Transactions.php`, `app/Http/Controllers/TransactionController.php`, `PaymentController.php`, `app/Policies/PaymentPolicy.php` |
 | Themes | `resources/css/theme-rtl.css`, `resources/css/theme-ltr.css`, shared `app.css` |
 
-## Deployment (deb10)
+## Deployment
+
+The app runs on two servers with the same code. Build once, then copy the same archive to both.
+
+| Server | URL | Notes |
+|---|---|---|
+| deb10 (LAN) | `http://ticketing.localkimia.com` | hosts file → `192.168.1.10`, PHP 8.4 |
+| waybill VPS | `https://ticketing.kimiasoft.ir` | `130.185.76.10`, see "waybill" below |
+
+### deb10
 
 Served at `http://ticketing.localkimia.com` (LAN, hosts file → `192.168.1.10`).
 

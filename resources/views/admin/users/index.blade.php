@@ -10,7 +10,7 @@
             <div class="sub">{{ __('app.results', ['count' => $users->total()]) }}</div>
         </div>
         <div class="dropdown">
-            <button class="btn btn-gradient dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-plus-lg"></i> {{ __('users.new') }}</button>
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-plus-lg"></i> {{ __('users.new') }}</button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                 @foreach ($roles as $role)
                     <li><a class="dropdown-item" href="{{ route('admin.users.create', ['role' => $role->value]) }}"><span class="badge text-bg-{{ $role->color() }}">&nbsp;</span> {{ $role->label() }}</a></li>

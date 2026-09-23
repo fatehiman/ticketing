@@ -14,14 +14,16 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Framework | Laravel 12, PHP ≥ 8.3, MariaDB (prod) / SQLite (local dev + tests) |
 | UI | Server-rendered Blade, Bootstrap 5, Bootstrap Icons, Vite build |
 | Languages | Persian (`fa`, **default**) and English (`en`), PHP translation files in `lang/fa/*.php`, `lang/en/*.php` |
-| Themes | Two separate themes, **tied to the language**: `fa` → **RTL theme** (Vazirmatn FD font with Persian digits, purple/teal palette, `bootstrap.rtl`) and `en` → **LTR theme** (Inter font, indigo/cyan palette, `bootstrap`). The theme is not chosen separately — it follows the language. |
+| Themes | Two separate themes, **tied to the language**: `fa` → **RTL theme** (Vazirmatn FD font with Persian digits, light purple/teal palette, `bootstrap.rtl`) and `en` → **LTR theme** (Inter font, light indigo/cyan palette, `bootstrap`). The theme is not chosen separately — it follows the language. Both are **light and colourful**: soft pastel gradients for the page, sidebar and cards; **buttons are always one solid colour** (no gradient). |
 | Calendar | Chosen per user in the profile, **independent of the language**: `jalali` (default) or `gregorian`. The DB always stores Gregorian. Jalali input uses `@majidh1/jalalidatepicker`, Gregorian uses native `<input type=date>`. The parser accepts both formats (year < 1700 ⇒ Jalali). |
 | Rich text | TinyMCE 7 (self-hosted, GPL licence key) with inline image upload (`POST /editor/upload`). |
 | History | Tickets are never updated in place without a trace: each change writes a row to `ticket_revisions` (diff + full snapshot). Delete = **soft delete** (`deleted_at`, `deleted_by`). |
 | Ticket number | `number = id * 100 + random(10..99)` → always increasing, integer, with 2 random digits (e.g. `#1047`, `#2083`). |
 | Story points | Fibonacci with plain labels: 1 Tiny, 2 Very small, 3 Small, 5 Medium, 8 Large, 13 Very large, 21 Huge. |
 | Time | Stored as **minutes** (int). UI input/output is `HH:MM`. "Spent time" is named **Time logged** (Jira wording). |
-| Grids | Every table has a column chooser. Visible columns are saved **on the server** per user (`grid_preferences`). |
+| Grids | Every table has a column chooser. Visible columns are saved **on the server** per user (`grid_preferences`). A grid can have a **totals row** (`Grid::totals()`): one aggregate query over **all filtered records** (not the page). The row is shown only while a money/number/time column with a total is visible. |
+| Tickets grid defaults | Number, title, type, status, priority, sprint, cost. Each user can change it. |
+| Transactions | Payments live in `payments`. Ticket costs are **not copied**: they are read live from `tickets` with a `UNION ALL`, so a ticket that stops being *done*, loses its cost or due date, or is deleted, disappears from the list and every total at once. |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
 
 ## 2. Roles
@@ -30,7 +32,11 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 |---|---|
 | **admin** | Everything. Manages all users (admins, developers, customers), all projects, assigns projects to developers and customers, sees all tickets. |
 | **developer** | Creates/manages **own** projects (projects they are a member of), sprints of those projects, **own customers** (customers on their projects, or created by them) and assigns them to own projects. Sees tickets of own projects only. Can set **any status at any time**. Can edit/delete tickets (revision + soft delete). |
-| **customer** | Sees their projects and their tickets. Creates tickets (status starts at *Pending review*). Can edit/delete own ticket **only while** it is *Pending review*. Can cancel own ticket at any time. |
+| **customer** | Sees their projects, their tickets and their transactions (read-only). Creates tickets (status starts at *Pending review*). Can edit/delete own ticket **only while** it is *Pending review*. Can cancel own ticket at any time. |
+
+Payments: admins and developers add them. A developer sees and manages (edit/delete) payments of
+**their customers** that have no project or are on one of the developer's projects — also payments
+added by another developer. Admins see and manage all payments.
 
 Profile page (all roles): language, calendar, password, profile picture.
 Customers and developers cannot edit their own name / email / mobile (read-only).
@@ -70,6 +76,8 @@ ticket_comments  id, ticket_id, user_id, body, timestamps
 attachments      id, ticket_id, user_id, path, original_name, mime, size
 ticket_menus     id, user_id, name, filters(json), sort_order      (custom "cartables")
 grid_preferences id, user_id, grid_key, columns(json)
+payments         id, customer_id, project_id(nullable), amount(int, no decimals), paid_on(date),
+                 description(500), created_by, updated_by, soft deletes
 ```
 
 ## 5. Project switcher (top bar)
@@ -95,15 +103,31 @@ grid_preferences id, user_id, grid_key, columns(json)
 Filters: keyword, number, project, sprint, statuses, priorities, types, assignee, reporter,
 unassigned, created date range, updated date range, due date range, sort, per page.
 
-## 7. Directory map
+## 7. Transactions
+
+* One page `/transactions` for every role. Sidebar: **Finance → Transactions**, and **Add payment** for staff.
+* Rows = customer **payments** + **ticket costs**. A ticket is a cost row only while
+  `status = done` **and** `cost > 0` **and** `due_date` is set. The row date is the due date.
+* Costs belong to customers **by project**: a customer's costs are the costs of their projects.
+  Staff filtering by one customer see that customer's payments + the costs of that customer's projects.
+* Filters: customer (staff only), description / ticket title, type (payment / cost), date range,
+  amount range, projects (multi-select, plus *No project*). Unlike tickets, this page does **not**
+  follow the top-bar project switcher (so payments without a project are never hidden).
+* Below the grid: **total payments**, **total costs**, **remaining = costs − payments**
+  (positive = still to pay, negative = prepayment). All totals are for the filtered records, not the page.
+* When the result covers more than one project, a second table shows the same totals per project.
+* Amounts of different project currencies are added together as plain numbers; the per-project
+  table shows each project's currency.
+
+## 8. Directory map
 
 ```
 app/Enums              Role, TicketStatus, TicketPriority, TicketType, StoryPoint, ProjectStatus
-app/Support            Dates (Jalali/Gregorian), Duration (HH:MM), TicketFilter, Grid, ProjectContext
-app/Policies           ProjectPolicy, TicketPolicy, UserPolicy, SprintPolicy
+app/Support            Dates (Jalali/Gregorian), Duration (HH:MM), TicketFilter, Grid (+ totals), ProjectContext, Transactions
+app/Policies           ProjectPolicy, TicketPolicy, PaymentPolicy
 app/Http/Controllers   Auth, Dashboard, Profile, Locale, ProjectSwitch, Project, Sprint,
                        Customer (developer), Admin\User, Ticket, TicketMenu, Attachment,
-                       Comment, EditorUpload, GridPreference
+                       Comment, EditorUpload, GridPreference, Transaction, Payment
 resources/css          app.css (shared) + theme-rtl.css + theme-ltr.css
 resources/js           app.js (grid, cartable, pickers), editor.js (TinyMCE)
 deploy/                nginx vhost

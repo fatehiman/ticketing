@@ -13,7 +13,7 @@
             <div class="sub">{{ __('app.results', ['count' => $projects->total()]) }}</div>
         </div>
         @can('create', App\Models\Project::class)
-            <a href="{{ route('projects.create') }}" class="btn btn-gradient"><i class="bi bi-plus-lg"></i> {{ __('projects.new') }}</a>
+            <a href="{{ route('projects.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('projects.new') }}</a>
         @endcan
     </div>
 

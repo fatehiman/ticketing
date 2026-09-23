@@ -32,6 +32,12 @@ class TicketController extends Controller
         'mp4', 'mov', 'avi', 'mkv', 'webm', 'mp3', 'wav', 'ogg', 'm4a',
     ];
 
+    /** Default grid: number, title, type, status, priority, sprint, cost. Each user can change it. */
+    public const HIDDEN_COLUMNS = [
+        'project', 'assignee', 'reporter', 'story_points', 'done_story_points', 'estimated_time',
+        'logged_time', 'estimated_cost', 'due_date', 'attachments', 'created_at', 'updated_at',
+    ];
+
     public function __construct(private TicketService $tickets) {}
 
     public function index(Request $request, ProjectContext $context)
@@ -65,7 +71,16 @@ class TicketController extends Controller
             'attachments' => __('tickets.fields.attachments'),
             'created_at' => __('tickets.fields.created_at'),
             'updated_at' => __('tickets.fields.updated_at'),
-        ], hidden: ['reporter', 'done_story_points', 'estimated_time', 'logged_time', 'estimated_cost', 'cost', 'created_at', 'attachments'], locked: ['number', 'title']);
+        ], hidden: self::HIDDEN_COLUMNS, locked: ['number', 'title']);
+        // Totals row: sums over all filtered tickets, not only this page.
+        $grid->totals($query, [
+            'story_points' => ['story_points', Grid::NUMBER],
+            'done_story_points' => ['done_story_points', Grid::NUMBER],
+            'estimated_time' => ['estimated_minutes', Grid::DURATION],
+            'logged_time' => ['logged_minutes', Grid::DURATION],
+            'estimated_cost' => ['estimated_cost', Grid::MONEY],
+            'cost' => ['cost', Grid::MONEY],
+        ]);
 
         return view('tickets.index', [
             'tickets' => $query->paginate($perPage)->withQueryString(),

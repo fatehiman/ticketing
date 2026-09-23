@@ -15,7 +15,7 @@
             <h1>{{ __('app.dash.welcome', ['name' => $user->first_name]) }} 👋</h1>
             <div class="sub">{{ __('app.dash.subtitle') }}</div>
         </div>
-        <a href="{{ route('tickets.create') }}" class="btn btn-gradient d-sm-none"><i class="bi bi-plus-lg"></i> {{ __('app.new_ticket') }}</a>
+        <a href="{{ route('tickets.create') }}" class="btn btn-primary d-sm-none"><i class="bi bi-plus-lg"></i> {{ __('app.new_ticket') }}</a>
     </div>
 
     <div class="row g-3 mb-4">

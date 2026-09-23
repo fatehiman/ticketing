@@ -12,7 +12,7 @@
         @method('PUT')
         @include('tickets._form')
         <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-gradient px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
+            <button class="btn btn-primary px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
             <a href="{{ route('tickets.show', $ticket) }}" class="btn btn-light">{{ __('app.cancel') }}</a>
         </div>
     </form>
