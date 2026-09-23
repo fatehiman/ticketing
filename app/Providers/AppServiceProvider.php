@@ -6,6 +6,7 @@ use App\Support\ProjectContext;
 use App\Support\TicketFilter;
 use App\Support\TicketMenus;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +21,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // Behind a TLS-terminating CDN the origin may be reached over plain HTTP; keep every
+        // generated URL on https so the browser does not block them as mixed content.
+        // deb10 has an http:// APP_URL, so nothing changes there.
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
 
         // The layout (and the tickets page) need the project switcher and the ticket folders with badges.
         // Computed once per request and kept on the request.

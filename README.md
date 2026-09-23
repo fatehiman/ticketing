@@ -69,7 +69,7 @@ The app runs on two servers with the same code. Build once, then copy the same a
 | Server | URL | Notes |
 |---|---|---|
 | deb10 (LAN) | `http://ticketing.localkimia.com` | hosts file → `192.168.1.10`, PHP 8.4 |
-| waybill VPS | `https://ticketing.kimiasoft.ir` | `130.185.76.10`, see "waybill" below |
+| waybill VPS | `https://ticketing.kimiasoft.ir` | `130.185.76.10` behind ArvanCloud, Apache mod_php |
 
 ### deb10
 
@@ -92,4 +92,24 @@ ssh deb10 'cd /var/www/ticketing && tar xzf /tmp/ticketing.tgz \
   && composer install --no-dev --optimize-autoloader \
   && php artisan migrate --force && php artisan optimize \
   && chown -R www-data:www-data . && systemctl reload php8.4-fpm'
+```
+
+### waybill (`ticketing.kimiasoft.ir`)
+
+- Public DNS → **ArvanCloud CDN** → origin `130.185.76.10` (SSH: `ssh waybill`, port 38010).
+- Apache **mod_php 8.4** serves `public/` directly (no PHP-FPM, no systemd unit, no port).
+  Vhost: [deploy/apache-ticketing.kimiasoft.ir.conf](deploy/apache-ticketing.kimiasoft.ir.conf) — both `:80` and `:443`
+  (self-signed origin cert in `/etc/ssl/{certs,private}/ticketing.kimiasoft.ir.*`, the CDN does not verify it).
+- Code: `/var/www/ticketing`, owner `www-data`, `.env` `chmod 600`. MariaDB database and user `ticketing`.
+- `.env` has `TRUSTED_PROXIES=*` (real visitor IP for the login rate limit) and `SESSION_SECURE_COOKIE=true`;
+  an `https://` `APP_URL` makes every generated URL https.
+- No demo data. Admin `admin@ticketing.local`; the first password is in `/root/ticketing-admin.txt` on the server.
+
+Update steps (same archive as deb10; mod_php needs no reload):
+
+```bash
+scp /tmp/ticketing.tgz waybill:/tmp/
+ssh waybill 'cd /var/www/ticketing && mariadb-dump ticketing | gzip > /root/ticketing-db-$(date +%F-%H%M).sql.gz \
+  && tar xzf /tmp/ticketing.tgz && COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader \
+  && php artisan migrate --force && php artisan optimize && chown -R www-data:www-data .'
 ```
