@@ -1,0 +1,48 @@
+/*
+ * Persian theme (right-to-left).
+ * Vazirmatn FD shows Persian digits. Purple / teal palette, soft rounded cards.
+ */
+@import 'bootstrap/dist/css/bootstrap.rtl.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'vazirmatn/misc/Farsi-Digits/Vazirmatn-FD-font-face.css';
+@import './app.css';
+
+:root {
+    --app-font: 'Vazirmatn FD', Tahoma, sans-serif;
+    --mono-font: 'Vazirmatn FD', monospace;
+    --app-bg: #f6f4fe;
+    --app-text: #1e1b3a;
+    --muted: #6b6891;
+    --line: #e9e5fb;
+
+    --brand: #7c3aed;
+    --brand-dark: #6425d3;
+    --brand-soft: rgba(124, 58, 237, .1);
+    --brand-gradient: linear-gradient(135deg, #7c3aed 0%, #c026d3 55%, #14b8a6 130%);
+
+    --sidebar-bg: linear-gradient(170deg, #2e1065 0%, #5b21b6 55%, #0f766e 120%);
+    --sidebar-text: rgba(255, 255, 255, .86);
+    --sidebar-active-bg: #fff;
+    --sidebar-active-text: #4c1d95;
+    --side-radius: 14px;
+
+    --topbar-bg: rgba(246, 244, 254, .82);
+    --card-radius: 18px;
+    --card-border: transparent;
+    --card-shadow: 0 8px 30px -14px rgba(76, 29, 149, .25);
+    --table-head-bg: #faf8ff;
+    --row-hover: #faf7ff;
+    --auth-bg: radial-gradient(circle at 80% 10%, #c4b5fd 0, transparent 40%),
+               radial-gradient(circle at 10% 90%, #99f6e4 0, transparent 40%),
+               #f6f4fe;
+
+    --bs-body-font-family: var(--app-font);
+    --bs-link-color: var(--brand);
+    --bs-link-hover-color: var(--brand-dark);
+    --bs-primary: #7c3aed;
+    --bs-primary-rgb: 124, 58, 237;
+}
+
+body { font-feature-settings: "ss01"; }
+.page-head h1 { font-weight: 800; }
+.side-link.active .bi { color: var(--brand); }

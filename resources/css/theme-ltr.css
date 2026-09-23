@@ -1,0 +1,53 @@
+/*
+ * English theme (left-to-right).
+ * Inter font, indigo / cyan palette, flatter cards with a coloured top edge.
+ */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter/800.css';
+@import './app.css';
+
+:root {
+    --app-font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono-font: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --app-bg: #f1f5f9;
+    --app-text: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+
+    --brand: #4f46e5;
+    --brand-dark: #4338ca;
+    --brand-soft: rgba(79, 70, 229, .09);
+    --brand-gradient: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+
+    --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+    --sidebar-text: rgba(226, 232, 240, .82);
+    --sidebar-active-bg: linear-gradient(90deg, #4f46e5, #06b6d4);
+    --sidebar-active-text: #fff;
+    --side-radius: 8px;
+
+    --topbar-bg: rgba(255, 255, 255, .85);
+    --card-radius: 10px;
+    --card-border: #e2e8f0;
+    --card-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+    --table-head-bg: #f8fafc;
+    --row-hover: #f8fafc;
+    --auth-bg: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0e7490 100%);
+
+    --bs-body-font-family: var(--app-font);
+    --bs-link-color: var(--brand);
+    --bs-link-hover-color: var(--brand-dark);
+    --bs-primary: #4f46e5;
+    --bs-primary-rgb: 79, 70, 229;
+}
+
+body { letter-spacing: -.005em; }
+.card { border-top: 3px solid transparent; }
+.card.card-accent { border-top-color: var(--brand); }
+.side-link.active .side-badge { background: rgba(255, 255, 255, .25); }
+.page-head h1 { letter-spacing: -.02em; }
+.stat-card { border-radius: 12px; }
