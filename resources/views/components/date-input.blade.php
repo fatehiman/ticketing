@@ -5,7 +5,7 @@
     $jalali = \App\Support\Dates::isJalali();
 @endphp
 @if ($jalali)
-    <input type="text" name="{{ $name }}" value="{{ $value }}" data-jdp autocomplete="off" placeholder="1405/01/01"
+    <input type="text" name="{{ $name }}" value="{{ $value }}" data-jdp autocomplete="off" placeholder="yyyy/mm/dd"
         {{ $attributes->merge(['class' => 'form-control ltr-input'.($errors->has($name) ? ' is-invalid' : '')]) }}>
 @else
     <input type="date" name="{{ $name }}" value="{{ $value }}"
