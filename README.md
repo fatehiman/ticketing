@@ -103,7 +103,7 @@ ssh deb10 'cd /var/www/ticketing && tar xzf /tmp/ticketing.tgz \
 - Code: `/var/www/ticketing`, owner `www-data`, `.env` `chmod 600`. MariaDB database and user `ticketing`.
 - `.env` has `TRUSTED_PROXIES=*` (real visitor IP for the login rate limit) and `SESSION_SECURE_COOKIE=true`;
   an `https://` `APP_URL` makes every generated URL https.
-- No demo data. Admin `admin@ticketing.local`; the first password is in `/root/ticketing-admin.txt` on the server.
+- No demo data. Admin `admin@ticketing.local`; password in `E:wwwmyLanedentials.md`.
 
 Update steps (same archive as deb10; mod_php needs no reload):
 
