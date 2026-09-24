@@ -55,10 +55,18 @@ class ReturnTo
         return self::isLocal($back) ? $back : null;
     }
 
+    /** A full http(s) URL of this site. Compared by host, so http/https behind the CDN does not matter. */
     private static function isLocal(string $url): bool
     {
-        $root = rtrim(url('/'), '/');
+        if ($url === '' || preg_match('/[\s\\\\]/', $url)) {
+            return false;
+        }
+        $parts = parse_url($url);
+        if (! $parts || ! in_array($parts['scheme'] ?? '', ['http', 'https'], true) || isset($parts['user']) || ! isset($parts['host'])) {
+            return false;
+        }
+        $hosts = array_filter([request()->getHost(), parse_url((string) config('app.url'), PHP_URL_HOST)]);
 
-        return $url !== '' && ($url === $root || str_starts_with($url, $root.'/') || str_starts_with($url, $root.'?'));
+        return in_array(strtolower($parts['host']), array_map('strtolower', $hosts), true);
     }
 }
