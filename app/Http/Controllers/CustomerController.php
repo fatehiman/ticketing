@@ -69,7 +69,7 @@ class CustomerController extends Controller
             $customer->projects()->attach($this->allowedProjectIds($developer, $data['projects'] ?? []));
         });
 
-        return redirect()->route('customers.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('customers.index'))->with('success', __('app.saved'));
     }
 
     public function edit(Request $request, User $customer)
@@ -101,7 +101,7 @@ class CustomerController extends Controller
             $customer->projects()->syncWithoutDetaching($selected);
         });
 
-        return redirect()->route('customers.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('customers.index'))->with('success', __('app.saved'));
     }
 
     /** Removes the customer from the developer's projects. Deletes them if nothing is left. */
@@ -115,7 +115,7 @@ class CustomerController extends Controller
             $customer->delete();
         }
 
-        return redirect()->route('customers.index')->with('success', __('app.deleted'));
+        return $this->redirectBack($request, route('customers.index'))->with('success', __('app.deleted'));
     }
 
     // ---------------------------------------------------------------------

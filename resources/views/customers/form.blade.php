@@ -4,7 +4,7 @@
 @section('content')
     <div class="page-head">
         <h1><i class="bi bi-people text-brand"></i> {{ $customer->exists ? __('users.edit_customer').': '.$customer->name : __('users.new_customer') }}</h1>
-        <a href="{{ route('customers.index') }}" class="btn btn-light">{{ __('app.back') }}</a>
+        <a href="{{ route('customers.index') }}" data-return-link class="btn btn-light">{{ __('app.back') }}</a>
     </div>
 
     <form method="POST" action="{{ $customer->exists ? route('customers.update', $customer) : route('customers.store') }}" enctype="multipart/form-data">

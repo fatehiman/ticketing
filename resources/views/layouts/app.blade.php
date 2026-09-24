@@ -11,7 +11,8 @@
     @vite(["resources/css/theme-{$dir}.css", 'resources/js/app.js'])
     <script>window.APP_I18N = @json(['menu_name_prompt' => __('tickets.filter.menu_name_prompt')]);</script>
 </head>
-<body>
+{{-- data-page / data-list-referrer: see App\Support\ReturnTo (back to the list page after saving a form) --}}
+<body data-page="{{ \App\Support\ReturnTo::kind(Route::currentRouteName()) }}" data-list-referrer="{{ \App\Support\ReturnTo::listReferrer(request()) }}">
     @include('partials.sidebar')
     <div class="sidebar-backdrop"></div>
 

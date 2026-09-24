@@ -96,11 +96,14 @@ class TicketController extends Controller
     public function create(Request $request, ProjectContext $context)
     {
         $this->authorize('create', Ticket::class);
+        $user = $request->user();
         $ticket = new Ticket([
             'project_id' => $context->id() ?? $request->integer('project_id') ?: null,
             'priority' => TicketPriority::Medium,
             'type' => TicketType::Task,
-            'status' => $request->user()->isStaff() ? TicketStatus::Backlog : TicketStatus::PendingReview,
+            'status' => $user->isStaff() ? TicketStatus::Backlog : TicketStatus::PendingReview,
+            // A developer is the assignee by default; admins and customers start unassigned.
+            'assignee_id' => $user->isDeveloper() ? $user->id : null,
         ]);
 
         return view('tickets.create', ['ticket' => $ticket] + $this->lookups($request->user(), $context, true));
@@ -118,7 +121,7 @@ class TicketController extends Controller
 
         $ticket = $this->tickets->create($data, $user, $request->file('attachments', []));
 
-        return redirect()->route('tickets.show', $ticket)->with('success', __('tickets.created', ['number' => $ticket->number]));
+        return $this->redirectBack($request, route('tickets.show', $ticket))->with('success', __('tickets.created', ['number' => $ticket->number]));
     }
 
     public function show(Request $request, Ticket $ticket)
@@ -147,7 +150,7 @@ class TicketController extends Controller
 
         $this->tickets->update($ticket, $data, $user, $request->file('attachments', []));
 
-        return redirect()->route('tickets.show', $ticket)->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('tickets.index'))->with('success', __('app.saved'));
     }
 
     public function destroy(Request $request, Ticket $ticket)
@@ -155,7 +158,7 @@ class TicketController extends Controller
         $this->authorize('delete', $ticket);
         $this->tickets->delete($ticket, $request->user());
 
-        return redirect()->route('tickets.index')->with('success', __('tickets.deleted', ['number' => $ticket->number]));
+        return $this->redirectBack($request, route('tickets.index'))->with('success', __('tickets.deleted', ['number' => $ticket->number]));
     }
 
     /** Staff: any status at any time. Customer: only "cancelled" on their own ticket. */

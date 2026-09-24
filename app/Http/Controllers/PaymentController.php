@@ -34,7 +34,7 @@ class PaymentController extends Controller
 
         Payment::create($this->validated($request, $user) + ['created_by' => $user->id, 'updated_by' => $user->id]);
 
-        return redirect()->route('transactions.index')->with('success', __('transactions.payment_saved'));
+        return $this->redirectBack($request, route('transactions.index'))->with('success', __('transactions.payment_saved'));
     }
 
     public function edit(Request $request, Payment $payment)
@@ -55,15 +55,15 @@ class PaymentController extends Controller
 
         $payment->update($this->validated($request, $user) + ['updated_by' => $user->id]);
 
-        return redirect()->route('transactions.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('transactions.index'))->with('success', __('app.saved'));
     }
 
-    public function destroy(Payment $payment)
+    public function destroy(Request $request, Payment $payment)
     {
         $this->authorize('delete', $payment);
         $payment->delete();
 
-        return redirect()->route('transactions.index')->with('success', __('app.deleted'));
+        return $this->redirectBack($request, route('transactions.index'))->with('success', __('app.deleted'));
     }
 
     private function validated(Request $request, User $user): array

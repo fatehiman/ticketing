@@ -377,4 +377,53 @@ class TicketingTest extends TestCase
         }
         $this->get('/tickets/'.$ticket->number)->assertSee('7,000,000');
     }
+
+    public function test_new_ticket_form_assigns_the_developer_by_default(): void
+    {
+        $selected = fn (User $u) => 'value="'.$u->id.'" data-projects="'.$this->project->id.'" selected';
+        $this->actingAs($this->dev)->get('/tickets/create')->assertOk()->assertSee($selected($this->dev), false);
+
+        $ticket = $this->makeTicket();
+        $this->actingAs($this->dev)->get('/tickets/'.$ticket->number.'/edit')->assertOk()->assertDontSee('data-default', false);
+        $this->actingAs($this->admin)->get('/tickets/create')->assertOk()->assertDontSee('selected>'.$this->dev->name, false);
+    }
+
+    public function test_saving_a_form_goes_back_to_the_list_page(): void
+    {
+        $ticket = $this->makeTicket();
+        $folder = url('/tickets?status%5B0%5D=backlog&page=2');
+
+        // Back to the folder the user came from.
+        $this->actingAs($this->dev)->put('/tickets/'.$ticket->number, $this->ticketData(['_back' => $folder]))->assertRedirect($folder);
+        // Opened directly (no list page): all tickets.
+        $this->actingAs($this->dev)->put('/tickets/'.$ticket->number, $this->ticketData())->assertRedirect('/tickets');
+        // Other sites are never used.
+        $this->actingAs($this->dev)->put('/tickets/'.$ticket->number, $this->ticketData(['_back' => 'https://evil.example/x']))->assertRedirect('/tickets');
+        $this->actingAs($this->dev)->put('/tickets/'.$ticket->number, $this->ticketData(['_back' => url('/').'.evil.example/x']))->assertRedirect('/tickets');
+
+        // Same for other forms.
+        $users = url('/admin/users?role=customer');
+        $this->actingAs($this->admin)->put('/admin/users/'.$this->customer->id, [
+            'first_name' => 'New', 'last_name' => 'Name', 'mobile' => $this->customer->mobile, 'email' => $this->customer->email,
+            'role' => 'customer', 'locale' => 'fa', 'calendar' => 'jalali', 'is_active' => '1', '_back' => $users,
+        ])->assertSessionHasNoErrors()->assertRedirect($users);
+    }
+
+    public function test_list_referrer_is_only_an_app_list_page(): void
+    {
+        $ticket = $this->makeTicket();
+        $page = fn (string $referer) => $this->actingAs($this->dev)->withHeader('referer', $referer)->get('/tickets/'.$ticket->number);
+
+        $page(url('/tickets?status=backlog'))->assertSee('data-list-referrer="'.e(url('/tickets?status=backlog')).'"', false);
+        $page(url('/tickets/'.$ticket->number.'/edit'))->assertSee('data-list-referrer=""', false);
+        $page(url('/login'))->assertSee('data-list-referrer=""', false);
+        $page('https://evil.example/tickets')->assertSee('data-list-referrer=""', false);
+    }
+
+    private function makeTicket(): Ticket
+    {
+        $this->actingAs($this->dev)->post('/tickets', $this->ticketData())->assertSessionHasNoErrors();
+
+        return Ticket::latest('id')->first();
+    }
 }

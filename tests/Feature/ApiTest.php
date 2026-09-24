@@ -189,6 +189,18 @@ class ApiTest extends TestCase
             ->assertStatus(422)->assertJsonPath('error', 'invalid_value');
     }
 
+    public function test_new_ticket_is_assigned_to_the_developer_of_the_token(): void
+    {
+        $token = $this->login();
+        $this->api($token)->postJson('/api/tickets', ['title' => 'Mine'])->assertCreated()->assertJsonPath('ticket.assignee', 'Sara Dev');
+        $this->api($token)->postJson('/api/tickets', ['title' => 'Nobody', 'assignee' => 'none'])->assertCreated()->assertJsonPath('ticket.assignee', null);
+        $this->api($token)->postJson('/api/tickets', ['title' => 'By id', 'assignee_id' => $this->dev->id])->assertCreated()->assertJsonPath('ticket.assignee', 'Sara Dev');
+
+        // A token of an admin (not a developer): unassigned.
+        [, $plain] = ApiToken::issue(User::factory()->admin()->create(), $this->project->id, 'admin bot');
+        $this->api($plain)->postJson('/api/tickets', ['title' => 'Admin'])->assertCreated()->assertJsonPath('ticket.assignee', null);
+    }
+
     public function test_list_filters_and_details(): void
     {
         $sprint = Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'name' => 'One', 'status' => 'active']);

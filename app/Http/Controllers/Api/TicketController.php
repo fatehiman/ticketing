@@ -170,6 +170,7 @@ class TicketController extends Controller
             'priority' => ['nullable', 'string', 'max:50'],
             'sprint' => ['nullable', 'string', 'max:100'],
             'assignee' => ['nullable', 'string', 'max:100'],
+            'assignee_id' => ['nullable', 'integer'],
             'story_points' => ['nullable', 'integer', 'in:'.implode(',', array_column(StoryPoint::cases(), 'value'))],
             'due_date' => ['nullable', 'string', 'max:20'],
             'estimated_time' => ['nullable', 'regex:'.Duration::PATTERN],
@@ -184,7 +185,7 @@ class TicketController extends Controller
             'status' => filled($input['status'] ?? null) ? $this->enum(TicketStatus::class, 'status', $input['status']) : TicketStatus::Backlog->value,
             'priority' => filled($input['priority'] ?? null) ? $this->enum(TicketPriority::class, 'priority', $input['priority']) : TicketPriority::Medium->value,
             'sprint_id' => filled($input['sprint'] ?? null) ? $this->sprint($project, $input['sprint'])->id : null,
-            'assignee_id' => filled($input['assignee'] ?? null) ? $this->assignee($project, mb_strtolower(trim($input['assignee'])), $user) : null,
+            'assignee_id' => $this->newAssignee($project, $input['assignee'] ?? $input['assignee_id'] ?? null, $user),
             'story_points' => $input['story_points'] ?? null,
             'due_date' => filled($input['due_date'] ?? null) ? $this->date($input['due_date'], 'due_date')->toDateString() : null,
             'estimated_minutes' => Duration::toMinutes($input['estimated_time'] ?? null),
@@ -286,6 +287,20 @@ class TicketController extends Controller
         };
 
         return $found?->id ?? throw new ApiError('assignee_not_found', "Assignee \"{$value}\" is not a developer of project {$project->code}. GET /api/options lists the assignees.", 404);
+    }
+
+    /**
+     * Assignee of a new ticket. Not sent: the token's user when they are a developer of the project,
+     * otherwise nobody. "none" means unassigned on purpose.
+     */
+    private function newAssignee(Project $project, mixed $value, User $user): ?int
+    {
+        $value = mb_strtolower(trim((string) $value));
+        if ($value === '') {
+            return $user->isDeveloper() && $this->developers($project)->contains('id', $user->id) ? $user->id : null;
+        }
+
+        return in_array($value, ['none', 'no', 'بدون'], true) ? null : $this->assignee($project, $value, $user);
     }
 
     private function developers(Project $project)

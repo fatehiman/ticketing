@@ -91,7 +91,7 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label" for="assignee_id">{{ __('tickets.fields.assignee_id') }}</label>
-                        <select id="assignee_id" name="assignee_id" data-follows-project class="form-select{{ $err('assignee_id') }}">
+                        <select id="assignee_id" name="assignee_id" data-follows-project @unless ($ticket->exists || session()->hasOldInput()) data-default="{{ $ticket->assignee_id }}" @endunless class="form-select{{ $err('assignee_id') }}">
                             <option value="">{{ __('tickets.unassigned') }}</option>
                             @foreach ($developers as $dev)
                                 <option value="{{ $dev->id }}" data-projects="{{ $dev->projects->pluck('id')->implode(',') }}" @selected((string) $val('assignee_id', $ticket->assignee_id) === (string) $dev->id)>{{ $dev->name }}</option>

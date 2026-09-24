@@ -29,6 +29,8 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Money | **Always a whole number, for every currency** (IRT, IRR, USD, EUR, AED): `7,000,000`, never `7,000,000.00`. Columns are integers (`budget`, `estimated_cost`, `cost`, `amount`), inputs use `data-money="int"`, validation is `integer`, `Money::format()` shows no decimals. |
 | LTR fields | Latin / numeric inputs (email, password, mobile, URL, code, money, `HH:MM`, dates) are `direction: ltr` and left-aligned in both themes (`.ltr-input`, plus every `email/password/url/tel/number/date` input). |
 | Bot API | JSON under `/api` for AI bots (create / list / read tickets). Own small token system (no Sanctum): `api_tokens` stores only the **SHA-256 hash**, tokens last **30 days**. Login by link: the bot gets a public `login_url` and a private `secret`; a developer opens the link within 60 s, signs in and picks **one project** that is linked to the token. The bot then trades `request_id` + `secret` for the token (once). Details in [API.md](API.md). |
+| Default assignee | A new ticket made by a **developer** (web form or bot token) is assigned to that developer, if they are a member of the project. Tickets made by customers or admins start **unassigned**. The bot can send `assignee: "none"` to skip it. |
+| After saving a form | Every create / edit / delete goes **back to the list page the user came from** (folder, filtered list, page number). Each browser tab keeps its last list page in `sessionStorage` (`App\Support\ReturnTo` + `initReturnTo()` in `app.js`); detail (`*.show`) and form (`*.create`, `*.edit`) pages do not change it, and POST forms send it as `_back` (same-site URLs only). A page opened directly (no referrer from this site) has no list page → the default page (*All tickets*, *Users*, …; a new ticket / project opens its own page). |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
 
 ## 2. Roles
@@ -174,5 +176,6 @@ deploy/                nginx vhost
   (then every call must send `project`).
 * Any token problem → `401 {"error": "auth_required"}` so the bot knows to log in again.
 * Tickets created by the bot: reporter = the developer, defaults type `task`, status `backlog`, priority `medium`,
+  assignee = the developer (when they are a developer of the project),
   written through `TicketService` (revision history like the web).
 * Developers see and revoke their bot tokens in **Profile → Bot access (API)**.

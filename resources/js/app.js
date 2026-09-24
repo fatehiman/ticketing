@@ -216,7 +216,15 @@ function initTicketForm() {
             opt.disabled = !ok;
             if (!ok && opt.selected) opt.closest('select').value = '';
         });
+        // New ticket: the default assignee (the logged-in developer) comes back when the chosen project has them.
+        document.querySelectorAll('[data-follows-project][data-default]').forEach((select) => {
+            const opt = select.querySelector(`option[value="${select.dataset.default}"]`);
+            if (select.value === '' && opt && !opt.disabled) select.value = select.dataset.default;
+        });
     };
+    // Once the user picks an assignee (or "unassigned") by hand, the default is not used again.
+    document.querySelectorAll('[data-follows-project][data-default]').forEach((select) =>
+        select.addEventListener('change', () => delete select.dataset.default));
     project.addEventListener('change', sync);
     sync();
 }
@@ -270,6 +278,42 @@ function initEditors() {
     });
 }
 
+/* ---------- Back to the list page after saving a form (see App\Support\ReturnTo) ---------- */
+// Each tab remembers its last list page (folder, filtered list, users…). Detail and form pages keep it,
+// so "list → ticket → edit → save" goes back to that list. A page opened directly (no referrer from this
+// site) forgets it, so the server uses its default page ("all tickets", "all users"…).
+function initReturnTo() {
+    const KEY = 'returnTo';
+    const store = {
+        get: () => { try { return sessionStorage.getItem(KEY); } catch (_) { return null; } },
+        set: (v) => { try { sessionStorage.setItem(KEY, v); } catch (_) { /* storage blocked */ } },
+        remove: () => { try { sessionStorage.removeItem(KEY); } catch (_) { /* storage blocked */ } },
+    };
+    const kind = document.body.dataset.page;
+    if (kind === 'list') {
+        store.set(window.location.href);
+    } else if (!document.referrer.startsWith(`${window.location.origin}/`)) {
+        store.remove();
+    } else if (!store.get() && document.body.dataset.listReferrer) {
+        store.set(document.body.dataset.listReferrer); // tab opened from a list (e.g. middle click)
+    }
+
+    const back = store.get();
+    if (!back) return;
+    // Every POST form sends it; only controllers that save/delete a record use it.
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (form.method.toLowerCase() !== 'post' || form.querySelector('input[name="_back"]')) return;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '_back';
+        input.value = back;
+        form.appendChild(input);
+    });
+    // "Back to list" / "Cancel" links of forms.
+    document.querySelectorAll('a[data-return-link]').forEach((a) => { a.href = back; });
+}
+
 /* ---------- Tooltips ---------- */
 function initTooltips() {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
@@ -279,6 +323,7 @@ function initTooltips() {
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initConfirm();
+    initReturnTo();
     initDatePickers();
     initInputs();
     initPaymentForm();

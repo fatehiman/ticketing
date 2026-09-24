@@ -9,7 +9,7 @@
 @section('content')
     <div class="page-head">
         <h1><i class="bi bi-wallet2 text-brand"></i> {{ $payment->exists ? __('transactions.edit_payment') : __('transactions.new_payment') }}</h1>
-        <a href="{{ route('transactions.index') }}" class="btn btn-light">{{ __('app.back') }}</a>
+        <a href="{{ route('transactions.index') }}" data-return-link class="btn btn-light">{{ __('app.back') }}</a>
     </div>
 
     <form method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" class="card card-accent" style="max-width: 760px">
@@ -53,7 +53,7 @@
         </div>
         <div class="card-footer bg-transparent d-flex gap-2">
             <button class="btn btn-primary px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
-            <a href="{{ route('transactions.index') }}" class="btn btn-light">{{ __('app.cancel') }}</a>
+            <a href="{{ route('transactions.index') }}" data-return-link class="btn btn-light">{{ __('app.cancel') }}</a>
         </div>
     </form>
 

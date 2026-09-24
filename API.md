@@ -182,7 +182,7 @@ Only `title` is required.
 | `status` | `backlog` | key or label |
 | `priority` | `medium` | key or label |
 | `sprint` | none | sprint number, `active`, or part of the sprint name |
-| `assignee` | none | `me`, developer id, or part of the name |
+| `assignee` (or `assignee_id`) | you, if you are a developer of the project; else none | `me`, `none` (unassigned), developer id, or part of the name |
 | `story_points` | none | 1, 2, 3, 5, 8, 13, 21 |
 | `due_date` | none | Gregorian or Jalali |
 | `estimated_time` | none | `HH:MM` |

@@ -65,7 +65,7 @@ class SprintController extends Controller
 
         Sprint::create($data);
 
-        return redirect()->route('sprints.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.saved'));
     }
 
     public function edit(Request $request, Sprint $sprint)
@@ -82,15 +82,15 @@ class SprintController extends Controller
         $this->authorize('update', Project::findOrFail($data['project_id']));
         $sprint->update($data);
 
-        return redirect()->route('sprints.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.saved'));
     }
 
-    public function destroy(Sprint $sprint)
+    public function destroy(Request $request, Sprint $sprint)
     {
         $this->authorize('update', $sprint->project);
         $sprint->delete(); // tickets keep existing, their sprint becomes empty
 
-        return redirect()->route('sprints.index')->with('success', __('app.deleted'));
+        return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.deleted'));
     }
 
     private function validated(Request $request, ?Sprint $sprint = null): array

@@ -4,7 +4,7 @@
 @section('content')
     <div class="page-head">
         <h1><i class="bi bi-lightning-charge text-brand"></i> {{ $sprint->exists ? __('sprints.edit') : __('sprints.new') }}</h1>
-        <a href="{{ route('sprints.index') }}" class="btn btn-light">{{ __('app.back') }}</a>
+        <a href="{{ route('sprints.index') }}" data-return-link class="btn btn-light">{{ __('app.back') }}</a>
     </div>
 
     <form method="POST" action="{{ $sprint->exists ? route('sprints.update', $sprint) : route('sprints.store') }}" class="card card-accent" style="max-width: 760px">

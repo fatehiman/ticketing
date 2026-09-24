@@ -70,7 +70,7 @@ class UserController extends Controller
             }
         });
 
-        return redirect()->route('admin.users.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('admin.users.index'))->with('success', __('app.saved'));
     }
 
     public function edit(User $user)
@@ -103,7 +103,7 @@ class UserController extends Controller
             $user->projects()->sync($user->role === Role::Admin ? [] : ($data['projects'] ?? []));
         });
 
-        return redirect()->route('admin.users.index')->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('admin.users.index'))->with('success', __('app.saved'));
     }
 
     public function destroy(Request $request, User $user)
@@ -111,6 +111,6 @@ class UserController extends Controller
         abort_if($user->is($request->user()), 422, __('users.cannot_delete_self'));
         $user->delete(); // soft delete: tickets keep their reporter
 
-        return redirect()->route('admin.users.index')->with('success', __('app.deleted'));
+        return $this->redirectBack($request, route('admin.users.index'))->with('success', __('app.deleted'));
     }
 }

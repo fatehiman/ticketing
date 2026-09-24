@@ -4,7 +4,7 @@
 @section('content')
     <div class="page-head">
         <h1><i class="bi bi-plus-circle text-brand"></i> {{ __('projects.new') }}</h1>
-        <a href="{{ route('projects.index') }}" class="btn btn-light">{{ __('app.back') }}</a>
+        <a href="{{ route('projects.index') }}" data-return-link class="btn btn-light">{{ __('app.back') }}</a>
     </div>
     <form method="POST" action="{{ route('projects.store') }}" enctype="multipart/form-data">
         @csrf

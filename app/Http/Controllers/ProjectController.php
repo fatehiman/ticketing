@@ -72,7 +72,7 @@ class ProjectController extends Controller
             return $project;
         });
 
-        return redirect()->route('projects.show', $project)->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('projects.show', $project))->with('success', __('app.saved'));
     }
 
     public function show(Request $request, Project $project)
@@ -103,15 +103,15 @@ class ProjectController extends Controller
             $this->syncMembers($request, $project, $request->user());
         });
 
-        return redirect()->route('projects.show', $project)->with('success', __('app.saved'));
+        return $this->redirectBack($request, route('projects.index'))->with('success', __('app.saved'));
     }
 
-    public function destroy(Project $project)
+    public function destroy(Request $request, Project $project)
     {
         $this->authorize('delete', $project);
         $project->delete(); // soft delete, tickets stay in the database
 
-        return redirect()->route('projects.index')->with('success', __('app.deleted'));
+        return $this->redirectBack($request, route('projects.index'))->with('success', __('app.deleted'));
     }
 
     // ---------------------------------------------------------------------

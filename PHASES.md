@@ -58,6 +58,13 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Profile: list and revoke bot tokens
 - [x] Docs for the bot: [API.md](API.md)
 
+## Phase 1.4 — Form flow
+
+- [x] New tickets are assigned to the logged-in developer by default (web form and bot API); customers' and
+      admins' tickets start unassigned
+- [x] After saving (create / edit / delete) every form goes back to the list page the user came from
+      (folder, filters, page); opened directly → the default list (*All tickets*, *Users*, …)
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups
