@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ReadableJson::class,
+        ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
             'api.token' => \App\Http\Middleware\AuthenticateApiToken::class,

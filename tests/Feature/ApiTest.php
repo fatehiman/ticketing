@@ -218,7 +218,9 @@ class ApiTest extends TestCase
 
         $this->api($token)->getJson('/api/tickets/'.$a->number)->assertOk()
             ->assertJsonPath('ticket.description', 'Gateway timeout')
-            ->assertJsonPath('ticket.status_label', 'درحال انجام');
+            ->assertJsonPath('ticket.status_label', 'درحال انجام')
+            ->assertSee('"status_label":"درحال انجام"', false) // plain UTF-8, not \u escapes
+            ->assertSee('"url":"http', false);
     }
 
     public function test_token_without_project_needs_project_param(): void
