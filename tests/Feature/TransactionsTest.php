@@ -249,6 +249,26 @@ class TransactionsTest extends TestCase
         $this->actingAs($this->customer)->get('/transactions')->assertSee('Foreign project payment');
     }
 
+    public function test_admin_sees_all_transactions_read_only(): void
+    {
+        $payment = $this->payment(['description' => 'Paid by card']);
+        $this->ticket(['title' => 'Cost in P1']);
+
+        $html = $this->actingAs($this->admin)->get('/transactions')->assertOk()
+            ->assertSee('Paid by card')->assertSee('Cost in P1')->getContent();
+        $this->assertStringNotContainsString(route('payments.create'), $html);
+        $this->assertStringNotContainsString(route('payments.edit', $payment), $html);
+        $this->assertStringNotContainsString('data-col="actions"', $html);
+
+        $this->get('/payments/create')->assertForbidden();
+        $this->post('/payments', ['customer_id' => $this->customer->id, 'amount' => '100', 'paid_on' => '2026-03-03'])->assertForbidden();
+        $this->get("/payments/{$payment->id}/edit")->assertForbidden();
+        $this->put("/payments/{$payment->id}", ['customer_id' => $this->customer->id, 'amount' => '1', 'paid_on' => '2026-03-03'])->assertForbidden();
+        $this->delete("/payments/{$payment->id}")->assertForbidden();
+        $this->assertSame(400, $payment->fresh()->amount);
+        $this->assertSame(1, Payment::count());
+    }
+
     public function test_staff_filter_by_customer_uses_customer_projects_for_costs(): void
     {
         $this->ticket(['title' => 'Cost in P1']);

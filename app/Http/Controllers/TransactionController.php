@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 /**
  * Transactions: customer payments next to the costs of done tickets.
- * Staff add payments here; customers see their own transactions read-only.
+ * Developers add payments here; admins see all transactions read-only, customers their own.
  * Totals are for all filtered records, not only the current page.
  */
 class TransactionController extends Controller
@@ -35,7 +35,10 @@ class TransactionController extends Controller
             'actions' => __('app.actions'),
         ];
         if (! $user->isStaff()) {
-            unset($columns['customer'], $columns['actions']); // customers see only their own rows, read-only
+            unset($columns['customer']); // customers see only their own rows
+        }
+        if (! $user->isDeveloper()) {
+            unset($columns['actions']); // customers and admins only read
         }
         $grid = Grid::make('transactions', $columns, locked: ['date']);
         $grid->totals($query, [
@@ -49,7 +52,7 @@ class TransactionController extends Controller
         // Names for the rows on this page.
         $customers = User::withTrashed()->whereIn('id', $rows->pluck('customer_id')->filter()->unique())->get()->keyBy('id');
         $projects = Project::withTrashed()->whereIn('id', $rows->pluck('project_id')->filter()->unique())->get()->keyBy('id');
-        $editable = $user->isStaff()
+        $editable = $user->isDeveloper()
             ? Payment::whereIn('id', $rows->where('kind', 'payment')->pluck('id'))->get()
                 ->filter(fn ($p) => $user->can('update', $p))->pluck('id')->flip()
             : collect();
