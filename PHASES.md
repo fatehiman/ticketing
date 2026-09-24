@@ -31,7 +31,7 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Lighter, colourful themes (pastel gradients for backgrounds/cards, solid-colour buttons)
 - [x] Tickets grid default columns: number, title, type, status, priority, sprint, cost (saved choices reset once)
 - [x] Grid totals row (money / number / HH:MM) over all filtered records, shown only when such a column is visible
-- [x] Customer payments: add / edit / delete by developers of the customer and admins
+- [x] Customer payments: add / edit / delete by developers of the customer
 - [x] Transactions page: payments + costs of done tickets (live, no copied rows), filters, totals,
       remaining, per-project summary; read-only for customers
 - [x] Deploy to deb10 and to the waybill VPS (`ticketing.kimiasoft.ir`)
@@ -60,10 +60,17 @@ Design details: [PLAN.md](PLAN.md).
 
 ## Phase 1.4 — Form flow
 
-- [x] New tickets are assigned to the logged-in developer by default (web form and bot API); customers' and
-      admins' tickets start unassigned
+- [x] New tickets are assigned to the logged-in developer by default (web form and bot API); customers'
+      tickets start unassigned
 - [x] After saving (create / edit / delete) every form goes back to the list page the user came from
       (folder, filters, page); opened directly → the default list (*All tickets*, *Users*, …)
+
+## Phase 1.6 — Admin is a read-only supervisor
+
+- [x] Admin cannot create, edit, delete, change status of or reply to tickets, cannot press *I read it*, and cannot
+      write sprints or payments (policies + `role:developer` routes; buttons hidden). Admin still manages users and projects
+- [x] Only developers can log in a bot; admin tokens stop working
+- [x] Production data: tickets / revisions made by admin by mistake moved to the only developer
 
 ## Phase 2 — Collaboration
 

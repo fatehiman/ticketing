@@ -6,6 +6,10 @@ use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
 
+/**
+ * Admins are supervisors: they read every ticket but never write (no create, edit, status,
+ * reply or delete). Tickets belong to the developers (tenants) and their customers.
+ */
 class TicketPolicy
 {
     public function view(User $user, Ticket $ticket): bool
@@ -15,16 +19,16 @@ class TicketPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || count($user->accessibleProjectIds()) > 0;
+        return ! $user->isAdmin() && count($user->accessibleProjectIds()) > 0;
     }
 
-    /** Staff can always edit. Customers only their own ticket while it is still pending review. */
+    /** Developers can always edit. Customers only their own ticket while it is still pending review. */
     public function update(User $user, Ticket $ticket): bool
     {
-        if (! $this->view($user, $ticket)) {
+        if ($user->isAdmin() || ! $this->view($user, $ticket)) {
             return false;
         }
-        if ($user->isStaff()) {
+        if ($user->isDeveloper()) {
             return true;
         }
 
@@ -36,16 +40,19 @@ class TicketPolicy
         return $this->update($user, $ticket);
     }
 
-    /** Staff may set any status at any time. */
+    /** Developers may set any status at any time. */
     public function changeStatus(User $user, Ticket $ticket): bool
     {
-        return $user->isStaff() && $this->view($user, $ticket);
+        return $user->isDeveloper() && $this->view($user, $ticket);
     }
 
     /** A customer can cancel their own ticket at any time (unless it is already closed). */
     public function cancel(User $user, Ticket $ticket): bool
     {
-        if ($user->isStaff()) {
+        if ($user->isAdmin()) {
+            return false;
+        }
+        if ($user->isDeveloper()) {
             return $this->view($user, $ticket);
         }
 
@@ -54,16 +61,16 @@ class TicketPolicy
             && ! $ticket->status->isClosed();
     }
 
-    /** Followups: staff at any time, customers only while the ticket is not closed. */
+    /** Followups: developers at any time, customers only while the ticket is not closed. */
     public function reply(User $user, Ticket $ticket): bool
     {
-        return $this->view($user, $ticket) && ($user->isStaff() || ! $ticket->status->isClosed());
+        return ! $user->isAdmin() && $this->view($user, $ticket) && ($user->isDeveloper() || ! $ticket->status->isClosed());
     }
 
-    /** "I read it" is only for the side that must answer. */
+    /** "I read it" is only for the side that must answer (admins only read). */
     public function markRead(User $user, Ticket $ticket): bool
     {
-        return $this->view($user, $ticket) && $ticket->isAwaiting($user);
+        return ! $user->isAdmin() && $this->view($user, $ticket) && $ticket->isAwaiting($user);
     }
 
     /**

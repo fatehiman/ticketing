@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Bot API: "Authorization: Bearer <token>". The token user must still be an active developer or admin.
+ * Bot API: "Authorization: Bearer <token>". The token user must still be an active developer (admins only read in the web app).
  * Any failure is a 401 "auth_required", so the bot knows it must run the login steps again.
  */
 class AuthenticateApiToken
@@ -19,7 +19,7 @@ class AuthenticateApiToken
         $token = ApiToken::findValid($request->bearerToken());
         $user = $token?->user;
 
-        if (! $token || ! $user || ! $user->is_active || ! $user->isStaff()) {
+        if (! $token || ! $user || ! $user->is_active || ! $user->isDeveloper()) {
             return response()->json([
                 'ok' => false,
                 'error' => 'auth_required',

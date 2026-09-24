@@ -107,10 +107,10 @@ class Ticket extends Model
         return $this->hasMany(Attachment::class)->whereNull('followup_id');
     }
 
-    /** True when the given user's side (staff or customer) must answer this ticket. */
+    /** True when the given user's side (staff or customer) must answer this ticket. Admins only read, never answer. */
     public function isAwaiting(User $user): bool
     {
-        return $this->awaiting_reply !== null && $this->awaiting_reply === $user->replySide();
+        return ! $user->isAdmin() && $this->awaiting_reply !== null && $this->awaiting_reply === $user->replySide();
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

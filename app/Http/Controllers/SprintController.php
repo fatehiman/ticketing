@@ -60,7 +60,7 @@ class SprintController extends Controller
     {
         $data = $this->validated($request);
         $project = Project::findOrFail($data['project_id']);
-        $this->authorize('update', $project);
+        $this->authorize('manageSprints', $project);
         $data['number'] ??= ((int) Sprint::where('project_id', $project->id)->max('number')) + 1;
 
         Sprint::create($data);
@@ -70,16 +70,16 @@ class SprintController extends Controller
 
     public function edit(Request $request, Sprint $sprint)
     {
-        $this->authorize('update', $sprint->project);
+        $this->authorize('manageSprints', $sprint->project);
 
         return view('sprints.form', ['sprint' => $sprint, 'projects' => $this->editableProjects($request), 'statuses' => SprintStatus::cases()]);
     }
 
     public function update(Request $request, Sprint $sprint)
     {
-        $this->authorize('update', $sprint->project);
+        $this->authorize('manageSprints', $sprint->project);
         $data = $this->validated($request, $sprint);
-        $this->authorize('update', Project::findOrFail($data['project_id']));
+        $this->authorize('manageSprints', Project::findOrFail($data['project_id']));
         $sprint->update($data);
 
         return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.saved'));
@@ -87,7 +87,7 @@ class SprintController extends Controller
 
     public function destroy(Request $request, Sprint $sprint)
     {
-        $this->authorize('update', $sprint->project);
+        $this->authorize('manageSprints', $sprint->project);
         $sprint->delete(); // tickets keep existing, their sprint becomes empty
 
         return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.deleted'));
@@ -114,6 +114,6 @@ class SprintController extends Controller
     private function editableProjects(Request $request)
     {
         return Project::query()->visibleTo($request->user())->orderBy('name')->get()
-            ->filter(fn ($p) => $request->user()->can('update', $p))->values();
+            ->filter(fn ($p) => $request->user()->can('manageSprints', $p))->values();
     }
 }

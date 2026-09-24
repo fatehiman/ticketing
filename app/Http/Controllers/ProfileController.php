@@ -22,7 +22,7 @@ class ProfileController extends Controller
 
         return view('profile.edit', [
             'user' => $user,
-            'apiTokens' => $user->isStaff() ? ApiToken::valid()->where('user_id', $user->id)->with('project')->latest('id')->get() : collect(),
+            'apiTokens' => $user->isDeveloper() ? ApiToken::valid()->where('user_id', $user->id)->with('project')->latest('id')->get() : collect(),
         ]);
     }
 

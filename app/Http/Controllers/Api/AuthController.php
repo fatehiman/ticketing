@@ -58,7 +58,7 @@ class AuthController extends Controller
             }
 
             $user = $auth->user;
-            if (! $user || ! $user->is_active || ! $user->isStaff()) {
+            if (! $user || ! $user->is_active || ! $user->isDeveloper()) {
                 return $this->fail('forbidden', 'This user cannot use the API.', 403);
             }
 

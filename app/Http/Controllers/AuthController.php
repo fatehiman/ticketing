@@ -51,7 +51,8 @@ class AuthController extends Controller
         $user->forceFill(['last_login_at' => now()])->save();
 
         // Toast on the first page: tickets (in all the user's projects) that wait for their reply.
-        $awaiting = Ticket::visibleTo($user)->where('awaiting_reply', $user->replySide())->count();
+        // Admins only read, so they never have to reply.
+        $awaiting = $user->isAdmin() ? 0 : Ticket::visibleTo($user)->where('awaiting_reply', $user->replySide())->count();
 
         return redirect()->intended(route('dashboard'))->with('awaiting_toast', $awaiting);
     }

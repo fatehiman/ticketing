@@ -16,9 +16,11 @@
         </a>
 
         <div class="nav-section">{{ __('app.tickets') }}</div>
-        <a href="{{ route('tickets.create') }}" @class(['side-link', 'active' => request()->routeIs('tickets.create')])>
-            <i class="bi bi-plus-circle"></i><span>{{ __('app.new_ticket') }}</span>
-        </a>
+        @can('create', App\Models\Ticket::class)
+            <a href="{{ route('tickets.create') }}" @class(['side-link', 'active' => request()->routeIs('tickets.create')])>
+                <i class="bi bi-plus-circle"></i><span>{{ __('app.new_ticket') }}</span>
+            </a>
+        @endcan
         <a class="side-link side-toggle" data-bs-toggle="collapse" href="#ticket-folders" role="button" aria-expanded="true">
             <i class="bi bi-folder2-open"></i><span>{{ __('app.tickets') }}</span><i class="bi bi-chevron-down chev"></i>
         </a>
@@ -82,11 +84,11 @@
         <a href="{{ route('transactions.index') }}" @class(['side-link', 'active' => request()->routeIs('transactions.*')])>
             <i class="bi bi-cash-coin"></i><span>{{ __('transactions.title') }}</span>
         </a>
-        @if ($user->isStaff())
+        @can('create', App\Models\Payment::class)
             <a href="{{ route('payments.create') }}" @class(['side-link', 'active' => request()->routeIs('payments.*')])>
                 <i class="bi bi-wallet2"></i><span>{{ __('transactions.new_payment') }}</span>
             </a>
-        @endif
+        @endcan
 
         <div class="nav-section">{{ __('app.profile') }}</div>
         <a href="{{ route('profile.edit') }}" @class(['side-link', 'active' => request()->routeIs('profile.*')])>

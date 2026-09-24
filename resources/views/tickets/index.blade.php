@@ -27,7 +27,9 @@
                 {{ $projectContext->current()?->name ?? __('app.all_projects') }} · {{ __('app.results', ['count' => $tickets->total()]) }}
             </div>
         </div>
-        <a href="{{ route('tickets.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('tickets.new') }}</a>
+        @can('create', App\Models\Ticket::class)
+            <a href="{{ route('tickets.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('tickets.new') }}</a>
+        @endcan
     </div>
 
     {{-- Filter box --}}

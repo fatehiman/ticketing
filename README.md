@@ -5,7 +5,9 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - Two languages: **Persian (default)** and **English** — PHP translation files in `lang/fa` and `lang/en`.
 - Two themes that follow the language: **RTL theme** for Persian, **LTR theme** for English.
 - Per-user **calendar** (Jalali or Gregorian), independent of the language.
-- Three roles: **admin**, **developer**, **customer**.
+- Three roles: **admin**, **developer**, **customer**. The app is a tenant system of developers: the **admin is a
+  supervisor** — manages users and projects and reads all tickets, sprints and transactions, but never writes tickets,
+  followups, sprints or payments (no *New ticket* button, no bot login).
 - Tickets with status, priority (Jira colours), type, sprint, story points, estimates, time logged, costs,
   due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
 - Full ticket **history** (every edit is saved as a revision) and **soft delete**.

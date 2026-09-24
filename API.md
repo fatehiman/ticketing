@@ -7,7 +7,7 @@ No attachments, followups or history.
 - Base URL: `https://ticketing.kimiasoft.ir/api` (LAN: `http://ticketing.localkimia.com/api`)
 - Send and receive JSON. Every answer has `"ok": true` or `"ok": false`.
 - After login, send the token in every call: `Authorization: Bearer <token>`
-- Only **developers** (and admins) can log in a bot. Customers cannot.
+- Only **developers** can log in a bot. Admins (read-only supervisors) and customers cannot.
 
 ## 1. Login (3 steps)
 

@@ -28,7 +28,7 @@ class ApiAuthController extends Controller
         if (! $user) {
             return redirect()->guest(route('login'));
         }
-        if (! $user->isStaff()) {
+        if (! $user->isDeveloper()) {
             return $this->message('api.only_staff', false);
         }
 
@@ -51,7 +51,7 @@ class ApiAuthController extends Controller
             return $this->message($error, false);
         }
         $user = $request->user();
-        if (! $user->isStaff()) {
+        if (! $user->isDeveloper()) {
             return $this->message('api.only_staff', false);
         }
 

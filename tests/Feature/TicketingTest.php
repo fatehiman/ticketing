@@ -85,13 +85,16 @@ class TicketingTest extends TestCase
             foreach (['fa', 'en'] as $locale) {
                 $user->update(['locale' => $locale, 'calendar' => $locale === 'fa' ? 'jalali' : 'gregorian']);
                 $this->actingAs($user->fresh());
-                $pages = ['/', '/tickets', '/tickets/create', '/tickets/'.$ticket->number, '/tickets/'.$closed->number, '/tickets?awaiting=me', '/profile', '/projects/'.$this->project->id, '/transactions'];
+                $pages = ['/', '/tickets', '/tickets/'.$ticket->number, '/tickets/'.$closed->number, '/tickets?awaiting=me', '/profile', '/projects/'.$this->project->id, '/transactions'];
+                if (! $user->isAdmin()) {
+                    $pages[] = '/tickets/create';
+                }
                 if ($user->isStaff()) {
-                    $pages = array_merge($pages, ['/payments/create', '/tickets/'.$ticket->number.'/edit', '/projects', '/projects/create',
-                        '/projects/'.$this->project->id.'/edit', '/sprints', '/sprints/create']);
+                    $pages = array_merge($pages, ['/projects', '/projects/create', '/projects/'.$this->project->id.'/edit', '/sprints']);
                 }
                 if ($user->isDeveloper()) {
-                    $pages = array_merge($pages, ['/customers', '/customers/create', '/customers/'.$this->customer->id.'/edit']);
+                    $pages = array_merge($pages, ['/payments/create', '/tickets/'.$ticket->number.'/edit', '/sprints/create',
+                        '/customers', '/customers/create', '/customers/'.$this->customer->id.'/edit']);
                 }
                 if ($user->isAdmin()) {
                     $pages = array_merge($pages, ['/admin/users', '/admin/users/create', '/admin/users/'.$this->dev->id.'/edit']);
@@ -202,6 +205,37 @@ class TicketingTest extends TestCase
         $this->actingAs($this->dev)->delete('/customers/'.$this->customer->id)->assertRedirect();
         $this->assertSame([$this->otherProject->id], $this->customer->projects()->pluck('projects.id')->all());
         $this->assertNotSoftDeleted($this->customer);
+    }
+
+    public function test_admin_only_reads_tickets_sprints_and_payments(): void
+    {
+        $ticket = $this->makeTicket();
+        $sprint = Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'status' => 'active']);
+        $ticket->forceFill(['awaiting_reply' => 'staff'])->save();
+
+        $this->actingAs($this->admin)->get('/tickets/'.$ticket->number)->assertOk()
+            ->assertDontSee(route('tickets.edit', $ticket));
+        $this->get('/tickets')->assertOk()->assertDontSee(route('tickets.create'));
+        $this->get('/sprints')->assertOk()->assertDontSee(route('sprints.create'));
+
+        $this->get('/tickets/create')->assertForbidden();
+        $this->post('/tickets', $this->ticketData(['title' => 'By admin']))->assertForbidden();
+        $this->get('/tickets/'.$ticket->number.'/edit')->assertForbidden();
+        $this->put('/tickets/'.$ticket->number, $this->ticketData())->assertForbidden();
+        $this->post('/tickets/'.$ticket->number.'/status', ['status' => 'done'])->assertForbidden();
+        $this->post('/tickets/'.$ticket->number.'/followups', ['body' => '<p>Hi</p>'])->assertForbidden();
+        $this->post('/tickets/'.$ticket->number.'/read')->assertForbidden();
+        $this->delete('/tickets/'.$ticket->number)->assertForbidden();
+        $this->get('/sprints/create')->assertForbidden();
+        $this->post('/sprints', ['project_id' => $this->project->id, 'status' => 'planned'])->assertForbidden();
+        $this->delete('/sprints/'.$sprint->id)->assertForbidden();
+        $this->get('/payments/create')->assertForbidden();
+        $this->post('/payments', ['customer_id' => $this->customer->id, 'amount' => '100', 'paid_on' => '2026-03-03'])->assertForbidden();
+
+        $this->assertSame(1, Ticket::count());
+        $this->assertSame('backlog', $ticket->fresh()->status->value);
+        $this->assertSame('staff', $ticket->fresh()->awaiting_reply);
+        $this->assertSame(1, Sprint::count());
     }
 
     public function test_admin_assigns_projects_but_not_to_admins(): void
@@ -385,7 +419,6 @@ class TicketingTest extends TestCase
 
         $ticket = $this->makeTicket();
         $this->actingAs($this->dev)->get('/tickets/'.$ticket->number.'/edit')->assertOk()->assertDontSee('data-default', false);
-        $this->actingAs($this->admin)->get('/tickets/create')->assertOk()->assertDontSee('selected>'.$this->dev->name, false);
     }
 
     public function test_saving_a_form_goes_back_to_the_list_page(): void

@@ -79,7 +79,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between">
                         <span><i class="bi bi-lightning-charge text-brand"></i> {{ __('app.sprints') }}</span>
-                        @can('update', $project)<a href="{{ route('sprints.create') }}" class="small">+ {{ __('sprints.new') }}</a>@endcan
+                        @can('manageSprints', $project)<a href="{{ route('sprints.create') }}" class="small">+ {{ __('sprints.new') }}</a>@endcan
                     </div>
                     <div class="table-responsive">
                         <table class="table table-grid">

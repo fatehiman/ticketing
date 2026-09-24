@@ -33,6 +33,12 @@ class ProjectPolicy
         return $this->update($user, $project);
     }
 
+    /** Sprints are the developer's work planning: admins only read them. */
+    public function manageSprints(User $user, Project $project): bool
+    {
+        return $user->isDeveloper() && $user->canAccessProject($project);
+    }
+
     /** Only admins assign developers to projects. */
     public function manageDevelopers(User $user): bool
     {

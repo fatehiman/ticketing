@@ -68,12 +68,12 @@ Route::middleware('auth')->group(function () {
     // Projects are visible to members; managing them needs admin/developer (checked by the policy).
     Route::resource('projects', ProjectController::class);
 
-    Route::middleware('role:admin,developer')->group(function () {
-        Route::resource('sprints', SprintController::class)->except('show');
-        Route::resource('payments', PaymentController::class)->except(['index', 'show']);
-    });
+    // Admins supervise: they read sprints, but only developers write sprints, payments and customers.
+    Route::get('/sprints', [SprintController::class, 'index'])->middleware('role:admin,developer')->name('sprints.index');
 
     Route::middleware('role:developer')->group(function () {
+        Route::resource('sprints', SprintController::class)->except(['index', 'show']);
+        Route::resource('payments', PaymentController::class)->except(['index', 'show']);
         Route::resource('customers', CustomerController::class)->except('show')->parameters(['customers' => 'customer']);
     });
 

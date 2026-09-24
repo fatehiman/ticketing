@@ -21,9 +21,11 @@
     @endif
 
     <div class="ms-auto d-flex align-items-center gap-2">
-        <a href="{{ route('tickets.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center gap-1">
-            <i class="bi bi-plus-lg"></i> {{ __('app.new_ticket') }}
-        </a>
+        @can('create', App\Models\Ticket::class)
+            <a href="{{ route('tickets.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center gap-1">
+                <i class="bi bi-plus-lg"></i> {{ __('app.new_ticket') }}
+            </a>
+        @endcan
 
         @php($other = app()->getLocale() === 'fa' ? 'en' : 'fa')
         <a href="{{ route('locale', $other) }}" class="top-icon-btn" title="{{ __('app.language') }}" data-bs-toggle="tooltip">

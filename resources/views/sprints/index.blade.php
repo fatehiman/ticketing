@@ -9,7 +9,9 @@
             <h1><i class="bi bi-lightning-charge text-brand"></i> {{ __('sprints.title') }}</h1>
             <div class="sub">{{ $projectContext->current()?->name ?? __('app.all_projects') }} · {{ __('app.results', ['count' => $sprints->total()]) }}</div>
         </div>
-        <a href="{{ route('sprints.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('sprints.new') }}</a>
+        @if (auth()->user()->isDeveloper())
+            <a href="{{ route('sprints.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('sprints.new') }}</a>
+        @endif
     </div>
 
     <div class="card">
@@ -48,7 +50,7 @@
                         <td data-col="points" class="{{ $grid->cls('points') }}">{{ (int) $sprint->points_done }} / {{ (int) $sprint->points_total }}</td>
                         <td data-col="goal" class="{{ $grid->cls('goal') }} small">{{ $sprint->goal }}</td>
                         <td class="text-end text-nowrap">
-                            @can('update', $sprint->project)
+                            @can('manageSprints', $sprint->project)
                                 <a href="{{ route('sprints.edit', $sprint) }}" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
                                 <form method="POST" action="{{ route('sprints.destroy', $sprint) }}" class="d-inline" data-confirm="{{ __('app.confirm_delete') }}">
                                     @csrf

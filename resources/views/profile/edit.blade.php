@@ -124,7 +124,7 @@
                 </div>
             </form>
 
-            @if ($user->isStaff())
+            @if ($user->isDeveloper())
                 <div class="card mt-3">
                     <div class="card-header"><i class="bi bi-robot text-brand"></i> {{ __('api.tokens') }}</div>
                     <div class="card-body">

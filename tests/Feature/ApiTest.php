@@ -196,9 +196,9 @@ class ApiTest extends TestCase
         $this->api($token)->postJson('/api/tickets', ['title' => 'Nobody', 'assignee' => 'none'])->assertCreated()->assertJsonPath('ticket.assignee', null);
         $this->api($token)->postJson('/api/tickets', ['title' => 'By id', 'assignee_id' => $this->dev->id])->assertCreated()->assertJsonPath('ticket.assignee', 'Sara Dev');
 
-        // A token of an admin (not a developer): unassigned.
+        // Admins only read: an admin token does not work.
         [, $plain] = ApiToken::issue(User::factory()->admin()->create(), $this->project->id, 'admin bot');
-        $this->api($plain)->postJson('/api/tickets', ['title' => 'Admin'])->assertCreated()->assertJsonPath('ticket.assignee', null);
+        $this->api($plain)->postJson('/api/tickets', ['title' => 'Admin'])->assertUnauthorized()->assertJsonPath('error', 'auth_required');
     }
 
     public function test_list_filters_and_details(): void

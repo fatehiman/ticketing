@@ -29,7 +29,7 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Money | **Always a whole number, for every currency** (IRT, IRR, USD, EUR, AED): `7,000,000`, never `7,000,000.00`. Columns are integers (`budget`, `estimated_cost`, `cost`, `amount`), inputs use `data-money="int"`, validation is `integer`, `Money::format()` shows no decimals. |
 | LTR fields | Latin / numeric inputs (email, password, mobile, URL, code, money, `HH:MM`, dates) are `direction: ltr` and left-aligned in both themes (`.ltr-input`, plus every `email/password/url/tel/number/date` input). |
 | Bot API | JSON under `/api` for AI bots (create / list / read tickets). Own small token system (no Sanctum): `api_tokens` stores only the **SHA-256 hash**, tokens last **30 days**. Login by link: the bot gets a public `login_url` and a private `secret`; a developer opens the link within 60 s, signs in and picks **one project** that is linked to the token. The bot then trades `request_id` + `secret` for the token (once). Details in [API.md](API.md). |
-| Default assignee | A new ticket made by a **developer** (web form or bot token) is assigned to that developer, if they are a member of the project. Tickets made by customers or admins start **unassigned**. The bot can send `assignee: "none"` to skip it. |
+| Default assignee | A new ticket made by a **developer** (web form or bot token) is assigned to that developer, if they are a member of the project. Tickets made by customers start **unassigned**. The bot can send `assignee: "none"` to skip it. |
 | After saving a form | Every create / edit / delete goes **back to the list page the user came from** (folder, filtered list, page number). Each browser tab keeps its last list page in `sessionStorage` (`App\Support\ReturnTo` + `initReturnTo()` in `app.js`); detail (`*.show`) and form (`*.create`, `*.edit`) pages do not change it, and POST forms send it as `_back` (same-site URLs only). A page opened directly (no referrer from this site) has no list page → the default page (*All tickets*, *Users*, …; a new ticket / project opens its own page). |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
 
@@ -37,16 +37,16 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 
 | Role | Can do |
 |---|---|
-| **admin** | Everything. Manages all users (admins, developers, customers), all projects, assigns projects to developers and customers, sees all tickets. |
+| **admin** | **Supervisor.** Manages all users (admins, developers, customers), all projects, assigns projects to developers and customers. **Reads** all tickets, sprints and transactions, but never writes them: no new ticket, edit, status change, followup, *I read it*, delete, sprint or payment. Cannot log in a bot. |
 | **developer** | Creates/manages **own** projects (projects they are a member of), sprints of those projects, **own customers** (customers on their projects, or created by them) and assigns them to own projects. Sees tickets of own projects only. Can set **any status at any time**. Can edit/delete tickets (revision + soft delete). |
 | **customer** | Sees their projects, their tickets and their transactions (read-only). Creates tickets (status starts at *Pending review*). Can edit/delete own ticket **only while** it is *Pending review*. Can cancel own ticket at any time. |
 
-Followups: staff can reply at any time; customers only while the ticket is **not closed**.
+Followups: developers can reply at any time; customers only while the ticket is **not closed**.
 Rating: only customers, only on closed tickets; the customer who rated can change it. Staff only read it.
 
-Payments: admins and developers add them. A developer sees and manages (edit/delete) payments of
+Payments: only developers add them. A developer sees and manages (edit/delete) payments of
 **their customers** that have no project or are on one of the developer's projects — also payments
-added by another developer. Admins see and manage all payments.
+added by another developer. Admins see all payments (read-only).
 
 Profile page (all roles): language, calendar, password, profile picture.
 Customers and developers cannot edit their own name / email / mobile (read-only).
@@ -57,7 +57,7 @@ Developers edit their customers in *Customers*; admin edits everyone.
 | Key | fa | en | Notes |
 |---|---|---|---|
 | `pending_review` | دردست بررسی | Pending review | Only for tickets created by customers |
-| `backlog` | درصف انجام | Backlog | Default for developer/admin tickets |
+| `backlog` | درصف انجام | Backlog | Default for developer tickets |
 | `in_progress` | درحال انجام | In progress (to do / doing) | |
 | `testing` | درحال تست | Testing | |
 | `done` | انجام شده | Done / deployed | |
@@ -167,7 +167,7 @@ deploy/                nginx vhost
 
 ## 8. Bot API
 
-* Only staff (developers, admins) can log in a bot. The token acts as that user (same project access).
+* Only developers can log in a bot (admins only read, customers cannot). The token acts as that user (same project access).
 * Login link rules: must be opened within **60 s** of `POST /api/auth/start`; sign-in + project choice within
   **10 min** of start; the bot must take the token within **10 min** of approval; the token is given **once**.
 * The link is posted in a group with customers, so the link alone is not enough: taking the token needs the
