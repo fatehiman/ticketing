@@ -28,7 +28,11 @@ bot                                 developer                         ticketing
 
 ### Step 1 — `POST /api/auth/start`
 
-Body (optional): `{"name": "Telegram bot – ACME group"}` — shown to the developer and in their profile.
+Body (optional): `{"name": "Telegram bot – ACME group", "require_project": true}`
+
+- `name` — shown to the developer and in their profile.
+- `require_project` — `true`: the token is always linked to one project. The approval page does not offer
+  *No fixed project*. Use it when the bot must never deal with projects (default `false`).
 
 ```json
 {
@@ -51,7 +55,7 @@ Body (optional): `{"name": "Telegram bot – ACME group"}` — shown to the deve
 The developer opens the link. If not signed in, the login page opens first, then it comes back.
 
 - One active project → it is linked at once.
-- More projects → the developer picks one, or *No fixed project*.
+- More projects → the developer picks one, or *No fixed project* (not offered with `require_project`).
 - The page says **"The bot login was successful"**. No token is shown on the page.
 
 ### Step 3 — `POST /api/auth/token`

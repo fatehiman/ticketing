@@ -14,8 +14,11 @@ class AuthController extends Controller
     /** Step 1: create a login request. */
     public function start(Request $request)
     {
-        $data = $request->validate(['name' => ['nullable', 'string', 'max:100']]);
-        [$auth, $secret] = ApiAuthRequest::start($data['name'] ?? null);
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:100'],
+            'require_project' => ['nullable', 'boolean'],
+        ]);
+        [$auth, $secret] = ApiAuthRequest::start($data['name'] ?? null, (bool) ($data['require_project'] ?? false));
 
         return response()->json([
             'ok' => true,

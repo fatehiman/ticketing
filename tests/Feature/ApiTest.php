@@ -246,6 +246,20 @@ class ApiTest extends TestCase
         $this->api($token)->getJson('/api/options?project=P1')->assertOk()->assertJsonPath('assignees.0.name', 'Sara Dev');
     }
 
+    public function test_require_project_hides_no_fixed_project(): void
+    {
+        $start = $this->postJson('/api/auth/start', ['require_project' => true])->assertOk()->json();
+        $path = parse_url($start['login_url'], PHP_URL_PATH);
+
+        $this->actingAs($this->dev)->get($path)->assertOk()
+            ->assertSee('Project one')->assertDontSee(__('api.no_fixed_project'));
+        $this->actingAs($this->dev)->post($path, ['project' => 'none'])->assertSessionHasErrors('project');
+        $this->actingAs($this->dev)->post($path, ['project' => (string) $this->project->id])->assertOk();
+
+        $this->postJson('/api/auth/token', ['request_id' => $start['request_id'], 'secret' => $start['secret']])
+            ->assertOk()->assertJsonPath('project.code', 'P1');
+    }
+
     public function test_revoked_token_stops_working(): void
     {
         $token = $this->login();

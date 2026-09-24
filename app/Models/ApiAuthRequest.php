@@ -23,11 +23,12 @@ class ApiAuthRequest extends Model
     /** After approval, the bot must take the token within this time. */
     public const CLAIM_MINUTES = 10;
 
-    protected $fillable = ['public_id', 'secret_hash', 'name', 'user_id', 'project_id', 'api_token_id', 'opened_at', 'approved_at', 'claimed_at'];
+    protected $fillable = ['public_id', 'secret_hash', 'name', 'require_project', 'user_id', 'project_id', 'api_token_id', 'opened_at', 'approved_at', 'claimed_at'];
 
     protected function casts(): array
     {
         return [
+            'require_project' => 'boolean',
             'opened_at' => 'datetime',
             'approved_at' => 'datetime',
             'claimed_at' => 'datetime',
@@ -45,13 +46,14 @@ class ApiAuthRequest extends Model
     }
 
     /** @return array{0: ApiAuthRequest, 1: string} the request and its plain secret */
-    public static function start(?string $name): array
+    public static function start(?string $name, bool $requireProject = false): array
     {
         $secret = Str::random(48);
         $request = self::create([
             'public_id' => Str::random(32),
             'secret_hash' => hash('sha256', $secret),
             'name' => $name,
+            'require_project' => $requireProject,
         ]);
 
         return [$request, $secret];

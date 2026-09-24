@@ -19,10 +19,12 @@
                             <span><b>{{ $project->name }}</b> <span class="text-muted small ltr-input d-inline-block">{{ $project->code }}</span></span>
                         </label>
                     @endforeach
-                    <label class="list-group-item d-flex gap-2 align-items-center">
-                        <input class="form-check-input m-0" type="radio" name="project" value="none">
-                        <span class="text-muted">{{ __('api.no_fixed_project') }}</span>
-                    </label>
+                    @unless ($auth->require_project)
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input m-0" type="radio" name="project" value="none">
+                            <span class="text-muted">{{ __('api.no_fixed_project') }}</span>
+                        </label>
+                    @endunless
                 </div>
                 @error('project')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <button class="btn btn-primary w-100 py-2 fw-semibold"><i class="bi bi-check2-circle"></i> {{ __('api.confirm') }}</button>

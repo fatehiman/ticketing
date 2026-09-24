@@ -55,9 +55,12 @@ class ApiAuthController extends Controller
             return $this->message('api.only_staff', false);
         }
 
-        $data = $request->validate([
-            'project' => ['required', Rule::in(array_merge(['none'], $this->projects($request)->pluck('id')->map(fn ($id) => (string) $id)->all()))],
-        ]);
+        // "none" (no fixed project) only when the bot did not ask for a fixed project.
+        $allowed = $this->projects($request)->pluck('id')->map(fn ($id) => (string) $id)->all();
+        if (! $auth->require_project) {
+            $allowed[] = 'none';
+        }
+        $data = $request->validate(['project' => ['required', Rule::in($allowed)]]);
 
         return $this->approve($auth, $user, $data['project'] === 'none' ? null : (int) $data['project']);
     }

@@ -65,6 +65,11 @@ Design details: [PLAN.md](PLAN.md).
 - [x] After saving (create / edit / delete) every form goes back to the list page the user came from
       (folder, filters, page); opened directly → the default list (*All tickets*, *Users*, …)
 
+## Phase 1.5 — Bot login with a fixed project
+
+- [x] `POST /api/auth/start` takes `require_project: true`: the approval page then hides *No fixed project*,
+      so the token is always linked to one project (used by the BrainyMemo Telegram bot)
+
 ## Phase 1.6 — Admin is a read-only supervisor
 
 - [x] Admin cannot create, edit, delete, change status of or reply to tickets, cannot press *I read it*, and cannot
