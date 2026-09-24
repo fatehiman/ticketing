@@ -276,6 +276,7 @@ function initEditors() {
 /* ---------- Tooltips ---------- */
 function initTooltips() {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
+    document.querySelectorAll('.toast').forEach((el) => bootstrap.Toast.getOrCreateInstance(el).show());
 }
 
 document.addEventListener('DOMContentLoaded', () => {

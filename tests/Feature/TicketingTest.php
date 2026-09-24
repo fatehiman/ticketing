@@ -78,13 +78,14 @@ class TicketingTest extends TestCase
     public function test_all_pages_render_for_every_role(): void
     {
         $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->dev->id]));
+        $closed = Ticket::create($this->ticketData(['reporter_id' => $this->customer->id, 'status' => 'done']));
         Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'status' => 'active']);
 
         foreach ([$this->admin, $this->dev, $this->customer] as $user) {
             foreach (['fa', 'en'] as $locale) {
                 $user->update(['locale' => $locale, 'calendar' => $locale === 'fa' ? 'jalali' : 'gregorian']);
                 $this->actingAs($user->fresh());
-                $pages = ['/', '/tickets', '/tickets/create', '/tickets/'.$ticket->number, '/profile', '/projects/'.$this->project->id, '/transactions'];
+                $pages = ['/', '/tickets', '/tickets/create', '/tickets/'.$ticket->number, '/tickets/'.$closed->number, '/tickets?awaiting=me', '/profile', '/projects/'.$this->project->id, '/transactions'];
                 if ($user->isStaff()) {
                     $pages = array_merge($pages, ['/payments/create', '/tickets/'.$ticket->number.'/edit', '/projects', '/projects/create',
                         '/projects/'.$this->project->id.'/edit', '/sprints', '/sprints/create']);
@@ -295,5 +296,71 @@ class TicketingTest extends TestCase
         $this->assertSame('gregorian', $fresh->calendar);
 
         $this->actingAs($fresh)->get('/')->assertSee('dir="ltr"', false);
+    }
+
+    public function test_followups_switch_the_waiting_side_and_show_red_badges(): void
+    {
+        $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->customer->id, 'status' => 'pending_review']));
+        $url = '/tickets/'.$ticket->number;
+
+        // Customer asks a question: the ticket now waits for staff.
+        $this->actingAs($this->customer)->post($url.'/followups', [
+            'body' => '<p>Any news?</p>',
+            'attachments' => [UploadedFile::fake()->create('log.txt', 3)],
+        ])->assertRedirect();
+        $ticket->refresh();
+        $this->assertSame('staff', $ticket->awaiting_reply);
+        $followup = $ticket->followups()->first();
+        $this->assertCount(1, $followup->attachments);
+        $this->assertCount(0, $ticket->attachments, 'followup files are not ticket files');
+
+        // Developer sees the red badge (sidebar) and the "Waiting for my reply" folder.
+        $this->actingAs($this->dev)->get('/tickets?awaiting=me')->assertOk()->assertSee('side-badge-alert', false)->assertSee($ticket->title);
+        $this->actingAs($this->customer)->get('/tickets')->assertDontSee('side-badge-alert', false);
+
+        // Developer replies and keeps the default: now the customer must answer.
+        $this->actingAs($this->dev)->post($url.'/followups', ['body' => '<p>Please test it.</p>', 'awaits_reply' => '1'])->assertRedirect();
+        $this->assertSame('customer', $ticket->fresh()->awaiting_reply);
+
+        // Login toast for the customer.
+        auth()->logout();
+        $this->post('/login', ['login' => $this->customer->email, 'password' => 'password'])->assertSessionHas('awaiting_toast', 1);
+
+        // "I read it" clears it, only for the waiting side.
+        $this->actingAs($this->dev)->post($url.'/read')->assertForbidden();
+        $this->actingAs($this->customer)->post($url.'/read')->assertRedirect();
+        $this->assertNull($ticket->fresh()->awaiting_reply);
+
+        // A staff reply with the box unticked does not wait for anyone.
+        $this->actingAs($this->customer)->post($url.'/followups', ['body' => '<p>Works, thanks.</p>']);
+        $this->actingAs($this->dev)->post($url.'/followups', ['body' => '<p>Great.</p>', 'awaits_reply' => '0']);
+        $this->assertNull($ticket->fresh()->awaiting_reply);
+        $this->assertSame(4, $ticket->followups()->count());
+
+        // Empty reply is refused.
+        $this->actingAs($this->dev)->post($url.'/followups', ['body' => ''])->assertSessionHasErrors('body');
+    }
+
+    public function test_closed_tickets_cannot_be_replied_by_customers_and_get_one_rating(): void
+    {
+        $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'status' => 'in_progress']));
+        $url = '/tickets/'.$ticket->number;
+
+        // No rating while the ticket is open.
+        $this->actingAs($this->customer)->post($url.'/comments', ['rating' => 5])->assertForbidden();
+
+        $ticket->update(['status' => 'done']);
+        $this->actingAs($this->customer)->post($url.'/followups', ['body' => '<p>Hi</p>'])->assertForbidden();
+        $this->actingAs($this->dev)->post($url.'/followups', ['body' => '<p>Deployed.</p>', 'awaits_reply' => '0'])->assertRedirect();
+
+        // Developers cannot rate, customers can (stars only, text optional).
+        $this->actingAs($this->dev)->post($url.'/comments', ['rating' => 5])->assertForbidden();
+        $this->actingAs($this->customer)->post($url.'/comments', ['rating' => 6])->assertSessionHasErrors('rating');
+        $this->actingAs($this->customer)->post($url.'/comments', ['rating' => 4])->assertRedirect();
+        $this->actingAs($this->customer)->post($url.'/comments', ['rating' => 3, 'body' => 'Good'])->assertRedirect();
+        $this->assertSame(1, $ticket->comment()->count());
+        $this->assertSame(3, $ticket->comment->rating);
+
+        $this->actingAs($this->dev)->get($url)->assertOk()->assertSee('Good');
     }
 }

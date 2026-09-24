@@ -10,7 +10,7 @@ class Attachment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['ticket_id', 'user_id', 'path', 'original_name', 'mime', 'size'];
+    protected $fillable = ['ticket_id', 'followup_id', 'user_id', 'path', 'original_name', 'mime', 'size'];
 
     public function ticket(): BelongsTo
     {

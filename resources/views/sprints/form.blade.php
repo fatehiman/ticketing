@@ -21,7 +21,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">{{ __('sprints.fields.number') }}</label>
-                <input type="number" min="1" name="number" value="{{ old('number', $sprint->number) }}" class="form-control @error('number') is-invalid @enderror">
+                <input type="number" min="1" name="number" value="{{ old('number', $sprint->number) }}" class="form-control ltr-input @error('number') is-invalid @enderror">
                 <div class="form-text">{{ __('sprints.number_hint') }}</div>
             </div>
             <div class="col-md-8">

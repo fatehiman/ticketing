@@ -113,6 +113,14 @@ class DatabaseSeeder extends Seeder
                 'due_date' => now()->addDays(($i % 20) - 6)->toDateString(),
             ], $byCustomer ? $customer : ($developer ?? $admin));
 
+            // A short conversation on some tickets: some wait for the developer, some for the customer.
+            if ($customer && $developer && $i % 3 === 0) {
+                $service->addFollowup($ticket, $customer, '<p>آیا این مورد تا آخر هفته آماده می‌شود؟</p>', true);
+                if ($i % 2 === 0) {
+                    $service->addFollowup($ticket, $developer, '<p>بله، نسخه آزمایشی تا پنجشنبه آماده است.</p>', $i % 4 !== 0);
+                }
+            }
+
             $ticket->timestamps = false;
             $ticket->forceFill(['created_at' => now()->subDays(40 - $i), 'updated_at' => now()->subDays(max(0, 20 - $i))])->saveQuietly();
         }

@@ -127,7 +127,7 @@
                         </div>
                         <div class="col-6 mb-1">
                             <label class="form-label" for="done_story_points">{{ __('tickets.fields.done_story_points') }}</label>
-                            <input type="number" min="0" max="999" id="done_story_points" name="done_story_points" value="{{ $val('done_story_points', $ticket->done_story_points) }}" class="form-control{{ $err('done_story_points') }}">
+                            <input type="number" min="0" max="999" id="done_story_points" name="done_story_points" value="{{ $val('done_story_points', $ticket->done_story_points) }}" class="form-control ltr-input{{ $err('done_story_points') }}">
                         </div>
                         <div class="col-6 mb-1">
                             <label class="form-label" for="due_date">{{ __('tickets.fields.due_date') }}</label>

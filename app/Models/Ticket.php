@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
@@ -27,6 +28,7 @@ class Ticket extends Model
         'project_id', 'sprint_id', 'type', 'status', 'priority', 'title', 'content', 'reporter_id',
         'assignee_id', 'story_points', 'done_story_points', 'estimated_minutes', 'logged_minutes',
         'estimated_cost', 'cost', 'due_date', 'resolved_at', 'updated_by', 'deleted_by',
+        'awaiting_reply', 'awaiting_since',
     ];
 
     protected function casts(): array
@@ -37,6 +39,7 @@ class Ticket extends Model
             'type' => TicketType::class,
             'due_date' => 'date',
             'resolved_at' => 'datetime',
+            'awaiting_since' => 'datetime',
             'estimated_cost' => 'decimal:2',
             'cost' => 'decimal:2',
         ];
@@ -87,14 +90,27 @@ class Ticket extends Model
         return $this->hasMany(TicketRevision::class)->latest('id');
     }
 
-    public function comments(): HasMany
+    /** The customer's rating (only on closed tickets). */
+    public function comment(): HasOne
     {
-        return $this->hasMany(TicketComment::class)->oldest('id');
+        return $this->hasOne(TicketComment::class);
     }
 
+    public function followups(): HasMany
+    {
+        return $this->hasMany(TicketFollowup::class)->oldest('id');
+    }
+
+    /** Files of the ticket itself (not of its followups). */
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(Attachment::class)->whereNull('followup_id');
+    }
+
+    /** True when the given user's side (staff or customer) must answer this ticket. */
+    public function isAwaiting(User $user): bool
+    {
+        return $this->awaiting_reply !== null && $this->awaiting_reply === $user->replySide();
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

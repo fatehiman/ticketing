@@ -9,12 +9,19 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - Tickets with status, priority (Jira colours), type, sprint, story points, estimates, time logged, costs,
   due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
 - Full ticket **history** (every edit is saved as a revision) and **soft delete**.
+- **Followups**: a ticket is a conversation. Staff and customers reply (rich text + attachments) below the ticket.
+  The ticket then **waits for a reply** from the other side: a **red badge** next to each folder's badge, a
+  *Waiting for my reply* folder, a toast after login and an **I read it** button. A staff reply has a
+  checkbox (on by default) to decide if the customer must answer. Customers cannot reply to closed tickets.
+- **Rating**: on a closed ticket (done, cancelled, rejected) a customer gives 1–5 stars and an optional comment.
+  One rating per ticket; staff can only read it.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
 - Every grid has a **column chooser**; the choice is saved on the server. Grids with money or `HH:MM`
   columns have a **totals row** (sums of all filtered records, not only the current page).
 - **Transactions**: staff add customer payments; each done ticket with a cost and a due date is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
 - Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
+- Latin / numeric fields (email, mobile, password, URL, code, amounts, times, dates) are always **LTR**, also in the RTL theme.
 
 Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md)
 
@@ -55,6 +62,9 @@ php artisan test
 | Roles and access rules | `app/Policies`, `app/Models/User.php` (`scopeCustomersOf`, `accessibleProjectIds`) |
 | Top-bar project switcher | `app/Support/ProjectContext.php` |
 | Ticket filters, folders, badges | `app/Support/TicketFilter.php`, `app/Support/TicketMenus.php` |
+| Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
+| Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
+| Notifications hook (future SMS) | `app/Events/FollowupPosted.php` (no listener yet) |
 | History and soft delete | `app/Services/TicketService.php`, `ticket_revisions` table |
 | Ticket number (`id × 100 + 2 random digits`) | `app/Models/Ticket.php` |
 | Jalali / Gregorian dates | `app/Support/Dates.php`, `resources/views/components/date-input.blade.php` |

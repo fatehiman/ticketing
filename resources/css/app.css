@@ -137,8 +137,8 @@ a { text-decoration: none; }
     box-shadow: 0 4px 14px -8px var(--brand);
 }
 .side-link .bi { font-size: 1.05rem; width: 1.2rem; text-align: center; }
+.side-link .side-badges { margin-inline-start: auto; display: inline-flex; gap: .25rem; flex-shrink: 0; }
 .side-link .side-badge {
-    margin-inline-start: auto;
     min-width: 1.7rem;
     padding: .15rem .45rem;
     border-radius: 999px;
@@ -149,6 +149,9 @@ a { text-decoration: none; }
     color: var(--sidebar-badge-text);
 }
 .side-link.active .side-badge { background: var(--brand); color: #fff; }
+/* Red badge: tickets waiting for the user's reply. */
+.side-link .side-badge.side-badge-alert, .side-link.active .side-badge.side-badge-alert { background: #dc2626; color: #fff; }
+.awaiting-dot { color: #dc2626; font-size: .7rem; }
 .side-sub .side-link { padding-block: .4rem; font-size: .86rem; margin-inline-start: 1.6rem; }
 .side-sub .dot {
     width: .6rem; height: .6rem; border-radius: 50%;
@@ -340,6 +343,26 @@ a { text-decoration: none; }
 .attachment-item { display: flex; align-items: center; gap: .6rem; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 .attachment-item .bi { font-size: 1.5rem; }
 
+/* Followups (ticket conversation) */
+.followup { border: 1px solid var(--line); border-radius: var(--card-radius); background: #fff; }
+.followup-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem .9rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
+.followup-body { padding: .8rem 1rem; overflow-wrap: anywhere; }
+.followup-body img { max-width: 100%; height: auto; }
+.followup-staff { border-inline-start: 4px solid var(--brand); }
+.followup-customer { border-inline-start: 4px solid #16a34a; }
+.toast-awaiting { background: #dc2626; color: #fff; }
+
+/* Star rating (like app stores): radios in reverse order, so :hover ~ label fills the lower stars. */
+.star-input { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: .15rem; }
+.star-input input { position: absolute; opacity: 0; pointer-events: none; }
+.star-input label { font-size: 2rem; line-height: 1; color: #d1d5db; cursor: pointer; transition: color .1s, transform .1s; }
+.star-input label:hover { transform: scale(1.1); }
+.star-input label:hover, .star-input label:hover ~ label,
+.star-input input:checked ~ label { color: #f59e0b; }
+.star-input input:focus-visible + label { outline: 2px solid var(--brand); border-radius: 4px; }
+.stars { color: #f59e0b; letter-spacing: .1rem; }
+.stars .off { color: #d1d5db; }
+
 /* ---------- Auth page ---------- */
 .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: var(--auth-bg); }
 .auth-card { width: 100%; max-width: 420px; border-radius: calc(var(--card-radius) + 6px); }
@@ -350,8 +373,18 @@ a { text-decoration: none; }
 .empty-state .bi { font-size: 2.5rem; display: block; margin-bottom: .5rem; opacity: .5; }
 .tox-tinymce { border-radius: 10px !important; }
 .jdp-container { font-family: var(--app-font) !important; }
-.ltr-input { direction: ltr; text-align: start; }
+/*
+ * Latin / numeric values (username, email, password, mobile, URL, code, amount, time, date)
+ * are always written left-to-right, also in the RTL theme. Inputs are left-aligned too, so they
+ * look and type like in the LTR theme. Plain text (not an input) keeps the page alignment.
+ */
+.ltr-input,
+input[type="email"], input[type="password"], input[type="url"], input[type="tel"],
+input[type="number"], input[type="date"] { direction: ltr; unicode-bidi: isolate; }
+input.ltr-input, textarea.ltr-input,
+input[type="email"], input[type="password"], input[type="url"], input[type="tel"],
+input[type="number"], input[type="date"] { text-align: left; }
+[dir="rtl"] :not(input):not(textarea).ltr-input { text-align: right; }
 /* Signed numbers: keep the minus sign on the left, also in RTL. */
 .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
-[dir="rtl"] .ltr-input { text-align: right; }
 .min-w-0 { min-width: 0; }

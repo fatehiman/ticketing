@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ticket;
 use App\Models\User;
 use App\Support\Dates;
 use Illuminate\Http\Request;
@@ -49,7 +50,10 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
 
-        return redirect()->intended(route('dashboard'));
+        // Toast on the first page: tickets (in all the user's projects) that wait for their reply.
+        $awaiting = Ticket::visibleTo($user)->where('awaiting_reply', $user->replySide())->count();
+
+        return redirect()->intended(route('dashboard'))->with('awaiting_toast', $awaiting);
     }
 
     public function logout(Request $request)

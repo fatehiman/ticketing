@@ -7,6 +7,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EditorUploadController;
+use App\Http\Controllers\FollowupController;
 use App\Http\Controllers\GridPreferenceController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PaymentController;
@@ -44,6 +45,8 @@ Route::middleware('auth')->group(function () {
     // Tickets
     Route::resource('tickets', TicketController::class);
     Route::post('/tickets/{ticket}/status', [TicketController::class, 'status'])->name('tickets.status');
+    Route::post('/tickets/{ticket}/followups', [FollowupController::class, 'store'])->name('tickets.followups.store');
+    Route::post('/tickets/{ticket}/read', [FollowupController::class, 'read'])->name('tickets.read');
     Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])->name('tickets.comments.store');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');

@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Enums\TicketStatus;
+use App\Events\FollowupPosted;
 use App\Models\Attachment;
 use App\Models\Ticket;
+use App\Models\TicketFollowup;
 use App\Models\TicketRevision;
 use App\Models\User;
 use App\Support\Html;
@@ -97,8 +99,46 @@ class TicketService
         });
     }
 
+    /**
+     * Add a reply to the ticket conversation.
+     * A customer reply always waits for staff. A staff reply waits for the customer
+     * only when $awaitsReply is true. Either way the writer's own side has now answered.
+     */
+    public function addFollowup(Ticket $ticket, User $user, ?string $body, bool $awaitsReply, array $files = []): TicketFollowup
+    {
+        $followup = DB::transaction(function () use ($ticket, $user, $body, $awaitsReply, $files) {
+            $awaitsReply = $user->isStaff() ? $awaitsReply : true;
+            $followup = $ticket->followups()->create([
+                'user_id' => $user->id,
+                'body' => Html::clean($body),
+                'awaits_reply' => $awaitsReply,
+            ]);
+            $this->storeFiles($ticket, $files, $user, $followup->id);
+
+            $ticket->forceFill($awaitsReply
+                ? ['awaiting_reply' => $user->isStaff() ? 'customer' : 'staff', 'awaiting_since' => now()]
+                : ['awaiting_reply' => null, 'awaiting_since' => null]
+            )->save(); // also updates updated_at
+
+            return $followup;
+        });
+
+        FollowupPosted::dispatch($followup);
+
+        return $followup;
+    }
+
+    /** "I read it": the user's side does not need to answer any more. */
+    public function markRead(Ticket $ticket, User $user): void
+    {
+        if ($ticket->isAwaiting($user)) {
+            // Reading is not an edit: keep updated_at as it is.
+            Ticket::withoutTimestamps(fn () => $ticket->forceFill(['awaiting_reply' => null, 'awaiting_since' => null])->saveQuietly());
+        }
+    }
+
     /** @param  UploadedFile[]  $files  @return string[] stored original names */
-    private function storeFiles(Ticket $ticket, array $files, User $user): array
+    private function storeFiles(Ticket $ticket, array $files, User $user, ?int $followupId = null): array
     {
         $names = [];
         foreach ($files as $file) {
@@ -107,7 +147,9 @@ class TicketService
             }
             $ext = strtolower($file->getClientOriginalExtension());
             $path = $file->storeAs('attachments/'.now()->format('Y/m'), Str::random(40).($ext ? '.'.$ext : ''), 'local');
-            $ticket->attachments()->create([
+            Attachment::create([
+                'ticket_id' => $ticket->id,
+                'followup_id' => $followupId,
                 'user_id' => $user->id,
                 'path' => $path,
                 'original_name' => mb_substr($file->getClientOriginalName(), 0, 250),

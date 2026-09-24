@@ -36,10 +36,21 @@ Design details: [PLAN.md](PLAN.md).
       remaining, per-project summary; read-only for customers
 - [x] Deploy to deb10 and to the waybill VPS (`ticketing.kimiasoft.ir`)
 
+## Phase 1.2 — Conversations and LTR fields
+
+- [x] Latin / numeric fields are LTR (and left-aligned) in the RTL theme too
+- [x] Ticket followups (replies) with rich text and attachments, from staff and customers
+- [x] "Waiting for reply": red badge next to each folder badge, *Waiting for my reply* folder, grid dot,
+      login toast, **I read it** button; staff checkbox to not wait for the customer
+- [x] Customers cannot reply to closed tickets
+- [x] Comments replaced by a customer rating (1–5 stars + optional text) on closed tickets, one per ticket;
+      old comments moved to followups
+- [x] `FollowupPosted` event as the hook for future SMS notifications
+
 ## Phase 2 — Collaboration
 
-- [ ] Rich-text comments with mentions and inline images
-- [ ] Email / in-app notifications (status change, new comment, assignment)
+- [ ] Mentions (@user) in followups
+- [ ] SMS / email notifications (new followup waiting for reply, status change, assignment) — listener on `FollowupPosted`
 - [ ] Time log entries (who, when, how long) that sum into *Time logged*
 - [ ] Kanban board per sprint (drag & drop status change)
 - [ ] Admin screen for deleted tickets (view / restore)
@@ -50,7 +61,7 @@ Design details: [PLAN.md](PLAN.md).
 - [ ] Sprint burndown and velocity charts
 - [ ] Budget vs. cost report per project
 - [ ] Export grid to Excel / CSV
-- [ ] Customer satisfaction rating on done tickets
+- [ ] Customer satisfaction report (average stars per project / developer)
 
 ## Phase 4 — Integrations
 

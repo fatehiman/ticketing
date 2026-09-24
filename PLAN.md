@@ -24,6 +24,9 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Grids | Every table has a column chooser. Visible columns are saved **on the server** per user (`grid_preferences`). A grid can have a **totals row** (`Grid::totals()`): one aggregate query over **all filtered records** (not the page). The row is shown only while a money/number/time column with a total is visible. |
 | Tickets grid defaults | Number, title, type, status, priority, sprint, cost. Each user can change it. |
 | Transactions | Payments live in `payments`. Ticket costs are **not copied**: they are read live from `tickets` with a `UNION ALL`, so a ticket that stops being *done*, loses its cost or due date, or is deleted, disappears from the list and every total at once. |
+| Followups | A ticket is a conversation: `ticket_followups` (sender, date/time, HTML body, attachments) shown below the ticket body. `tickets.awaiting_reply` (`staff` / `customer` / null) says which **side** must answer. All staff (admins + developers of the project) are one side, all customers of the project are the other. |
+| Rating | `ticket_comments` holds the customer's **rating** of a closed ticket: 1–5 stars + optional text, **one per ticket** (unique `ticket_id`). Old free-text comments were moved to followups. |
+| LTR fields | Latin / numeric inputs (email, password, mobile, URL, code, money, `HH:MM`, dates) are `direction: ltr` and left-aligned in both themes (`.ltr-input`, plus every `email/password/url/tel/number/date` input). |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
 
 ## 2. Roles
@@ -33,6 +36,9 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | **admin** | Everything. Manages all users (admins, developers, customers), all projects, assigns projects to developers and customers, sees all tickets. |
 | **developer** | Creates/manages **own** projects (projects they are a member of), sprints of those projects, **own customers** (customers on their projects, or created by them) and assigns them to own projects. Sees tickets of own projects only. Can set **any status at any time**. Can edit/delete tickets (revision + soft delete). |
 | **customer** | Sees their projects, their tickets and their transactions (read-only). Creates tickets (status starts at *Pending review*). Can edit/delete own ticket **only while** it is *Pending review*. Can cancel own ticket at any time. |
+
+Followups: staff can reply at any time; customers only while the ticket is **not closed**.
+Rating: only customers, only on closed tickets; the customer who rated can change it. Staff only read it.
 
 Payments: admins and developers add them. A developer sees and manages (edit/delete) payments of
 **their customers** that have no project or are on one of the developer's projects — also payments
@@ -72,8 +78,10 @@ tickets          id, number, project_id, sprint_id, type, status, priority, titl
                  estimated_minutes, logged_minutes, estimated_cost, cost, due_date,
                  resolved_at, updated_by, deleted_by, soft deletes
 ticket_revisions id, ticket_id, user_id, action, changes(json), snapshot(json), created_at
-ticket_comments  id, ticket_id, user_id, body, timestamps
-attachments      id, ticket_id, user_id, path, original_name, mime, size
+tickets          … awaiting_reply(staff|customer|null), awaiting_since
+ticket_followups id, ticket_id, user_id, body(html), awaits_reply(bool), timestamps
+ticket_comments  id, ticket_id(unique), user_id, rating(1-5), body(nullable), timestamps   (rating)
+attachments      id, ticket_id, followup_id(nullable), user_id, path, original_name, mime, size
 ticket_menus     id, user_id, name, filters(json), sort_order      (custom "cartables")
 grid_preferences id, user_id, grid_key, columns(json)
 payments         id, customer_id, project_id(nullable), amount(int, no decimals), paid_on(date),
@@ -103,7 +111,23 @@ payments         id, customer_id, project_id(nullable), amount(int, no decimals)
 Filters: keyword, number, project, sprint, statuses, priorities, types, assignee, reporter,
 unassigned, created date range, updated date range, due date range, sort, per page.
 
-## 7. Transactions
+## 7. Followups and "waiting for reply"
+
+| Event | `awaiting_reply` becomes |
+|---|---|
+| Customer sends a followup | `staff` |
+| Staff sends a followup, box **Wait for the customer's reply** ticked (default) | `customer` |
+| Staff sends a followup, box unticked | null |
+| The waiting side clicks **I read it** | null (does not change `updated_at`) |
+
+* Replying always removes the ticket from the writer's own red badge (their side has answered).
+* Sidebar: every folder shows its count and, in red, how many of its tickets wait for **my side**.
+  Built-in folder **Waiting for my reply** = filter `awaiting=me`. Grid rows show a red dot.
+* After login a toast shows how many tickets (in all the user's projects) wait for the user's reply.
+* `App\Events\FollowupPosted` is fired after each followup — the place to add SMS later.
+* Creating a ticket does not set `awaiting_reply` (new customer tickets are in *Pending review*).
+
+## 8. Transactions
 
 * One page `/transactions` for every role. Sidebar: **Finance → Transactions**, and **Add payment** for staff.
 * Rows = customer **payments** + **ticket costs**. A ticket is a cost row only while
@@ -119,7 +143,7 @@ unassigned, created date range, updated date range, due date range, sort, per pa
 * Amounts of different project currencies are added together as plain numbers; the per-project
   table shows each project's currency.
 
-## 8. Directory map
+## 9. Directory map
 
 ```
 app/Enums              Role, TicketStatus, TicketPriority, TicketType, StoryPoint, ProjectStatus
@@ -127,7 +151,7 @@ app/Support            Dates (Jalali/Gregorian), Duration (HH:MM), TicketFilter,
 app/Policies           ProjectPolicy, TicketPolicy, PaymentPolicy
 app/Http/Controllers   Auth, Dashboard, Profile, Locale, ProjectSwitch, Project, Sprint,
                        Customer (developer), Admin\User, Ticket, TicketMenu, Attachment,
-                       Comment, EditorUpload, GridPreference, Transaction, Payment
+                       Comment (rating), Followup, EditorUpload, GridPreference, Transaction, Payment
 resources/css          app.css (shared) + theme-rtl.css + theme-ltr.css
 resources/js           app.js (grid, cartable, pickers), editor.js (TinyMCE)
 deploy/                nginx vhost

@@ -18,7 +18,7 @@ class TicketFilter
     /** Keys that define "which tickets" (used to match a menu). */
     public const KEYS = [
         'q', 'number', 'project_id', 'sprint_id', 'status', 'priority', 'type', 'assignee_id', 'reporter_id',
-        'created_from', 'created_to', 'updated_from', 'updated_to', 'due_from', 'due_to',
+        'awaiting', 'created_from', 'created_to', 'updated_from', 'updated_to', 'due_from', 'due_to',
     ];
 
     public const ARRAY_KEYS = ['status', 'priority', 'type'];
@@ -97,6 +97,11 @@ class TicketFilter
         }
         if (isset($f['reporter_id'])) {
             $query->where('reporter_id', $f['reporter_id'] === 'me' ? $user->id : (int) $f['reporter_id']);
+        }
+
+        // "me" = tickets where the user's side (staff or customer) must answer a followup.
+        if (($f['awaiting'] ?? null) === 'me') {
+            $query->where('awaiting_reply', $user->replySide());
         }
 
         foreach (['created' => 'tickets.created_at', 'updated' => 'tickets.updated_at', 'due' => 'due_date'] as $prefix => $column) {

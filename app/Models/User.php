@@ -90,6 +90,12 @@ class User extends Authenticatable
         return $this->isAdmin() || $this->isDeveloper();
     }
 
+    /** Side in ticket conversations: tickets.awaiting_reply holds the side that must answer. */
+    public function replySide(): string
+    {
+        return $this->isStaff() ? 'staff' : 'customer';
+    }
+
     /** Per-request cache for accessibleProjectIds(). */
     protected ?array $projectIdsCache = null;
 

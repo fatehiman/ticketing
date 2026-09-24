@@ -31,7 +31,7 @@
                         <i class="bi {{ $item['icon'] }}"></i>
                     @endif
                     <span class="text-truncate">{{ $item['name'] }}</span>
-                    <span class="side-badge">{{ $item['count'] }}</span>
+                    @include('partials.side-badges')
                 </a>
             @endforeach
 
@@ -47,7 +47,7 @@
                                 data-delete-url="{{ route('ticket-menus.destroy', $item['id']) }}">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <span class="side-badge">{{ $item['count'] }}</span>
+                        @include('partials.side-badges')
                     </a>
                 @endforeach
             @endif

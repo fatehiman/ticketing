@@ -54,8 +54,29 @@ class TicketPolicy
             && ! $ticket->status->isClosed();
     }
 
+    /** Followups: staff at any time, customers only while the ticket is not closed. */
+    public function reply(User $user, Ticket $ticket): bool
+    {
+        return $this->view($user, $ticket) && ($user->isStaff() || ! $ticket->status->isClosed());
+    }
+
+    /** "I read it" is only for the side that must answer. */
+    public function markRead(User $user, Ticket $ticket): bool
+    {
+        return $this->view($user, $ticket) && $ticket->isAwaiting($user);
+    }
+
+    /**
+     * Rating (stars + optional text): only customers, only on closed tickets,
+     * one per ticket. The customer who wrote it can change it.
+     */
     public function comment(User $user, Ticket $ticket): bool
     {
-        return $this->view($user, $ticket);
+        if (! $user->isCustomer() || ! $this->view($user, $ticket) || ! $ticket->status->isClosed()) {
+            return false;
+        }
+        $comment = $ticket->comment;
+
+        return $comment === null || $comment->user_id === $user->id;
     }
 }

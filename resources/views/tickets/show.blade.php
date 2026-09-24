@@ -10,7 +10,14 @@
     $user = auth()->user();
     $currency = $ticket->project->currency;
     $overdue = $ticket->due_date && $ticket->due_date->isPast() && ! $ticket->status->isClosed();
+    $awaitingMe = $ticket->isAwaiting($user);
 @endphp
+
+@can('reply', $ticket)
+    @push('head')
+        <script src="/vendor/tinymce/tinymce.min.js" referrerpolicy="origin"></script>
+    @endpush
+@endcan
 
 @section('content')
     <div class="page-head align-items-start">
@@ -20,6 +27,9 @@
                 <x-status :status="$ticket->status" />
                 <x-priority :priority="$ticket->priority" />
                 <span class="small text-muted"><i class="bi {{ $ticket->type->icon() }}"></i> {{ $ticket->type->label() }}</span>
+                @if ($awaitingMe)
+                    <a href="#followups" class="badge text-bg-danger text-decoration-none"><i class="bi bi-reply-fill"></i> {{ __('tickets.followup.awaiting_badge') }}</a>
+                @endif
             </div>
             <h1 class="text-break">{{ $ticket->title }}</h1>
             <div class="sub"><i class="bi bi-kanban"></i> {{ $ticket->project->name }} · {{ Dates::dateTime($ticket->created_at) }}</div>
@@ -103,30 +113,122 @@
                 </div>
             </div>
 
-            <div class="card mb-3" id="comments">
-                <div class="card-header"><i class="bi bi-chat-dots text-brand"></i> {{ __('tickets.comments') }} ({{ $ticket->comments->count() }})</div>
+            <div class="card mb-3" id="followups">
+                <div class="card-header"><i class="bi bi-chat-left-text text-brand"></i> {{ __('tickets.followup.title') }} ({{ $ticket->followups->count() }})</div>
                 <div class="card-body">
-                    @forelse ($ticket->comments as $comment)
-                        <div class="d-flex gap-2 mb-3">
-                            <x-avatar :user="$comment->user" class="avatar-sm" />
-                            <div class="flex-grow-1 min-w-0">
-                                <div class="small mb-1"><span class="fw-semibold">{{ $comment->user?->name }}</span>
-                                    <span class="text-muted" title="{{ Dates::dateTime($comment->created_at) }}">· {{ Dates::ago($comment->created_at) }}</span></div>
-                                <div class="comment">{{ $comment->body }}</div>
+                    @if ($awaitingMe)
+                        <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2 py-2" role="status">
+                            <i class="bi bi-reply-fill"></i>
+                            <span class="flex-grow-1 small">{{ __('tickets.followup.awaiting_you') }}</span>
+                            <form method="POST" action="{{ route('tickets.read', $ticket) }}">
+                                @csrf
+                                <button class="btn btn-sm btn-light"><i class="bi bi-check2-all"></i> {{ __('tickets.followup.mark_read') }}</button>
+                            </form>
+                        </div>
+                    @elseif ($ticket->awaiting_reply)
+                        <div class="small text-muted mb-3"><i class="bi bi-hourglass-split"></i>
+                            {{ __('tickets.followup.awaiting_other.'.$ticket->awaiting_reply) }}
+                            @if ($ticket->awaiting_since) · {{ Dates::ago($ticket->awaiting_since) }} @endif
+                        </div>
+                    @endif
+
+                    @forelse ($ticket->followups as $followup)
+                        @php($staffSide = (bool) $followup->user?->isStaff())
+                        <div @class(['followup mb-3', 'followup-staff' => $staffSide, 'followup-customer' => ! $staffSide]) id="followup-{{ $followup->id }}">
+                            <div class="followup-head">
+                                <x-avatar :user="$followup->user" class="avatar-sm" />
+                                <span class="fw-semibold">{{ $followup->user?->name }}</span>
+                                <span class="badge text-bg-light">{{ $followup->user?->role->label() }}</span>
+                                @if ($staffSide && ! $followup->awaits_reply && $user->isStaff())
+                                    <span class="badge text-bg-light" title="{{ __('tickets.followup.no_reply_needed') }}"><i class="bi bi-bell-slash"></i></span>
+                                @endif
+                                <span class="text-muted ms-auto" title="{{ Dates::ago($followup->created_at) }}">{{ Dates::dateTime($followup->created_at) }}</span>
                             </div>
+                            @if ($followup->body)
+                                <div class="followup-body ticket-content">{!! $followup->body !!}</div>
+                            @endif
+                            @if ($followup->attachments->isNotEmpty())
+                                <div @class(['d-flex flex-wrap gap-2 px-3 pb-3', 'pt-3' => ! $followup->body])>
+                                    @foreach ($followup->attachments as $file)
+                                        <a href="{{ $file->isImage() ? route('attachments.show', [$file, 'inline' => 1]) : route('attachments.show', $file) }}" @if ($file->isImage()) target="_blank" @endif
+                                           class="attachment-item text-decoration-none py-1 small">
+                                            <i class="bi {{ $file->icon() }}" style="font-size:1.1rem"></i>
+                                            <span class="text-break">{{ $file->original_name }}</span>
+                                            <span class="text-muted">{{ $file->humanSize() }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     @empty
-                        <div class="text-muted small mb-3">{{ __('tickets.no_comments') }}</div>
+                        <div class="text-muted small mb-3">{{ __('tickets.followup.none') }}</div>
                     @endforelse
-                    @can('comment', $ticket)
-                        <form method="POST" action="{{ route('tickets.comments.store', $ticket) }}">
+
+                    @can('reply', $ticket)
+                        <form method="POST" action="{{ route('tickets.followups.store', $ticket) }}" enctype="multipart/form-data" class="mt-3">
                             @csrf
-                            <textarea name="body" rows="3" class="form-control mb-2" placeholder="{{ __('tickets.write_comment') }}" required maxlength="10000"></textarea>
-                            <button class="btn btn-primary btn-sm"><i class="bi bi-send"></i> {{ __('tickets.add_comment') }}</button>
+                            <label class="form-label fw-semibold" for="followup-body"><i class="bi bi-reply"></i> {{ __('tickets.followup.new') }}</label>
+                            <textarea id="followup-body" name="body" data-editor rows="6" class="form-control">{{ old('body') }}</textarea>
+                            <div class="mt-2">
+                                <input type="file" name="attachments[]" multiple class="form-control form-control-sm"
+                                       accept=".{{ implode(',.', \App\Http\Controllers\TicketController::FILE_TYPES) }}">
+                                <div class="form-text">{{ __('tickets.attachments_hint') }}</div>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+                                <button class="btn btn-primary"><i class="bi bi-send"></i> {{ __('tickets.followup.send') }}</button>
+                                @if ($user->isStaff())
+                                    <div class="form-check mb-0">
+                                        <input type="hidden" name="awaits_reply" value="0">
+                                        <input class="form-check-input" type="checkbox" name="awaits_reply" value="1" id="awaits_reply" @checked(old('awaits_reply', '1') === '1')>
+                                        <label class="form-check-label small" for="awaits_reply">{{ __('tickets.followup.awaits_customer') }}</label>
+                                    </div>
+                                @endif
+                            </div>
                         </form>
-                    @endcan
+                    @elseif ($ticket->status->isClosed() && $user->isCustomer())
+                        <div class="text-muted small"><i class="bi bi-lock"></i> {{ __('tickets.followup.closed_note') }}</div>
+                    @endif
                 </div>
             </div>
+
+            @if ($ticket->status->isClosed())
+                @php($comment = $ticket->comment)
+                <div class="card mb-3" id="rating">
+                    <div class="card-header"><i class="bi bi-star text-brand"></i> {{ __('tickets.rating.title') }}</div>
+                    <div class="card-body">
+                        @if ($comment)
+                            <div class="d-flex gap-2">
+                                <x-avatar :user="$comment->user" class="avatar-sm" />
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="small mb-1"><span class="fw-semibold">{{ $comment->user?->name }}</span>
+                                        <span class="text-muted">· {{ Dates::dateTime($comment->updated_at) }}</span></div>
+                                    <div class="stars fs-5" title="{{ $comment->rating }}/5">
+                                        @for ($i = 1; $i <= 5; $i++)<i @class(['bi', 'bi-star-fill' => $i <= $comment->rating, 'bi-star off' => $i > $comment->rating])></i>@endfor
+                                    </div>
+                                    @if ($comment->body)<div class="comment mt-2">{{ $comment->body }}</div>@endif
+                                </div>
+                            </div>
+                        @elsecannot('comment', $ticket)
+                            <div class="text-muted small">{{ __('tickets.rating.none') }}</div>
+                        @endif
+
+                        @can('comment', $ticket)
+                            <form method="POST" action="{{ route('tickets.comments.store', $ticket) }}" @class(['border-top pt-3 mt-3' => $comment])>
+                                @csrf
+                                <div class="small text-muted mb-1">{{ $comment ? __('tickets.rating.change') : __('tickets.rating.ask') }}</div>
+                                <div class="star-input mb-2" role="radiogroup" aria-label="{{ __('tickets.rating.title') }}">
+                                    @for ($i = 5; $i >= 1; $i--)
+                                        <input type="radio" name="rating" value="{{ $i }}" id="star-{{ $i }}" required @checked((int) old('rating', $comment?->rating) === $i)>
+                                        <label for="star-{{ $i }}" title="{{ $i }}/5"><i class="bi bi-star-fill"></i></label>
+                                    @endfor
+                                </div>
+                                <textarea name="body" rows="2" class="form-control mb-2" maxlength="5000" placeholder="{{ __('tickets.rating.body_placeholder') }}">{{ old('body', $comment?->body) }}</textarea>
+                                <button class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> {{ __('tickets.rating.submit') }}</button>
+                            </form>
+                        @endcan
+                    </div>
+                </div>
+            @endif
 
             <div class="card">
                 <div class="card-header"><i class="bi bi-clock-history text-brand"></i> {{ __('tickets.history') }}</div>

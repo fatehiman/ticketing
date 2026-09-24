@@ -70,6 +70,10 @@
                             <span><i class="bi {{ $status->icon() }}"></i>{{ $status->label() }}</span>
                         </label>
                     @endforeach
+                    <label class="chip-check" style="--c: #dc2626">
+                        <input type="checkbox" name="awaiting" value="me" @checked($f('awaiting') === 'me')>
+                        <span><i class="bi bi-reply-fill"></i>{{ __('tickets.menu.awaiting') }}</span>
+                    </label>
                 </div>
             </div>
 
@@ -185,6 +189,9 @@
                         <td data-col="number" class="{{ $grid->cls('number') }}"><a href="{{ route('tickets.show', $ticket) }}" class="t-number">#{{ $ticket->number }}</a></td>
                         <td data-col="title" class="{{ $grid->cls('title') }}" style="min-width: 240px">
                             <a href="{{ route('tickets.show', $ticket) }}" class="t-title">{{ $ticket->title }}</a>
+                            @if ($ticket->isAwaiting(auth()->user()))
+                                <i class="bi bi-circle-fill awaiting-dot ms-1" title="{{ __('tickets.followup.awaiting_badge') }}"></i>
+                            @endif
                         </td>
                         <td data-col="project" class="{{ $grid->cls('project') }} text-nowrap">{{ $ticket->project->name }}</td>
                         <td data-col="type" class="{{ $grid->cls('type') }} text-nowrap"><i class="bi {{ $ticket->type->icon() }}"></i> {{ $ticket->type->label() }}</td>
