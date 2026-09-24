@@ -96,7 +96,7 @@
                 </div>
                 <div class="col-8">
                     <label class="form-label">{{ __('projects.fields.budget') }}</label>
-                    <input type="text" name="budget" data-money inputmode="decimal" value="{{ $val('budget', $project->budget) }}" class="form-control ltr-input{{ $err('budget') }}">
+                    <input type="text" name="budget" data-money="int" inputmode="numeric" value="{{ $val('budget', $project->budget) }}" class="form-control ltr-input{{ $err('budget') }}">
                 </div>
                 <div class="col-4">
                     <label class="form-label">{{ __('projects.fields.currency') }}</label>

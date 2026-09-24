@@ -28,7 +28,7 @@ class Project extends Model
             'status' => ProjectStatus::class,
             'start_date' => 'date',
             'end_date' => 'date',
-            'budget' => 'decimal:2',
+            'budget' => 'integer',
         ];
     }
 

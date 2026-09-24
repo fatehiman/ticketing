@@ -38,6 +38,7 @@ Design details: [PLAN.md](PLAN.md).
 
 ## Phase 1.2 — Conversations and LTR fields
 
+- [x] Money without decimals everywhere (all currencies): integer columns, inputs, validation, display
 - [x] Latin / numeric fields are LTR (and left-aligned) in the RTL theme too
 - [x] Ticket followups (replies) with rich text and attachments, from staff and customers
 - [x] "Waiting for reply": red badge next to each folder badge, *Waiting for my reply* folder, grid dot,

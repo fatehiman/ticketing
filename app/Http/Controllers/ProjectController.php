@@ -131,7 +131,7 @@ class ProjectController extends Controller
             'status' => ['required', Rule::enum(ProjectStatus::class)],
             'start_date' => ['nullable', 'string', $dateRule],
             'end_date' => ['nullable', 'string', $dateRule],
-            'budget' => ['nullable', 'numeric', 'min:0', 'max:9999999999999999'],
+            'budget' => ['nullable', 'integer', 'min:0', 'max:9999999999999999'],
             'currency' => ['required', Rule::in(Money::CURRENCIES)],
             'phone1' => ['nullable', 'string', 'max:30'],
             'phone2' => ['nullable', 'string', 'max:30'],

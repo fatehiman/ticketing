@@ -209,8 +209,8 @@ class TicketController extends Controller
                 'done_story_points' => ['nullable', 'integer', 'min:0', 'max:999'],
                 'estimated_time' => ['nullable', 'regex:'.Duration::PATTERN],
                 'logged_time' => ['nullable', 'regex:'.Duration::PATTERN],
-                'estimated_cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999999999'],
-                'cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999999999'],
+                'estimated_cost' => ['nullable', 'integer', 'min:0', 'max:9999999999999999'],
+                'cost' => ['nullable', 'integer', 'min:0', 'max:9999999999999999'],
                 'due_date' => ['nullable', 'string', $dateRule],
             ];
         }

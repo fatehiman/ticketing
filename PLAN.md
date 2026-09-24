@@ -26,6 +26,7 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Transactions | Payments live in `payments`. Ticket costs are **not copied**: they are read live from `tickets` with a `UNION ALL`, so a ticket that stops being *done*, loses its cost or due date, or is deleted, disappears from the list and every total at once. |
 | Followups | A ticket is a conversation: `ticket_followups` (sender, date/time, HTML body, attachments) shown below the ticket body. `tickets.awaiting_reply` (`staff` / `customer` / null) says which **side** must answer. All staff (admins + developers of the project) are one side, all customers of the project are the other. |
 | Rating | `ticket_comments` holds the customer's **rating** of a closed ticket: 1–5 stars + optional text, **one per ticket** (unique `ticket_id`). Old free-text comments were moved to followups. |
+| Money | **Always a whole number, for every currency** (IRT, IRR, USD, EUR, AED): `7,000,000`, never `7,000,000.00`. Columns are integers (`budget`, `estimated_cost`, `cost`, `amount`), inputs use `data-money="int"`, validation is `integer`, `Money::format()` shows no decimals. |
 | LTR fields | Latin / numeric inputs (email, password, mobile, URL, code, money, `HH:MM`, dates) are `direction: ltr` and left-aligned in both themes (`.ltr-input`, plus every `email/password/url/tel/number/date` input). |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
 
@@ -69,13 +70,13 @@ users            id, first_name, last_name, email, mobile, password, role, avata
                  locale(fa|en), calendar(jalali|gregorian), current_project_id,
                  is_active, created_by, soft deletes
 projects         id, code, name, description(255), logo_path, status(active|on_hold|completed|archived),
-                 start_date, end_date, budget, currency, phone1, phone2, email, website,
+                 start_date, end_date, budget(int), currency, phone1, phone2, email, website,
                  address, contact_person, notes, created_by, soft deletes
 project_user     project_id, user_id                (developers + customers)
 sprints          id, project_id, number, name, goal, start_date, end_date, status(planned|active|closed)
 tickets          id, number, project_id, sprint_id, type, status, priority, title, content(html),
                  reporter_id, assignee_id, story_points, done_story_points,
-                 estimated_minutes, logged_minutes, estimated_cost, cost, due_date,
+                 estimated_minutes, logged_minutes, estimated_cost(int), cost(int), due_date,
                  resolved_at, updated_by, deleted_by, soft deletes
 ticket_revisions id, ticket_id, user_id, action, changes(json), snapshot(json), created_at
 tickets          … awaiting_reply(staff|customer|null), awaiting_since

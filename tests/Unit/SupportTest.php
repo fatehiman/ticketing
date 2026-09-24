@@ -35,6 +35,14 @@ class SupportTest extends TestCase
         $this->assertNull(Money::parse(''));
     }
 
+    public function test_money_format_has_no_decimals(): void
+    {
+        $this->assertSame('7,000,000', Money::format('7000000.00'));
+        $this->assertSame('1,251', Money::format(1250.6));
+        $this->assertSame('0', Money::format(0));
+        $this->assertSame('', Money::format(null));
+    }
+
     public function test_filter_normalize_is_order_independent(): void
     {
         $a = TicketFilter::normalize(['status' => ['testing', 'backlog'], 'q' => ' x ', 'junk' => 1, 'priority' => []]);

@@ -11,9 +11,8 @@ class Money
         if ($amount === null || $amount === '') {
             return '';
         }
-        $amount = (float) $amount;
-        $decimals = floor($amount) == $amount ? 0 : 2;
-        $text = number_format($amount, $decimals);
+        // Always a whole number, for every currency: 7,000,000 (never 7,000,000.00).
+        $text = number_format(round((float) $amount));
 
         return $currency ? $text.' '.__('app.currency.'.$currency) : $text;
     }

@@ -154,7 +154,7 @@ class TicketingTest extends TestCase
         ]))->assertSessionHasNoErrors();
         $ticket = Ticket::first();
         $this->assertSame(150, $ticket->estimated_minutes);
-        $this->assertSame('1500000.00', $ticket->estimated_cost);
+        $this->assertSame(1500000, $ticket->estimated_cost);
         $this->assertSame('2026-10-02', $ticket->due_date->toDateString());
 
         $this->actingAs($this->dev)->put('/tickets/'.$ticket->number, $this->ticketData(['title' => 'New title', 'status' => 'testing']))
@@ -362,5 +362,19 @@ class TicketingTest extends TestCase
         $this->assertSame(3, $ticket->comment->rating);
 
         $this->actingAs($this->dev)->get($url)->assertOk()->assertSee('Good');
+    }
+
+    public function test_money_is_always_a_whole_number(): void
+    {
+        $this->actingAs($this->dev)->post('/tickets', $this->ticketData(['cost' => '7,000,000', 'estimated_cost' => '12.5']))
+            ->assertSessionHasErrors('estimated_cost');
+        $this->actingAs($this->dev)->post('/tickets', $this->ticketData(['cost' => '7,000,000']))->assertRedirect();
+        $ticket = Ticket::first();
+        $this->assertSame(7000000, $ticket->cost);
+
+        foreach (['/tickets/'.$ticket->number, '/tickets/'.$ticket->number.'/edit'] as $page) {
+            $this->get($page)->assertOk()->assertDontSee('7000000.00')->assertDontSee('7,000,000.00');
+        }
+        $this->get('/tickets/'.$ticket->number)->assertSee('7,000,000');
     }
 }

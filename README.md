@@ -21,6 +21,7 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - **Transactions**: staff add customer payments; each done ticket with a cost and a due date is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
 - Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
+- Money is **always a whole number** in every currency: `7,000,000`, never `7,000,000.00`.
 - Latin / numeric fields (email, mobile, password, URL, code, amounts, times, dates) are always **LTR**, also in the RTL theme.
 
 Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md)

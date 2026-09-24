@@ -40,8 +40,8 @@ class Ticket extends Model
             'due_date' => 'date',
             'resolved_at' => 'datetime',
             'awaiting_since' => 'datetime',
-            'estimated_cost' => 'decimal:2',
-            'cost' => 'decimal:2',
+            'estimated_cost' => 'integer',
+            'cost' => 'integer',
         ];
     }
 

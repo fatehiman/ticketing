@@ -144,11 +144,11 @@
                         <div class="col-12"><div class="form-text mt-0 mb-2">{{ __('tickets.time_hint') }}</div></div>
                         <div class="col-6">
                             <label class="form-label" for="estimated_cost">{{ __('tickets.fields.estimated_cost') }}</label>
-                            <input type="text" id="estimated_cost" name="estimated_cost" data-money inputmode="decimal" value="{{ $val('estimated_cost', $ticket->estimated_cost) }}" class="form-control ltr-input{{ $err('estimated_cost') }}">
+                            <input type="text" id="estimated_cost" name="estimated_cost" data-money="int" inputmode="numeric" value="{{ $val('estimated_cost', $ticket->estimated_cost) }}" class="form-control ltr-input{{ $err('estimated_cost') }}">
                         </div>
                         <div class="col-6">
                             <label class="form-label" for="cost">{{ __('tickets.fields.cost') }}</label>
-                            <input type="text" id="cost" name="cost" data-money inputmode="decimal" value="{{ $val('cost', $ticket->cost) }}" class="form-control ltr-input{{ $err('cost') }}">
+                            <input type="text" id="cost" name="cost" data-money="int" inputmode="numeric" value="{{ $val('cost', $ticket->cost) }}" class="form-control ltr-input{{ $err('cost') }}">
                         </div>
                         @if ($currency)
                             <div class="col-12"><div class="form-text">{{ __('projects.fields.currency') }}: {{ __('app.currency.'.$currency) }}</div></div>

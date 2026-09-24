@@ -79,13 +79,10 @@ function initInputs() {
         });
     });
     document.querySelectorAll('[data-money]').forEach((input) => {
+        // Money is always a whole number (all currencies): 7,000,000 — no decimal point.
         const format = () => {
-            const raw = toLatin(input.value).replace(/[^\d.]/g, '');
-            if (raw === '') { input.value = ''; return; }
-            const [int, dec] = raw.split('.');
-            // data-money="int": whole numbers only (no decimal point).
-            const keepDec = dec !== undefined && input.dataset.money !== 'int';
-            input.value = Number(int || 0).toLocaleString('en-US') + (keepDec ? `.${dec.slice(0, 2)}` : '');
+            const raw = toLatin(input.value).replace(/\.\d*$/, '').replace(/\D/g, '');
+            input.value = raw === '' ? '' : Number(raw).toLocaleString('en-US');
         };
         input.addEventListener('input', format);
         format();
