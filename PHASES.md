@@ -48,6 +48,16 @@ Design details: [PLAN.md](PLAN.md).
       old comments moved to followups
 - [x] `FollowupPosted` event as the hook for future SMS notifications
 
+## Phase 1.3 — Bot API
+
+- [x] Ticket type *task* in Persian is now «تسک»
+- [x] JSON API for AI bots: `GET /api/me`, `GET /api/options`, `GET /api/tickets` (filters: sprint, type, status,
+      priority, assignee, date range, title / description `LIKE`), `GET /api/tickets/{number}`, `POST /api/tickets` (only title required)
+- [x] Bot login by link: `POST /api/auth/start` → developer opens the link (60 s), signs in, picks the project →
+      `POST /api/auth/token` gives a 30-day token linked to that project
+- [x] Profile: list and revoke bot tokens
+- [x] Docs for the bot: [API.md](API.md)
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups
@@ -66,6 +76,6 @@ Design details: [PLAN.md](PLAN.md).
 
 ## Phase 4 — Integrations
 
-- [ ] REST API with tokens (Sanctum)
+- [ ] Bot API: update ticket (status, assignee), add followup
 - [ ] Create tickets from email
 - [ ] Two-factor login / SSO

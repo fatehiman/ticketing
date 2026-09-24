@@ -123,6 +123,49 @@
                     </div>
                 </div>
             </form>
+
+            @if ($user->isStaff())
+                <div class="card mt-3">
+                    <div class="card-header"><i class="bi bi-robot text-brand"></i> {{ __('api.tokens') }}</div>
+                    <div class="card-body">
+                        <div class="small text-muted mb-2">{{ __('api.tokens_note', ['days' => \App\Models\ApiToken::LIFETIME_DAYS]) }}</div>
+                        @if ($apiTokens->isEmpty())
+                            <div class="text-muted">{{ __('api.tokens_empty') }}</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('api.bot_name') }}</th>
+                                            <th>{{ __('api.token_project') }}</th>
+                                            <th>{{ __('api.token_last_used') }}</th>
+                                            <th>{{ __('api.token_expires') }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($apiTokens as $token)
+                                            <tr>
+                                                <td>{{ $token->name ?: '—' }}</td>
+                                                <td>{{ $token->project?->name ?? '—' }}</td>
+                                                <td>{{ $token->last_used_at ? Dates::dateTime($token->last_used_at) : '—' }}</td>
+                                                <td>{{ Dates::format($token->expires_at) }}</td>
+                                                <td class="text-end">
+                                                    <form method="POST" action="{{ route('profile.api-tokens.destroy', $token) }}" data-confirm="{{ __('app.confirm_delete') }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> {{ __('api.revoke') }}</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 @endsection

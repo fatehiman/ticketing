@@ -35,6 +35,19 @@ class Html
         return self::$sanitizer->sanitize($html);
     }
 
+    /** Full plain text of HTML content, keeping paragraphs and line breaks (for the bot API). */
+    public static function toText(?string $html): ?string
+    {
+        if ($html === null || trim($html) === '') {
+            return null;
+        }
+        $text = preg_replace(['#<br\s*/?>\R?#i', '#</(p|h[1-6]|blockquote)>\R?#i', '#</(div|li|tr)>\R?#i'], ["\n", "\n\n", "\n"], $html);
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace(["/[ \t\x{00A0}]+/u", "/ *\n */u", "/\n{3,}/u"], [' ', "\n", "\n\n"], $text);
+
+        return trim($text) === '' ? null : trim($text);
+    }
+
     /** Plain-text excerpt of HTML content. */
     public static function excerpt(?string $html, int $length = 140): string
     {

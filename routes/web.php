@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
@@ -22,6 +23,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/locale/{locale}', LocaleController::class)->name('locale');
 
+// Bot login link (step 2 of the API login). Open to guests: the first visit is recorded, then sign-in.
+Route::get('/bot-login/{publicId}', [ApiAuthController::class, 'show'])->name('api-auth.show');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
@@ -37,6 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::post('/profile/avatar', [ProfileController::class, 'avatar'])->name('profile.avatar');
     Route::delete('/profile/avatar', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
+    Route::delete('/profile/api-tokens/{apiToken}', [ProfileController::class, 'revokeToken'])->name('profile.api-tokens.destroy');
+    Route::post('/bot-login/{publicId}', [ApiAuthController::class, 'store'])->name('api-auth.store');
 
     Route::post('/switch-project', ProjectSwitchController::class)->name('project.switch');
     Route::post('/grid-preferences', GridPreferenceController::class)->name('grid.save');

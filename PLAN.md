@@ -28,6 +28,7 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Rating | `ticket_comments` holds the customer's **rating** of a closed ticket: 1–5 stars + optional text, **one per ticket** (unique `ticket_id`). Old free-text comments were moved to followups. |
 | Money | **Always a whole number, for every currency** (IRT, IRR, USD, EUR, AED): `7,000,000`, never `7,000,000.00`. Columns are integers (`budget`, `estimated_cost`, `cost`, `amount`), inputs use `data-money="int"`, validation is `integer`, `Money::format()` shows no decimals. |
 | LTR fields | Latin / numeric inputs (email, password, mobile, URL, code, money, `HH:MM`, dates) are `direction: ltr` and left-aligned in both themes (`.ltr-input`, plus every `email/password/url/tel/number/date` input). |
+| Bot API | JSON under `/api` for AI bots (create / list / read tickets). Own small token system (no Sanctum): `api_tokens` stores only the **SHA-256 hash**, tokens last **30 days**. Login by link: the bot gets a public `login_url` and a private `secret`; a developer opens the link within 60 s, signs in and picks **one project** that is linked to the token. The bot then trades `request_id` + `secret` for the token (once). Details in [API.md](API.md). |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
 
 ## 2. Roles
@@ -85,6 +86,10 @@ ticket_comments  id, ticket_id(unique), user_id, rating(1-5), body(nullable), ti
 attachments      id, ticket_id, followup_id(nullable), user_id, path, original_name, mime, size
 ticket_menus     id, user_id, name, filters(json), sort_order      (custom "cartables")
 grid_preferences id, user_id, grid_key, columns(json)
+api_tokens       id, user_id, project_id(nullable = no fixed project), name, token_hash(sha256, unique),
+                 last_used_at, expires_at(+30 days)
+api_auth_requests id, public_id(in the link), secret_hash(sha256), name, user_id, project_id, api_token_id,
+                 opened_at, approved_at, claimed_at      (one bot login attempt)
 payments         id, customer_id, project_id(nullable), amount(int, no decimals), paid_on(date),
                  description(500), created_by, updated_by, soft deletes
 ```
@@ -157,3 +162,17 @@ resources/css          app.css (shared) + theme-rtl.css + theme-ltr.css
 resources/js           app.js (grid, cartable, pickers), editor.js (TinyMCE)
 deploy/                nginx vhost
 ```
+
+## 8. Bot API
+
+* Only staff (developers, admins) can log in a bot. The token acts as that user (same project access).
+* Login link rules: must be opened within **60 s** of `POST /api/auth/start`; sign-in + project choice within
+  **10 min** of start; the bot must take the token within **10 min** of approval; the token is given **once**.
+* The link is posted in a group with customers, so the link alone is not enough: taking the token needs the
+  `secret` that only the bot has.
+* One active project → linked without asking. More → the developer picks one, or *No fixed project*
+  (then every call must send `project`).
+* Any token problem → `401 {"error": "auth_required"}` so the bot knows to log in again.
+* Tickets created by the bot: reporter = the developer, defaults type `task`, status `backlog`, priority `medium`,
+  written through `TicketService` (revision history like the web).
+* Developers see and revoke their bot tokens in **Profile → Bot access (API)**.

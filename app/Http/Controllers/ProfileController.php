@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Middleware\SetLocale;
+use App\Models\ApiToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,12 @@ class ProfileController extends Controller
 {
     public function edit(Request $request)
     {
-        return view('profile.edit', ['user' => $request->user()]);
+        $user = $request->user();
+
+        return view('profile.edit', [
+            'user' => $user,
+            'apiTokens' => $user->isStaff() ? ApiToken::valid()->where('user_id', $user->id)->with('project')->latest('id')->get() : collect(),
+        ]);
     }
 
     public function update(Request $request)
@@ -63,6 +69,15 @@ class ProfileController extends Controller
         $user->update(['avatar_path' => $request->file('avatar')->store('avatars', 'public')]);
 
         return back()->with('success', __('app.saved'));
+    }
+
+    /** Stop a bot at once: delete its API token. */
+    public function revokeToken(Request $request, ApiToken $apiToken)
+    {
+        abort_unless($apiToken->user_id === $request->user()->id, 403);
+        $apiToken->delete();
+
+        return back()->with('success', __('api.revoked'));
     }
 
     public function removeAvatar(Request $request)

@@ -23,8 +23,10 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
 - Money is **always a whole number** in every currency: `7,000,000`, never `7,000,000.00`.
 - Latin / numeric fields (email, mobile, password, URL, code, amounts, times, dates) are always **LTR**, also in the RTL theme.
+- **Bot API** (JSON) for AI bots: create, search / list and read tickets. A developer logs in the bot with a
+  one-time link (no password in the chat) and links the bot to one project; tokens last 30 days. See [API.md](API.md).
 
-Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md)
+Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md) · Bot API: [API.md](API.md)
 
 ## Requirements
 
@@ -72,6 +74,7 @@ php artisan test
 | Grid column chooser + totals row | `app/Support/Grid.php`, `resources/views/components/grid-columns.blade.php`, `resources/views/partials/grid-totals.blade.php` |
 | Transactions (payments + ticket costs) | `app/Support/Transactions.php`, `app/Http/Controllers/TransactionController.php`, `PaymentController.php`, `app/Policies/PaymentPolicy.php` |
 | Themes | `resources/css/theme-rtl.css`, `resources/css/theme-ltr.css`, shared `app.css` |
+| Bot API (login link, tokens, tickets JSON) | `routes/api.php`, `app/Http/Controllers/Api/*`, `app/Http/Controllers/ApiAuthController.php` (web page of the link), `app/Http/Middleware/AuthenticateApiToken.php`, `app/Models/ApiToken.php`, `ApiAuthRequest.php` — docs in [API.md](API.md) |
 
 ## Deployment
 

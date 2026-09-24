@@ -23,7 +23,7 @@ return [
         'lowest' => 'خیلی پایین',
     ],
     'type' => [
-        'task' => 'وظیفه',
+        'task' => 'تسک',
         'bug' => 'باگ',
         'feature' => 'قابلیت جدید',
         'improvement' => 'بهبود',
