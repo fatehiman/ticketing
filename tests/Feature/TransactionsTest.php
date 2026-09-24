@@ -113,18 +113,21 @@ class TransactionsTest extends TestCase
 
     // ---- Transactions -----------------------------------------------------------
 
-    public function test_only_done_tickets_with_cost_and_due_date_are_costs(): void
+    public function test_only_done_tickets_with_cost_are_costs(): void
     {
         $shown = $this->ticket(['title' => 'Counted ticket']);
         $this->ticket(['title' => 'Not done ticket', 'status' => 'testing']);
         $this->ticket(['title' => 'No cost ticket', 'cost' => null]);
-        $this->ticket(['title' => 'No date ticket', 'due_date' => null]);
+        $this->ticket(['title' => 'No date ticket', 'due_date' => null, 'cost' => 300]);
         $this->payment();
 
         $this->actingAs($this->dev)->get('/transactions')->assertOk()
             ->assertSee('Counted ticket')->assertDontSee('Not done ticket')
-            ->assertDontSee('No cost ticket')->assertDontSee('No date ticket')
-            ->assertViewHas('totals', ['payments' => 400.0, 'costs' => 1000.0, 'remaining' => 600.0]);
+            ->assertDontSee('No cost ticket')->assertSee('No date ticket')
+            ->assertViewHas('totals', ['payments' => 400.0, 'costs' => 1300.0, 'remaining' => 900.0]);
+        $this->get('/transactions?kind[]=cost&amount_to=300')->assertDontSee('Counted ticket')->assertSee('No date ticket');
+        $shown->forceFill(['cost' => 1000])->save(); // keep the rest of the test on one cost row
+        \App\Models\Ticket::where('title', 'No date ticket')->delete();
 
         // The developer moves the ticket back to testing: the cost disappears from the list and the totals.
         app(TicketService::class)->changeStatus($shown, \App\Enums\TicketStatus::Testing, $this->dev);
@@ -136,6 +139,17 @@ class TransactionsTest extends TestCase
         $this->get('/transactions')->assertSee('Counted ticket');
         app(TicketService::class)->update($shown->fresh(), ['cost' => null], $this->dev);
         $this->get('/transactions')->assertDontSee('Counted ticket');
+    }
+
+    public function test_cost_without_due_date_uses_the_day_it_was_done(): void
+    {
+        $this->travelTo('2026-06-20 10:00');
+        $this->ticket(['title' => 'Done in June', 'due_date' => null]);
+        $this->travelBack();
+
+        $this->actingAs($this->dev)->get('/transactions?date_from=2026-06-01&date_to=2026-06-30')->assertSee('Done in June');
+        $this->get('/transactions?date_from=2026-07-01')->assertDontSee('Done in June');
+        $this->get('/transactions?sort=tx_date&dir=asc')->assertOk()->assertSee('Done in June');
     }
 
     public function test_deleted_ticket_is_not_a_cost(): void

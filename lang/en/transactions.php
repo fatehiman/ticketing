@@ -12,7 +12,7 @@ return [
     'all_customers' => 'All customers',
     'no_project' => 'No project',
     'amount_hint' => 'Whole number, no decimal point.',
-    'cost_rule' => 'A ticket cost is shown only when the ticket is Done and has both a cost and a due date.',
+    'cost_rule' => 'A ticket cost is shown when the ticket is Done and has a cost. Its date is the due date, or the day it was done.',
     'total_payments' => 'Total payments',
     'total_costs' => 'Total costs',
     'remaining' => 'Remaining',

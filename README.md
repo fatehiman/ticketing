@@ -20,7 +20,7 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
 - Every grid has a **column chooser**; the choice is saved on the server. Grids with money or `HH:MM`
   columns have a **totals row** (sums of all filtered records, not only the current page).
-- **Transactions**: staff add customer payments; each done ticket with a cost and a due date is shown as a
+- **Transactions**: staff add customer payments; each done ticket with a cost is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
 - Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
 - Money is **always a whole number** in every currency: `7,000,000`, never `7,000,000.00`.

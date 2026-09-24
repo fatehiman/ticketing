@@ -8,14 +8,16 @@ use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
 
 /**
  * The transactions ledger: customer payments + costs of done tickets, in one query.
  *
- * A ticket is a "cost" row only while it is done AND has a cost AND has a due date.
+ * A ticket is a "cost" row only while it is done AND has a cost. Its date is the due date,
+ * or the day it was done when it has no due date (TX_DATE_COST).
  * Costs are read live from the tickets table (no copy is stored), so changing the
- * status, removing the cost/due date or deleting the ticket removes the row and its
+ * status, removing the cost or deleting the ticket removes the row and its
  * amount from every total right away.
  *
  * Costs belong to customers by project: a customer's costs are the costs of their projects.
@@ -29,6 +31,9 @@ class Transactions
     public const ARRAY_KEYS = ['project', 'kind'];
 
     public const SORTS = ['tx_date', 'amount'];
+
+    /** Date of a cost row: due date, else the day the ticket was done (old rows: last update). */
+    private const TX_DATE_COST = 'COALESCE(tickets.due_date, DATE(tickets.resolved_at), DATE(tickets.updated_at))';
 
     /** Keep only known keys and drop empty values. */
     public static function normalize(array $input, User $user): array
@@ -103,7 +108,6 @@ class Transactions
         // --- ticket costs -----------------------------------------------------------
         $costs = Ticket::query()->visibleTo($user)
             ->where('tickets.status', TicketStatus::Done->value)
-            ->whereNotNull('tickets.due_date')
             ->where('tickets.cost', '>', 0)
             ->when($customerProjectIds !== null, fn ($q) => $q->whereIn('tickets.project_id', $customerProjectIds ?: [0]))
             ->when($projectFilter, fn ($q) => $q->whereIn('tickets.project_id', $projectIds ?: [0]))
@@ -119,9 +123,9 @@ class Transactions
             ->toBase()
             ->select([
                 DB::raw("'cost' as kind"), 'tickets.id', DB::raw('NULL as customer_id'), 'tickets.project_id',
-                'tickets.cost as amount', 'tickets.due_date as tx_date', 'tickets.title as description', 'tickets.number as ticket_number',
+                'tickets.cost as amount', DB::raw(self::TX_DATE_COST.' as tx_date'), 'tickets.title as description', 'tickets.number as ticket_number',
             ]);
-        self::range($costs, 'tickets.due_date', 'tickets.cost', $f);
+        self::range($costs, DB::raw(self::TX_DATE_COST), 'tickets.cost', $f);
 
         if (! in_array('payment', $kinds, true)) {
             $payments->whereRaw('1 = 0');
@@ -173,7 +177,7 @@ class Transactions
         return ['payments' => $payments, 'costs' => $costs, 'remaining' => $costs - $payments];
     }
 
-    private static function range(Builder $query, string $dateColumn, string $amountColumn, array $f): void
+    private static function range(Builder $query, string|Expression $dateColumn, string $amountColumn, array $f): void
     {
         if ($from = Dates::parse($f['date_from'] ?? null)) {
             $query->where($dateColumn, '>=', $from->toDateString());

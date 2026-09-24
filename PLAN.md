@@ -23,7 +23,7 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Time | Stored as **minutes** (int). UI input/output is `HH:MM`. "Spent time" is named **Time logged** (Jira wording). |
 | Grids | Every table has a column chooser. Visible columns are saved **on the server** per user (`grid_preferences`). A grid can have a **totals row** (`Grid::totals()`): one aggregate query over **all filtered records** (not the page). The row is shown only while a money/number/time column with a total is visible. |
 | Tickets grid defaults | Number, title, type, status, priority, sprint, cost. Each user can change it. |
-| Transactions | Payments live in `payments`. Ticket costs are **not copied**: they are read live from `tickets` with a `UNION ALL`, so a ticket that stops being *done*, loses its cost or due date, or is deleted, disappears from the list and every total at once. |
+| Transactions | Payments live in `payments`. Ticket costs are **not copied**: they are read live from `tickets` with a `UNION ALL`, so a ticket that stops being *done*, loses its cost, or is deleted, disappears from the list and every total at once. |
 | Followups | A ticket is a conversation: `ticket_followups` (sender, date/time, HTML body, attachments) shown below the ticket body. `tickets.awaiting_reply` (`staff` / `customer` / null) says which **side** must answer. All staff (admins + developers of the project) are one side, all customers of the project are the other. |
 | Rating | `ticket_comments` holds the customer's **rating** of a closed ticket: 1–5 stars + optional text, **one per ticket** (unique `ticket_id`). Old free-text comments were moved to followups. |
 | Money | **Always a whole number, for every currency** (IRT, IRR, USD, EUR, AED): `7,000,000`, never `7,000,000.00`. Columns are integers (`budget`, `estimated_cost`, `cost`, `amount`), inputs use `data-money="int"`, validation is `integer`, `Money::format()` shows no decimals. |
@@ -137,9 +137,10 @@ unassigned, created date range, updated date range, due date range, sort, per pa
 
 ## 8. Transactions
 
-* One page `/transactions` for every role. Sidebar: **Finance → Transactions**, and **Add payment** for staff.
+* One page `/transactions` for every role. Sidebar: **Finance → Transactions**, and **Add payment** for developers.
 * Rows = customer **payments** + **ticket costs**. A ticket is a cost row only while
-  `status = done` **and** `cost > 0` **and** `due_date` is set. The row date is the due date.
+  `status = done` **and** `cost > 0`. The row date is the due date; without a due date, the day the ticket
+  was done (`resolved_at`).
 * Costs belong to customers **by project**: a customer's costs are the costs of their projects.
   Staff filtering by one customer see that customer's payments + the costs of that customer's projects.
 * Filters: customer (staff only), description / ticket title, type (payment / cost), date range,
