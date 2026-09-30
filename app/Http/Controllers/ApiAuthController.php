@@ -36,11 +36,9 @@ class ApiAuthController extends Controller
         if ($projects->isEmpty()) {
             return $this->message('api.no_projects', false);
         }
-        // Only one project: nothing to choose.
-        if ($projects->count() === 1) {
-            return $this->approve($auth, $user, $projects->first()->id);
-        }
 
+        // Never approve on GET (link previews of chat apps, a signed-in user opening someone else's link):
+        // the developer must always click Confirm, also with only one project.
         return view('api-auth.choose', ['auth' => $auth, 'projects' => $projects]);
     }
 

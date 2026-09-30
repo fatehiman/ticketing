@@ -113,12 +113,20 @@ class ApiTest extends TestCase
         $this->postJson('/api/auth/token', ['request_id' => $start['request_id'], 'secret' => $start['secret']])->assertOk();
     }
 
-    public function test_single_project_is_linked_without_asking(): void
+    public function test_opening_the_link_never_approves_even_with_one_project(): void
     {
         $this->otherProject->members()->detach($this->dev->id);
         $start = $this->postJson('/api/auth/start')->json();
-        $this->actingAs($this->dev)->get(parse_url($start['login_url'], PHP_URL_PATH))->assertOk()->assertSee(__('api.approved', ['project' => 'Project one', 'days' => 30]));
+        $path = parse_url($start['login_url'], PHP_URL_PATH);
 
+        // A GET (e.g. a chat app's link preview, or a signed-in user) only shows the Confirm form.
+        $this->actingAs($this->dev)->get($path)->assertOk()->assertSee(__('api.confirm'))->assertDontSee(__('api.approved', ['project' => 'Project one', 'days' => 30]));
+        $this->assertNull(ApiAuthRequest::first()->approved_at);
+        $this->postJson('/api/auth/token', ['request_id' => $start['request_id'], 'secret' => $start['secret']])
+            ->assertStatus(202)->assertJsonPath('status', 'pending');
+
+        $this->actingAs($this->dev)->post($path, ['project' => (string) $this->project->id])
+            ->assertOk()->assertSee(__('api.approved', ['project' => 'Project one', 'days' => 30]));
         $this->postJson('/api/auth/token', ['request_id' => $start['request_id'], 'secret' => $start['secret']])
             ->assertOk()->assertJsonPath('project.code', 'P1');
     }

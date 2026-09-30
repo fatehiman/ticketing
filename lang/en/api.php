@@ -6,6 +6,7 @@ return [
     'bot_name' => 'Bot',
     'no_fixed_project' => 'No fixed project (the bot must name the project in every request)',
     'confirm' => 'Confirm login',
+    'confirm_warning' => 'Confirm only if you asked this bot to log in just now. If you did not start this login, close this page.',
     'approved' => 'The bot login was successful. Project: :project. Now tell the bot that you have logged in. The access is valid for :days days.',
     'only_staff' => 'Only developers can log in a bot.',
     'no_projects' => 'You have no active project, so a bot cannot be linked.',

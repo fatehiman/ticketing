@@ -9,6 +9,7 @@
             @if ($auth->name)
                 <p class="small mb-3"><i class="bi bi-tag"></i> {{ __('api.bot_name') }}: <b>{{ $auth->name }}</b></p>
             @endif
+            <div class="alert alert-warning small py-2"><i class="bi bi-shield-exclamation"></i> {{ __('api.confirm_warning') }}</div>
 
             <form method="POST" action="{{ route('api-auth.store', $auth->public_id) }}">
                 @csrf

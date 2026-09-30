@@ -54,8 +54,8 @@ Body (optional): `{"name": "Telegram bot – ACME group", "require_project": tru
 
 The developer opens the link. If not signed in, the login page opens first, then it comes back.
 
-- One active project → it is linked at once.
-- More projects → the developer picks one, or *No fixed project* (not offered with `require_project`).
+- The developer picks a project, or *No fixed project* (not offered with `require_project`), and clicks **Confirm**.
+- Opening the link never approves by itself (also with only one project), so a chat app's link preview cannot log in a bot.
 - The page says **"The bot login was successful"**. No token is shown on the page.
 
 ### Step 3 — `POST /api/auth/token`
