@@ -18,6 +18,7 @@ use App\Support\Grid;
 use App\Support\Money;
 use App\Support\ProjectContext;
 use App\Support\TicketFilter;
+use App\Support\TicketMenus;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -38,6 +39,8 @@ class TicketController extends Controller
         'logged_time', 'estimated_cost', 'due_date', 'attachments', 'created_at', 'updated_at',
     ];
 
+    public const BULK_ACTIONS = ['status', 'sprint', 'assignee', 'priority', 'type', 'delete'];
+
     public function __construct(private TicketService $tickets) {}
 
     public function index(Request $request, ProjectContext $context)
@@ -51,7 +54,10 @@ class TicketController extends Controller
             ->withCount('attachments');
         TicketFilter::applySort($query, $request->query('sort'), $request->query('dir'));
 
-        $grid = Grid::make('tickets', [
+        // Each folder keeps its own columns (backlog needs other columns than done).
+        // A folder without its own choice uses the choice of the search page ("tickets").
+        $folder = TicketMenus::activeKey($user, $request);
+        $grid = Grid::make($folder ? 'tickets-'.$folder : 'tickets', [
             'number' => __('tickets.fields.number'),
             'title' => __('tickets.fields.title'),
             'project' => __('tickets.fields.project_id'),
@@ -71,7 +77,7 @@ class TicketController extends Controller
             'attachments' => __('tickets.fields.attachments'),
             'created_at' => __('tickets.fields.created_at'),
             'updated_at' => __('tickets.fields.updated_at'),
-        ], hidden: self::HIDDEN_COLUMNS, locked: ['number', 'title']);
+        ], hidden: self::HIDDEN_COLUMNS, locked: ['number', 'title'], fallback: 'tickets');
         // Totals row: sums over all filtered tickets, not only this page.
         $grid->totals($query, [
             'story_points' => ['story_points', Grid::NUMBER],
@@ -175,6 +181,67 @@ class TicketController extends Controller
         $this->tickets->changeStatus($ticket, $status, $request->user());
 
         return back()->with('success', __('tickets.status_changed', ['status' => $status->label()]));
+    }
+
+    /**
+     * Bulk action on the tickets checked on one page (developers only).
+     * A sprint or an assignee only fits tickets of its own project; other tickets are skipped.
+     */
+    public function bulk(Request $request)
+    {
+        abort_unless($request->user()->isDeveloper(), 403);
+        $user = $request->user();
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'max:100'],
+            'ids.*' => ['integer'],
+            'action' => ['required', Rule::in(self::BULK_ACTIONS)],
+            'status' => ['exclude_unless:action,status', 'required', Rule::enum(TicketStatus::class)],
+            'priority' => ['exclude_unless:action,priority', 'required', Rule::enum(TicketPriority::class)],
+            'type' => ['exclude_unless:action,type', 'required', Rule::enum(TicketType::class)],
+            'sprint_id' => ['exclude_unless:action,sprint', 'required', 'regex:/^(none|\d+)$/'],
+            'assignee_id' => ['exclude_unless:action,assignee', 'required', 'regex:/^(none|\d+)$/'],
+        ], [], [
+            'ids' => __('tickets.bulk.selected_label'),
+            'sprint_id' => __('tickets.fields.sprint_id'),
+            'assignee_id' => __('tickets.fields.assignee_id'),
+        ]);
+        $action = $data['action'];
+
+        // The project a sprint or an assignee belongs to; null value = clear the field.
+        $sprint = $action === 'sprint' && $data['sprint_id'] !== 'none' ? Sprint::findOrFail($data['sprint_id']) : null;
+        $assignee = $action === 'assignee' && $data['assignee_id'] !== 'none'
+            ? User::role(Role::Developer)->with(['projects' => fn ($q) => $q->select('projects.id')])->findOrFail($data['assignee_id'])
+            : null;
+
+        $done = $skipped = 0;
+        $tickets = Ticket::whereIn('id', $data['ids'])->get();
+        foreach ($tickets as $ticket) {
+            $fits = match ($action) {
+                'sprint' => ! $sprint || $sprint->project_id === $ticket->project_id,
+                'assignee' => ! $assignee || $assignee->projects->contains('id', $ticket->project_id),
+                default => true,
+            };
+            if (! $fits || ! $user->can($action === 'status' ? 'changeStatus' : ($action === 'delete' ? 'delete' : 'update'), $ticket)) {
+                $skipped++;
+
+                continue;
+            }
+
+            match ($action) {
+                'status' => $this->tickets->changeStatus($ticket, TicketStatus::from($data['status']), $user),
+                'priority' => $this->tickets->update($ticket, ['priority' => $data['priority']], $user),
+                'type' => $this->tickets->update($ticket, ['type' => $data['type']], $user),
+                'sprint' => $this->tickets->update($ticket, ['sprint_id' => $sprint?->id], $user),
+                'assignee' => $this->tickets->update($ticket, ['assignee_id' => $assignee?->id], $user),
+                'delete' => $this->tickets->delete($ticket, $user),
+            };
+            $done++;
+        }
+        $skipped += count(array_unique($data['ids'])) - $tickets->count();
+
+        $redirect = back()->with('success', trans_choice('tickets.bulk.done', $done, ['count' => $done]));
+
+        return $skipped ? $redirect->with('warning', trans_choice('tickets.bulk.skipped', $skipped, ['count' => $skipped])) : $redirect;
     }
 
     // ---------------------------------------------------------------------

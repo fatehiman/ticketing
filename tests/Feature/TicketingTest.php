@@ -297,6 +297,68 @@ class TicketingTest extends TestCase
         $this->actingAs($this->dev)->get('/tickets')->assertOk()->assertViewHas('grid', fn ($g) => $g->visible('cost') && ! $g->visible('status'));
     }
 
+    public function test_each_ticket_folder_keeps_its_own_columns(): void
+    {
+        // The search page choice is the fallback of every folder.
+        $this->actingAs($this->dev)->postJson('/grid-preferences', ['grid' => 'tickets', 'columns' => ['number', 'title', 'status']])->assertOk();
+        $this->actingAs($this->dev)->postJson('/grid-preferences', ['grid' => 'tickets-status_done', 'columns' => ['number', 'title', 'cost']])->assertOk();
+
+        $this->actingAs($this->dev)->get('/tickets?status[]=done')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->key === 'tickets-status_done' && $g->visible('cost') && ! $g->visible('status'));
+        $this->actingAs($this->dev)->get('/tickets?status[]=backlog')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->key === 'tickets-status_backlog' && $g->visible('status') && ! $g->visible('cost'));
+        $this->actingAs($this->dev)->get('/tickets?q=xyz')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->key === 'tickets' && $g->visible('status'));
+    }
+
+    public function test_developer_bulk_actions_on_tickets(): void
+    {
+        $sprint = Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'start_date' => '2026-10-01', 'end_date' => '2026-10-14']);
+        $this->otherProject->members()->attach($this->dev->id);
+        $a = Ticket::create($this->ticketData(['reporter_id' => $this->dev->id]));
+        $b = Ticket::create($this->ticketData(['reporter_id' => $this->dev->id]));
+        $other = Ticket::create($this->ticketData(['project_id' => $this->otherProject->id, 'reporter_id' => $this->dev->id]));
+        $ids = [$a->id, $b->id, $other->id];
+
+        $this->actingAs($this->dev)->get('/tickets')->assertSee('bulk-form', false);
+        $this->actingAs($this->customer)->get('/tickets')->assertDontSee('bulk-form', false);
+
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => $ids, 'action' => 'status', 'status' => 'testing'])
+            ->assertSessionHasNoErrors()->assertSessionMissing('warning');
+        $this->assertSame(3, Ticket::where('status', 'testing')->count());
+        $this->assertSame('status_changed', $a->revisions()->latest('id')->first()->action);
+
+        // The sprint is in project one, so the ticket of project two is skipped.
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => $ids, 'action' => 'sprint', 'sprint_id' => $sprint->id])
+            ->assertSessionHas('warning');
+        $this->assertSame($sprint->id, $a->fresh()->sprint_id);
+        $this->assertNull($other->fresh()->sprint_id);
+
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'sprint', 'sprint_id' => 'none']);
+        $this->assertNull($a->fresh()->sprint_id);
+
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id, $b->id], 'action' => 'assignee', 'assignee_id' => $this->dev->id]);
+        $this->assertSame($this->dev->id, $b->fresh()->assignee_id);
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'assignee', 'assignee_id' => $this->otherDev->id])
+            ->assertSessionHas('warning');
+        $this->assertSame($this->dev->id, $a->fresh()->assignee_id);
+
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'priority', 'priority' => 'lowest']);
+        $this->assertSame('lowest', $a->fresh()->priority->value);
+
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$b->id], 'action' => 'delete']);
+        $this->assertSoftDeleted($b);
+
+        // A missing parameter is a validation error; other developers' tickets are skipped; customers and admins are refused.
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'status'])->assertSessionHasErrors('status');
+        $foreign = Ticket::create($this->ticketData(['project_id' => $this->otherProject->id, 'reporter_id' => $this->otherDev->id]));
+        $this->otherProject->members()->detach($this->dev->id);
+        $this->actingAs($this->dev->fresh())->post('/tickets/bulk', ['ids' => [$foreign->id], 'action' => 'priority', 'priority' => 'lowest'])->assertSessionHas('warning');
+        $this->assertSame('high', $foreign->fresh()->priority->value);
+        $this->actingAs($this->customer)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'delete'])->assertForbidden();
+        $this->actingAs($this->admin)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'delete'])->assertForbidden();
+    }
+
     public function test_attachments_are_private_and_editor_upload_works(): void
     {
         Storage::fake('local');

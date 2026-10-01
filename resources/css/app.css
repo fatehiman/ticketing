@@ -288,6 +288,11 @@ a { text-decoration: none; }
 .grid-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
 .col-chooser .dropdown-menu { max-height: 60vh; overflow-y: auto; min-width: 230px; }
 .col-chooser .form-check { padding-inline-start: 2.2rem; }
+.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); background: var(--row-hover); }
+.bulk-bar.d-none { display: none !important; }
+.bulk-bar .form-select { width: auto; max-width: 100%; }
+.table-grid .bulk-col { width: 1%; padding-inline-end: 0; }
+.table-grid tbody tr.row-checked > * { background: var(--row-hover); }
 
 /* ---------- Filter box ---------- */
 .filter-card .form-label { font-size: .78rem; color: var(--muted); margin-bottom: .2rem; font-weight: 600; }

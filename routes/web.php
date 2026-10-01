@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/editor/upload', EditorUploadController::class)->name('editor.upload');
 
     // Tickets
+    Route::post('/tickets/bulk', [TicketController::class, 'bulk'])->name('tickets.bulk');
     Route::resource('tickets', TicketController::class);
     Route::post('/tickets/{ticket}/status', [TicketController::class, 'status'])->name('tickets.status');
     Route::post('/tickets/{ticket}/followups', [FollowupController::class, 'store'])->name('tickets.followups.store');

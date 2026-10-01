@@ -133,6 +133,48 @@ function initGrids() {
     });
 }
 
+/* ---------- Bulk actions on the checked tickets of one page ---------- */
+function initBulk() {
+    const form = document.getElementById('bulk-form');
+    if (!form) return;
+    const rows = [...document.querySelectorAll('[data-bulk-row]')];
+    const all = document.querySelector('[data-bulk-all]');
+    const action = form.querySelector('[data-bulk-action]');
+    const count = form.querySelector('[data-bulk-count]');
+
+    const refresh = () => {
+        const n = rows.filter((r) => r.checked).length;
+        form.classList.toggle('d-none', n === 0);
+        count.textContent = n === 1 ? count.dataset.labelOne : count.dataset.labelMany.replace('#', n);
+        all.checked = n > 0 && n === rows.length;
+        all.indeterminate = n > 0 && n < rows.length;
+        rows.forEach((r) => r.closest('tr').classList.toggle('row-checked', r.checked));
+    };
+    // Show only the parameter box of the chosen action; hidden boxes are disabled, so they are not sent.
+    const showParams = () => {
+        form.querySelectorAll('[data-bulk-for]').forEach((el) => {
+            const on = el.dataset.bulkFor === action.value;
+            el.classList.toggle('d-none', !on);
+            el.disabled = !on;
+        });
+        form.dataset.confirm = action.value === 'delete' ? form.dataset.confirmDelete : form.dataset.confirmDefault;
+    };
+    form.dataset.confirmDefault = form.dataset.confirm;
+
+    rows.forEach((r) => r.addEventListener('change', refresh));
+    all.addEventListener('change', () => {
+        rows.forEach((r) => { r.checked = all.checked; });
+        refresh();
+    });
+    action.addEventListener('change', showParams);
+    form.querySelector('[data-bulk-clear]').addEventListener('click', () => {
+        rows.forEach((r) => { r.checked = false; });
+        refresh();
+    });
+    showParams();
+    refresh();
+}
+
 /* ---------- Ticket filter + "create menu" ---------- */
 function formToFilters(form) {
     const out = {};
@@ -329,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initPaymentForm();
     initGrids();
     initTicketFilter();
+    initBulk();
     initFilterForms();
     initMenuEdit();
     initTicketForm();

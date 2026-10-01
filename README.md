@@ -18,7 +18,10 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - **Rating**: on a closed ticket (done, cancelled, rejected) a customer gives 1–5 stars and an optional comment.
   One rating per ticket; staff can only read it.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
-- Every grid has a **column chooser**; the choice is saved on the server. Grids with money or `HH:MM`
+- **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
+  change status, sprint, assignee, priority or type, or delete them in one step. Every change goes into the history.
+- Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
+  folder** (e.g. *Backlog* without cost, *Done* with cost); a folder without its own choice uses the search page choice. Grids with money or `HH:MM`
   columns have a **totals row** (sums of all filtered records, not only the current page).
 - **Transactions**: staff add customer payments; each done ticket with a cost is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
@@ -67,6 +70,7 @@ php artisan test
 | Roles and access rules | `app/Policies`, `app/Models/User.php` (`scopeCustomersOf`, `accessibleProjectIds`) |
 | Top-bar project switcher | `app/Support/ProjectContext.php` |
 | Ticket filters, folders, badges | `app/Support/TicketFilter.php`, `app/Support/TicketMenus.php` |
+| Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
 | Notifications hook (future SMS) | `app/Events/FollowupPosted.php` (no listener yet) |

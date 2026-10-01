@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\TicketStatus;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -13,6 +14,31 @@ use Illuminate\Support\Facades\DB;
 class TicketMenus
 {
     public function __construct(private User $user, private ProjectContext $context) {}
+
+    /**
+     * Data for the layout and the tickets page: project switcher and folders with badges.
+     * Computed once per request and kept on the request.
+     */
+    public static function layoutData(User $user, Request $request): array
+    {
+        if (! $request->attributes->has('layout_data')) {
+            $context = app(ProjectContext::class);
+            $current = $request->routeIs('tickets.index') ? $request->query() : null;
+            $request->attributes->set('layout_data', [
+                'projectContext' => $context,
+                'ticketMenus' => (new self($user, $context))->items($current),
+                'currentFilters' => $current !== null ? TicketFilter::normalize($current) : null,
+            ]);
+        }
+
+        return $request->attributes->get('layout_data');
+    }
+
+    /** Key of the folder that matches the current tickets page ("status_done", "custom_7", …), or null. */
+    public static function activeKey(User $user, Request $request): ?string
+    {
+        return collect(self::layoutData($user, $request)['ticketMenus'])->firstWhere('active', true)['key'] ?? null;
+    }
 
     public function items(?array $currentFilters = null): array
     {

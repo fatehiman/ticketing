@@ -59,6 +59,27 @@ return [
         'none' => 'The customer has not rated this ticket yet.',
     ],
 
+    'bulk' => [
+        'selected' => '{1} 1 ticket selected|[2,*] :count tickets selected',
+        'selected_label' => 'Selected tickets',
+        'select_all' => 'Select all tickets on this page',
+        'select' => 'Select this ticket',
+        'action' => 'Action',
+        'choose' => 'Choose an action…',
+        'apply' => 'Apply',
+        'clear' => 'Clear selection',
+        'set_status' => 'Change status',
+        'set_sprint' => 'Change sprint',
+        'set_assignee' => 'Change assignee',
+        'set_priority' => 'Change priority',
+        'set_type' => 'Change type',
+        'delete' => 'Delete',
+        'confirm' => 'Apply this action to the selected tickets?',
+        'confirm_delete' => 'Delete the selected tickets?',
+        'done' => '{0} No ticket was changed.|{1} 1 ticket was changed.|[2,*] :count tickets were changed.',
+        'skipped' => '{1} 1 ticket was skipped (no access, or the sprint / assignee belongs to another project).|[2,*] :count tickets were skipped (no access, or the sprint / assignee belongs to another project).',
+    ],
+
     'actions' => [
         'created' => 'created the ticket',
         'updated' => 'edited the ticket',

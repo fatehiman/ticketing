@@ -4,6 +4,12 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('app.close') }}"></button>
     </div>
 @endif
+@if (session('warning'))
+    <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-1"></i> {{ session('warning') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('app.close') }}"></button>
+    </div>
+@endif
 @if ($errors->any())
     <div class="alert alert-danger border-0 shadow-sm" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-1"></i>

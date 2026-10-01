@@ -77,6 +77,12 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Only developers can log in a bot; admin tokens stop working
 - [x] Production data: tickets / revisions made by admin by mistake moved to the only developer
 
+## Phase 1.7 — Bulk actions and per-folder columns
+
+- [x] Developers check tickets on one page (or all of the page with the top checkbox) and change status, sprint,
+      assignee, priority or type, or delete them, in one step. A sprint or assignee of another project is skipped
+- [x] Each ticket folder (built-in or custom) keeps its own visible columns; the search page choice is the fallback
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups

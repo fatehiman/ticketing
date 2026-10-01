@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Support\ProjectContext;
-use App\Support\TicketFilter;
 use App\Support\TicketMenus;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\URL;
@@ -36,17 +35,7 @@ class AppServiceProvider extends ServiceProvider
             if (! $user) {
                 return;
             }
-            $request = request();
-            if (! $request->attributes->has('layout_data')) {
-                $context = app(ProjectContext::class);
-                $current = $request->routeIs('tickets.index') ? $request->query() : null;
-                $request->attributes->set('layout_data', [
-                    'projectContext' => $context,
-                    'ticketMenus' => (new TicketMenus($user, $context))->items($current),
-                    'currentFilters' => $current !== null ? TicketFilter::normalize($current) : null,
-                ]);
-            }
-            $view->with($request->attributes->get('layout_data'));
+            $view->with(TicketMenus::layoutData($user, request()));
         });
     }
 }

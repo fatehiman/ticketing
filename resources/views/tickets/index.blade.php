@@ -10,6 +10,7 @@
     $activeMenu = collect($ticketMenus)->firstWhere('active', true);
     $f = fn ($key, $default = null) => $filters[$key] ?? $default;
     $checked = fn ($key, $value) => in_array($value, $filters[$key] ?? [], true);
+    $bulk = $user->isDeveloper() && $tickets->isNotEmpty();
 @endphp
 
 @section('content')
@@ -168,10 +169,46 @@
             <span class="fw-semibold">{{ __('app.results', ['count' => $tickets->total()]) }}</span>
             <div class="ms-auto"><x-grid-columns :grid="$grid" /></div>
         </div>
+        @if ($bulk)
+            {{-- Bulk actions on the checked tickets of this page (app.js shows the bar while a ticket is checked). --}}
+            <form method="POST" action="{{ route('tickets.bulk') }}" id="bulk-form" class="bulk-bar d-none"
+                  data-confirm="{{ __('tickets.bulk.confirm') }}" data-confirm-delete="{{ __('tickets.bulk.confirm_delete') }}">
+                @csrf
+                <span class="fw-semibold text-nowrap" data-bulk-count data-label-one="{{ trans_choice('tickets.bulk.selected', 1) }}" data-label-many="{{ trans_choice('tickets.bulk.selected', 2, ['count' => '#']) }}"></span>
+                <select name="action" class="form-select form-select-sm" data-bulk-action required aria-label="{{ __('tickets.bulk.action') }}">
+                    <option value="">{{ __('tickets.bulk.choose') }}</option>
+                    @foreach (App\Http\Controllers\TicketController::BULK_ACTIONS as $action)
+                        <option value="{{ $action }}">{{ __('tickets.bulk.'.($action === 'delete' ? 'delete' : 'set_'.$action)) }}</option>
+                    @endforeach
+                </select>
+                <select name="status" class="form-select form-select-sm d-none" data-bulk-for="status" disabled aria-label="{{ __('tickets.fields.status') }}">
+                    @foreach ($statuses as $status)<option value="{{ $status->value }}">{{ $status->label() }}</option>@endforeach
+                </select>
+                <select name="sprint_id" class="form-select form-select-sm d-none" data-bulk-for="sprint" disabled aria-label="{{ __('tickets.fields.sprint_id') }}">
+                    <option value="none">{{ __('tickets.no_sprint') }}</option>
+                    @foreach ($sprints as $sprint)<option value="{{ $sprint->id }}">{{ $sprint->project->code }} · {{ $sprint->label() }}</option>@endforeach
+                </select>
+                <select name="assignee_id" class="form-select form-select-sm d-none" data-bulk-for="assignee" disabled aria-label="{{ __('tickets.fields.assignee_id') }}">
+                    <option value="none">{{ __('tickets.unassigned') }}</option>
+                    @foreach ($developers as $dev)<option value="{{ $dev->id }}">{{ $dev->name }}</option>@endforeach
+                </select>
+                <select name="priority" class="form-select form-select-sm d-none" data-bulk-for="priority" disabled aria-label="{{ __('tickets.fields.priority') }}">
+                    @foreach ($priorities as $priority)<option value="{{ $priority->value }}">{{ $priority->label() }}</option>@endforeach
+                </select>
+                <select name="type" class="form-select form-select-sm d-none" data-bulk-for="type" disabled aria-label="{{ __('tickets.fields.type') }}">
+                    @foreach ($types as $type)<option value="{{ $type->value }}">{{ $type->label() }}</option>@endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary text-nowrap"><i class="bi bi-check2-all"></i> {{ __('tickets.bulk.apply') }}</button>
+                <button type="button" class="btn btn-sm btn-link text-decoration-none text-nowrap" data-bulk-clear>{{ __('tickets.bulk.clear') }}</button>
+            </form>
+        @endif
         <div class="table-responsive">
-            <table class="table table-grid" data-grid="tickets">
+            <table class="table table-grid" data-grid="{{ $grid->key }}">
                 <thead>
                 <tr>
+                    @if ($bulk)
+                        <th class="bulk-col"><input type="checkbox" class="form-check-input" data-bulk-all title="{{ __('tickets.bulk.select_all') }}" aria-label="{{ __('tickets.bulk.select_all') }}"></th>
+                    @endif
                     @php($sortable = ['number' => 'number', 'title' => 'title', 'status' => 'status', 'priority' => 'priority', 'story_points' => 'story_points', 'due_date' => 'due_date', 'created_at' => 'created_at', 'updated_at' => 'updated_at'])
                     @foreach ($grid->columns as $key => $label)
                         <th data-col="{{ $key }}" class="{{ $grid->cls($key) }}">
@@ -188,6 +225,9 @@
                 @forelse ($tickets as $ticket)
                     @php($overdue = $ticket->due_date && $ticket->due_date->isPast() && ! $ticket->status->isClosed())
                     <tr>
+                        @if ($bulk)
+                            <td class="bulk-col"><input type="checkbox" class="form-check-input" name="ids[]" value="{{ $ticket->id }}" form="bulk-form" data-bulk-row aria-label="{{ __('tickets.bulk.select') }} #{{ $ticket->number }}"></td>
+                        @endif
                         <td data-col="number" class="{{ $grid->cls('number') }}"><a href="{{ route('tickets.show', $ticket) }}" class="t-number">#{{ $ticket->number }}</a></td>
                         <td data-col="title" class="{{ $grid->cls('title') }}" style="min-width: 240px">
                             <a href="{{ route('tickets.show', $ticket) }}" class="t-title">{{ $ticket->title }}</a>
@@ -225,7 +265,7 @@
                     <tr><td colspan="{{ count($grid->columns) }}" class="empty-state"><i class="bi bi-inbox"></i>{{ __('app.no_results') }}</td></tr>
                 @endforelse
                 </tbody>
-                @include('partials.grid-totals', ['grid' => $grid])
+                @include('partials.grid-totals', ['grid' => $grid, 'leadCell' => $bulk])
             </table>
         </div>
         @if ($tickets->hasPages())

@@ -36,16 +36,22 @@ class Grid
      * @param  array<string,string>  $columns  key => label
      * @param  string[]  $hidden  columns hidden by default
      * @param  string[]  $locked  columns that can never be hidden
+     * @param  string|null  $fallback  grid key whose saved choice is used while $key has none
+     *                                 (e.g. a ticket folder "tickets-status_done" falls back to "tickets")
      */
     public function __construct(
         public readonly string $key,
         public readonly array $columns,
         array $hidden = [],
         public readonly array $locked = [],
+        ?string $fallback = null,
     ) {
-        $saved = auth()->check()
-            ? GridPreference::where('user_id', auth()->id())->where('grid_key', $key)->value('columns')
-            : null;
+        $saved = null;
+        if (auth()->check()) {
+            $keys = array_values(array_unique(array_filter([$key, $fallback])));
+            $rows = GridPreference::where('user_id', auth()->id())->whereIn('grid_key', $keys)->pluck('columns', 'grid_key');
+            $saved = $rows[$key] ?? ($fallback ? $rows[$fallback] ?? null : null);
+        }
         $saved = is_string($saved) ? json_decode($saved, true) : $saved;
 
         $this->visible = is_array($saved)
@@ -53,9 +59,9 @@ class Grid
             : array_values(array_diff(array_keys($columns), $hidden));
     }
 
-    public static function make(string $key, array $columns, array $hidden = [], array $locked = []): self
+    public static function make(string $key, array $columns, array $hidden = [], array $locked = [], ?string $fallback = null): self
     {
-        return new self($key, $columns, $hidden, $locked);
+        return new self($key, $columns, $hidden, $locked, $fallback);
     }
 
     public function visible(string $column): bool
