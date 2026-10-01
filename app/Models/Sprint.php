@@ -69,6 +69,16 @@ class Sprint extends Model
         return array_values(array_unique(array_merge($conflicts['start'] ?? [], $conflicts['end'] ?? [])));
     }
 
+    /** Length in calendar days, both ends included (weekends count too): 5th → 12th = 8 days. Null without both dates. */
+    public function days(): ?int
+    {
+        if (! $this->start_date || ! $this->end_date || $this->end_date->lt($this->start_date)) {
+            return null;
+        }
+
+        return (int) $this->start_date->diffInDays($this->end_date) + 1;
+    }
+
     /** "Sprint 4 — Checkout" */
     public function label(): string
     {

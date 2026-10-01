@@ -20,5 +20,6 @@ return [
         'start_date' => 'Start date',
         'end_date' => 'End date',
         'dates' => 'Dates',
+        'days' => 'Days',
     ],
 ];

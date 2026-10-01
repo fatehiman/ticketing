@@ -35,6 +35,7 @@ class SprintController extends Controller
             'project' => __('sprints.fields.project_id'),
             'status' => __('sprints.fields.status'),
             'dates' => __('sprints.fields.dates'),
+            'days' => __('sprints.fields.days'),
             'tickets' => __('sprints.done_total_tickets'),
             'points' => __('sprints.points'),
             'goal' => __('sprints.fields.goal'),

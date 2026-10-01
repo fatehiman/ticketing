@@ -53,6 +53,7 @@
                                 @endif
                             @endforeach
                         </td>
+                        <td data-col="days" class="{{ $grid->cls('days') }}">{{ $sprint->days() }}</td>
                         <td data-col="tickets" class="{{ $grid->cls('tickets') }}" style="min-width: 140px">
                             <a href="{{ route('tickets.index', ['project_id' => $sprint->project_id, 'sprint_id' => $sprint->id]) }}" class="small">{{ $sprint->done_count }} / {{ $sprint->tickets_count }}</a>
                             <div class="progress" style="height:.35rem"><div class="progress-bar" style="width: {{ $pct }}%; background: var(--brand-gradient)"></div></div>

@@ -17,7 +17,7 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
   checkbox (on by default) to decide if the customer must answer. Customers cannot reply to closed tickets.
 - **Rating**: on a closed ticket (done, cancelled, rejected) a customer gives 1–5 stars and an optional comment.
   One rating per ticket; staff can only read it.
-- **Sprints** per project. Dates of two sprints of the same project should not overlap (the next sprint starts
+- **Sprints** per project, with a **Days** column (end − start + 1, weekends included: 5th → 12th = 8 days). Dates of two sprints of the same project should not overlap (the next sprint starts
   the day after the previous one ends; gaps are fine). This is only a warning: the overlapping dates are **red**
   on the sprints page (end of the earlier sprint and start of the later one), and saving shows a warning.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.

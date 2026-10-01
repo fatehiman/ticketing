@@ -368,6 +368,8 @@ class TicketingTest extends TestCase
         // Other projects never conflict.
         Sprint::create(['project_id' => $this->otherProject->id, 'number' => 1, 'start_date' => '2026-10-10', 'end_date' => '2026-10-15', 'status' => 'planned']);
         $this->assertSame([], Sprint::dateConflicts([$this->project->id, $this->otherProject->id]));
+        $this->assertSame(8, $one->days()); // 5th → 12th, both days included
+        $this->assertNull((new Sprint(['start_date' => '2026-10-05']))->days());
 
         // Saving sprint 2 to start on the last day of sprint 1 works, with a warning.
         $this->actingAs($this->dev)->put('/sprints/'.$two->id, ['project_id' => $this->project->id, 'number' => 2,
