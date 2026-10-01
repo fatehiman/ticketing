@@ -1,6 +1,6 @@
 @php
     $user = auth()->user();
-    $builtin = collect($ticketMenus)->where('custom', false);
+    $builtin = collect($ticketMenus)->where('custom', false)->where('hidden', false);
     $custom = collect($ticketMenus)->where('custom', true)->sortBy([['sort_order', 'asc'], ['id', 'asc']]);
     $onTickets = request()->routeIs('tickets.*');
 @endphp
@@ -22,7 +22,11 @@
             </a>
         @endcan
         <a class="side-link side-toggle" data-bs-toggle="collapse" href="#ticket-folders" role="button" aria-expanded="true">
-            <i class="bi bi-folder2-open"></i><span>{{ __('app.tickets') }}</span><i class="bi bi-chevron-down chev"></i>
+            <i class="bi bi-folder2-open"></i><span>{{ __('app.tickets') }}</span>
+            <button type="button" class="menu-edit folders-edit" title="{{ __('tickets.folders.title') }}">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <i class="bi bi-chevron-down chev"></i>
         </a>
         <div class="collapse show side-sub" id="ticket-folders">
             @foreach ($builtin as $item)

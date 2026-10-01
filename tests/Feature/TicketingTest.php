@@ -277,6 +277,33 @@ class TicketingTest extends TestCase
         $this->assertModelMissing($menu);
     }
 
+    public function test_builtin_folders_can_be_reordered_hidden_and_reset(): void
+    {
+        $keys = fn (User $u) => collect((new \App\Support\TicketMenus($u, app(\App\Support\ProjectContext::class)))->items())
+            ->reject(fn ($i) => $i['hidden'])->pluck('key')->all();
+        $default = $keys($this->customer);
+        $this->assertSame('open', $default[0]);
+
+        // Customer: "all" first, "open" hidden, an unknown key is dropped; missing folders come at the end.
+        $this->actingAs($this->customer)->put('/folder-settings', [
+            'order' => ['all', 'open', 'reported', 'bogus'],
+            'visible' => ['all', 'reported'],
+        ])->assertRedirect();
+        $this->assertSame(['order' => ['all', 'open', 'reported'], 'hidden' => ['open']], $this->customer->fresh()->folder_settings);
+
+        $now = $keys($this->customer->fresh());
+        $this->assertSame(['all', 'reported'], array_slice($now, 0, 2));
+        $this->assertNotContains('open', $now);
+        $this->assertContains('awaiting', $now);
+
+        // A hidden folder still opens by URL.
+        $this->actingAs($this->customer->fresh())->get('/tickets?status[]=backlog')->assertOk();
+
+        $this->actingAs($this->customer)->delete('/folder-settings')->assertRedirect();
+        $this->assertNull($this->customer->fresh()->folder_settings);
+        $this->assertSame($default, $keys($this->customer->fresh()));
+    }
+
     public function test_filters_and_project_override(): void
     {
         Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'Alpha', 'status' => 'testing']));

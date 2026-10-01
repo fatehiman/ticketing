@@ -114,6 +114,11 @@ payments         id, customer_id, project_id(nullable), amount(int, no decimals)
 * Custom items: tick **Create menu (ایجاد کارتابل)** next to Search → JS asks a name → the
   filter set is saved → redirect to the new menu (highlighted, because the query matches).
 * Custom items have a small ✎ icon → modal: rename, change order (number list), delete.
+* The parent **Tickets** item has a small ✎ icon → modal with all **built-in** folders: change the order
+  (drag & drop or ↑ ↓) and show / hide each one (switch); **Reset to default** clears it.
+  Saved per user in `users.folder_settings` = `{"order": [keys], "hidden": [keys]}` (null = default order, all shown).
+  A folder missing from the saved order (e.g. a new status) comes at the end. A hidden folder is only left out
+  of the sidebar (no badge query); its URL still works. Custom folders are not in this modal (delete them instead).
 * The active menu is found by comparing the **normalised** current filters with each menu's filters.
 * Filter `project`: empty → follow the top switcher; set → use only that project.
 

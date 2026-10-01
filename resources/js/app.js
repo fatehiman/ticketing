@@ -246,6 +246,56 @@ function initMenuEdit() {
     );
 }
 
+/* ---------- Built-in folders: order + show / hide (pencil next to "Tickets") ---------- */
+function initFolders() {
+    const modalEl = document.getElementById('foldersModal');
+    const list = modalEl?.querySelector('.folder-list');
+    if (!list) return;
+    const modal = new bootstrap.Modal(modalEl);
+    document.querySelector('.folders-edit')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // do not open / close the folder list
+        modal.show();
+    });
+
+    const mark = (li) => li.classList.toggle('is-hidden', !li.querySelector('[type="checkbox"]').checked);
+    list.querySelectorAll('li').forEach(mark);
+    list.addEventListener('change', (e) => mark(e.target.closest('li')));
+
+    list.addEventListener('click', (e) => {
+        const btn = e.target.closest('.folder-up, .folder-down');
+        if (!btn) return;
+        const li = btn.closest('li');
+        if (btn.classList.contains('folder-up') && li.previousElementSibling) {
+            li.previousElementSibling.before(li);
+        } else if (btn.classList.contains('folder-down') && li.nextElementSibling) {
+            li.nextElementSibling.after(li);
+        }
+        btn.focus();
+    });
+
+    // Drag and drop with the mouse; the arrows work everywhere (also on phones).
+    let dragged = null;
+    list.addEventListener('dragstart', (e) => {
+        dragged = e.target.closest('li');
+        dragged?.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+    list.addEventListener('dragend', () => {
+        dragged?.classList.remove('dragging');
+        dragged = null;
+    });
+    list.addEventListener('dragover', (e) => {
+        const over = e.target.closest('li');
+        if (!dragged || !over || over === dragged) return;
+        e.preventDefault();
+        const box = over.getBoundingClientRect();
+        if (e.clientY > box.top + box.height / 2) over.after(dragged);
+        else over.before(dragged);
+    });
+    list.addEventListener('drop', (e) => e.preventDefault());
+}
+
 /* ---------- Ticket form: sprints and assignees follow the project ---------- */
 function initTicketForm() {
     const project = document.querySelector('[data-project-select]');
@@ -374,6 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initBulk();
     initFilterForms();
     initMenuEdit();
+    initFolders();
     initTicketForm();
     initEditors();
     initTooltips();

@@ -8,6 +8,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EditorUploadController;
+use App\Http\Controllers\FolderSettingsController;
 use App\Http\Controllers\FollowupController;
 use App\Http\Controllers\GridPreferenceController;
 use App\Http\Controllers\LocaleController;
@@ -62,6 +63,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/ticket-menus', [TicketMenuController::class, 'store'])->name('ticket-menus.store');
     Route::put('/ticket-menus/{ticketMenu}', [TicketMenuController::class, 'update'])->name('ticket-menus.update');
     Route::delete('/ticket-menus/{ticketMenu}', [TicketMenuController::class, 'destroy'])->name('ticket-menus.destroy');
+
+    // Built-in folders: order and show / hide per user (the pencil next to "Tickets")
+    Route::put('/folder-settings', [FolderSettingsController::class, 'update'])->name('folder-settings.update');
+    Route::delete('/folder-settings', [FolderSettingsController::class, 'destroy'])->name('folder-settings.reset');
 
     // Transactions: payments + costs of done tickets. Customers see theirs read-only.
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');

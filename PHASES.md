@@ -84,6 +84,7 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Each ticket folder (built-in or custom) keeps its own visible columns; the search page choice is the fallback
 - [x] Sprint date conflicts: sprints of one project must not overlap (the next one starts the day after the previous
       one ends; gaps are fine). Only a warning: the overlapping dates are red on the sprints page, and saving shows a warning
+- [x] Built-in folders: ✎ next to *Tickets* → modal to change their order and show / hide them, with *Reset to default*
 
 ## Phase 2 — Collaboration
 

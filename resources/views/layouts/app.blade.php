@@ -25,6 +25,7 @@
     </div>
 
     @include('partials.menu-modal')
+    @include('partials.folders-modal')
     @stack('scripts')
 </body>
 </html>

@@ -20,7 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'email', 'mobile', 'password', 'role', 'avatar_path',
-        'locale', 'calendar', 'current_project_id', 'is_active', 'created_by', 'last_login_at',
+        'locale', 'calendar', 'current_project_id', 'is_active', 'created_by', 'last_login_at', 'folder_settings',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -32,6 +32,7 @@ class User extends Authenticatable
             'role' => Role::class,
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'folder_settings' => 'array',
         ];
     }
 

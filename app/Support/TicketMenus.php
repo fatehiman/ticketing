@@ -61,6 +61,8 @@ class TicketMenus
         }
         $items[] = $this->item('reported', __('tickets.menu.reported_by_me'), 'bi-pencil-square', null, ['reporter_id' => 'me']);
 
+        $items = $this->applySettings($items);
+
         foreach ($this->user->ticketMenus as $menu) {
             $item = $this->item('custom_'.$menu->id, $menu->name, 'bi-folder2', null, $menu->filters ?? []);
             $item['custom'] = true;
@@ -81,6 +83,37 @@ class TicketMenus
         return $items;
     }
 
+    /** Keys of all built-in folders (for every role). */
+    public static function builtinKeys(): array
+    {
+        return array_merge(
+            ['open', 'awaiting', 'all'],
+            array_map(fn ($s) => 'status_'.$s->value, TicketStatus::cases()),
+            ['mine', 'unassigned', 'reported'],
+        );
+    }
+
+    /**
+     * The user's order and hidden folders (the pencil next to "Tickets").
+     * Folders missing from the saved order (e.g. a new status) come at the end, in the default order.
+     * Hidden folders stay in the list (the page of a hidden folder still works) but are marked.
+     */
+    private function applySettings(array $items): array
+    {
+        $settings = $this->user->folder_settings ?? [];
+        $order = array_flip($settings['order'] ?? []);
+        $hidden = $settings['hidden'] ?? [];
+
+        foreach ($items as $i => &$item) {
+            $item['hidden'] = in_array($item['key'], $hidden, true);
+            $item['position'] = $order[$item['key']] ?? count($order) + $i;
+        }
+        unset($item);
+        usort($items, fn ($a, $b) => $a['position'] <=> $b['position']);
+
+        return $items;
+    }
+
     private function item(string $key, string $name, string $icon, ?string $color, array $filters): array
     {
         $filters = TicketFilter::normalize($filters);
@@ -95,6 +128,7 @@ class TicketMenus
             'count' => 0,
             'awaiting' => 0, // tickets in this folder that wait for the user's reply (red badge)
             'custom' => false,
+            'hidden' => false,
             'active' => false,
         ];
     }
@@ -114,6 +148,9 @@ class TicketMenus
         $waiting = $rows->mapWithKeys(fn ($r) => [$r->getRawOriginal('status') => (int) $r->w])->all();
 
         foreach ($items as &$item) {
+            if ($item['hidden']) {
+                continue; // not in the sidebar, no badge needed
+            }
             $f = $item['filters'];
             if ($f === []) {
                 $item['count'] = array_sum($byStatus);

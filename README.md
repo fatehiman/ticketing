@@ -21,6 +21,8 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
   the day after the previous one ends; gaps are fine). This is only a warning: the overlapping dates are **red**
   on the sprints page (end of the earlier sprint and start of the later one), and saving shows a warning.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
+  A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
+  each one, saved per user, with **Reset to default** (default: current order, all shown). Custom menus are not in it.
 - **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
   change status, sprint, assignee, priority or type, or delete them in one step. Every change goes into the history.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
@@ -73,6 +75,7 @@ php artisan test
 | Roles and access rules | `app/Policies`, `app/Models/User.php` (`scopeCustomersOf`, `accessibleProjectIds`) |
 | Top-bar project switcher | `app/Support/ProjectContext.php` |
 | Ticket filters, folders, badges | `app/Support/TicketFilter.php`, `app/Support/TicketMenus.php` |
+| Order / show-hide of built-in folders | `TicketMenus::applySettings()`, `FolderSettingsController`, `users.folder_settings`, `resources/views/partials/folders-modal.blade.php`, `initFolders()` in `resources/js/app.js` |
 | Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |

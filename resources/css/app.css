@@ -153,7 +153,7 @@ a { text-decoration: none; }
 .side-link .side-badge.side-badge-alert, .side-link.active .side-badge.side-badge-alert { background: #dc2626; color: #fff; }
 .awaiting-dot { color: #dc2626; font-size: .7rem; }
 .side-sub .side-link { padding-block: .4rem; font-size: .86rem; margin-inline-start: 1.6rem; }
-.side-sub .dot {
+.side-sub .dot, .folder-list .dot {
     width: .6rem; height: .6rem; border-radius: 50%;
     background: var(--c, var(--muted));
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, var(--muted)) 22%, transparent);
@@ -168,6 +168,14 @@ a { text-decoration: none; }
 .side-toggle .chev { margin-inline-start: auto; transition: transform .2s; font-size: .8rem; }
 .side-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
 [dir="rtl"] .side-toggle[aria-expanded="false"] .chev { transform: rotate(90deg); }
+/* Pencil next to "Tickets": order and show / hide of the built-in folders. */
+.side-toggle .folders-edit { margin-inline-start: auto; }
+.side-toggle .folders-edit + .chev { margin-inline-start: .4rem; }
+.folders-form { display: contents; } /* keeps the scrollable modal body working */
+.folder-list .list-group-item { padding-block: .4rem; }
+.folder-list .folder-grip { cursor: grab; }
+.folder-list .dragging { opacity: .45; }
+.folder-list .is-hidden > span { opacity: .5; text-decoration: line-through; }
 .sidebar-footer { margin-top: auto; padding: 1rem 1.25rem; font-size: .75rem; opacity: .6; }
 
 /* ---------- Top bar ---------- */

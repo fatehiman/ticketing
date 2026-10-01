@@ -146,4 +146,16 @@ return [
         'order_hint' => 'Smaller numbers are shown first.',
         'confirm_delete' => 'Delete this menu? (Tickets are not affected.)',
     ],
+
+    // Order and show / hide of the built-in folders (pencil next to "Tickets")
+    'folders' => [
+        'title' => 'Arrange folders',
+        'hint' => 'Drag the rows or use the arrows to change the order. Turn a switch off to hide that folder. Your own menus are not listed here.',
+        'up' => 'Move up',
+        'down' => 'Move down',
+        'show' => 'Show in the menu',
+        'reset' => 'Reset to default',
+        'confirm_reset' => 'Show all folders again in the default order?',
+        'reset_done' => 'Folders are back to the default.',
+    ],
 ];
