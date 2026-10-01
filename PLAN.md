@@ -110,7 +110,11 @@ payments         id, customer_id, project_id(nullable), amount(int, no decimals)
 * `/tickets` is a single page: a filter box on top, a grid below, and a **Search** button.
 * Every menu item under **Tickets** is just a **saved set of filters** that is loaded into the
   filter box. Each item shows a **badge** with the count of its query.
-* Built-in items: *All tickets*, one per status, *Assigned to me*, *Reported by me*.
+* Built-in items: *All tickets*, *Current sprint*, one per status, *Assigned to me*, *Reported by me*.
+* **Current sprint** (اسپرینت حاضر) = filter `sprint_id=current`: tickets (any status) of **every** sprint whose
+  dates include today (`start_date ≤ today ≤ end_date`, both ends count; `Sprint::scopeCurrent()`). Found by the
+  dates only, not by the sprint status; a sprint without both dates is never current. Overlapping sprints → all of
+  their tickets. Also an option in the sprint filter of the search page.
 * Custom items: tick **Create menu (ایجاد کارتابل)** next to Search → JS asks a name → the
   filter set is saved → redirect to the new menu (highlighted, because the query matches).
 * Custom items have a small ✎ icon → modal: rename, change order (number list), delete.

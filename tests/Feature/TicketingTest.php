@@ -277,6 +277,30 @@ class TicketingTest extends TestCase
         $this->assertModelMissing($menu);
     }
 
+    public function test_current_sprint_folder_uses_the_dates_of_every_sprint_that_includes_today(): void
+    {
+        $this->travelTo('2026-10-10 12:00');
+        $sprint = fn (int $n, ?string $start, ?string $end, string $status = 'planned') => Sprint::create([
+            'project_id' => $this->project->id, 'number' => $n, 'start_date' => $start, 'end_date' => $end, 'status' => $status,
+        ]);
+        $a = $sprint(1, '2026-10-01', '2026-10-10');            // today is the last day
+        $b = $sprint(2, '2026-10-10', '2026-10-20');            // overlaps: today is the first day
+        $past = $sprint(3, '2026-09-01', '2026-09-30', 'active'); // status does not matter, only dates
+        $noDates = $sprint(4, null, null, 'active');
+
+        foreach ([[$a, 'done'], [$b, 'backlog'], [$past, 'testing'], [$noDates, 'testing'], [null, 'testing']] as $i => [$s, $status]) {
+            Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => "T{$i}", 'status' => $status, 'sprint_id' => $s?->id]));
+        }
+
+        $titles = \App\Support\TicketFilter::query(['sprint_id' => 'current'], $this->dev, app(\App\Support\ProjectContext::class))
+            ->pluck('title')->sort()->values()->all();
+        $this->assertSame(['T0', 'T1'], $titles);
+
+        $item = collect((new \App\Support\TicketMenus($this->dev, app(\App\Support\ProjectContext::class)))->items())->firstWhere('key', 'current_sprint');
+        $this->assertSame(2, $item['count']);
+        $this->actingAs($this->dev)->get($item['url'])->assertOk()->assertSee('T0')->assertDontSee('T2');
+    }
+
     public function test_builtin_folders_can_be_reordered_hidden_and_reset(): void
     {
         $keys = fn (User $u) => collect((new \App\Support\TicketMenus($u, app(\App\Support\ProjectContext::class)))->items())

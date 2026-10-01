@@ -25,6 +25,7 @@ return [
     'last_update' => 'آخرین تغییر',
     'unassigned' => 'واگذار نشده',
     'no_sprint' => 'بدون اسپرینت',
+    'current_sprint' => 'اسپرینت حاضر (بر اساس تاریخ)',
     'overdue' => 'عقب‌افتاده',
     'rating_saved' => 'سپاس! امتیاز شما ثبت شد.',
 
@@ -133,6 +134,7 @@ return [
     'menu' => [
         'open' => 'تیکت‌های باز',
         'all' => 'همه تیکت‌ها',
+        'current_sprint' => 'اسپرینت حاضر',
         'assigned_to_me' => 'واگذار شده به من',
         'unassigned' => 'واگذار نشده',
         'reported_by_me' => 'ثبت شده توسط من',

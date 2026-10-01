@@ -49,6 +49,7 @@ class TicketMenus
         ]);
         $items[] = $this->item('awaiting', __('tickets.menu.awaiting'), 'bi-reply', null, ['awaiting' => 'me']);
         $items[] = $this->item('all', __('tickets.menu.all'), 'bi-collection', null, []);
+        $items[] = $this->item('current_sprint', __('tickets.menu.current_sprint'), 'bi-lightning-charge', null, ['sprint_id' => 'current']);
 
         foreach (TicketStatus::cases() as $status) {
             // Pending review is only meaningful for staff and customers; everyone sees it.
@@ -87,7 +88,7 @@ class TicketMenus
     public static function builtinKeys(): array
     {
         return array_merge(
-            ['open', 'awaiting', 'all'],
+            ['open', 'awaiting', 'all', 'current_sprint'],
             array_map(fn ($s) => 'status_'.$s->value, TicketStatus::cases()),
             ['mine', 'unassigned', 'reported'],
         );

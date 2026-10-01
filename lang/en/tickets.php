@@ -25,6 +25,7 @@ return [
     'last_update' => 'Last update',
     'unassigned' => 'Unassigned',
     'no_sprint' => 'No sprint',
+    'current_sprint' => 'Current sprint (by dates)',
     'overdue' => 'Overdue',
     'rating_saved' => 'Thank you! Your rating was saved.',
 
@@ -133,6 +134,7 @@ return [
     'menu' => [
         'open' => 'Open tickets',
         'all' => 'All tickets',
+        'current_sprint' => 'Current sprint',
         'assigned_to_me' => 'Assigned to me',
         'unassigned' => 'Unassigned',
         'reported_by_me' => 'Reported by me',

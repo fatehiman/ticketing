@@ -23,6 +23,8 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
   A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
   each one, saved per user, with **Reset to default** (default: current order, all shown). Custom menus are not in it.
+- **Current sprint** folder (اسپرینت حاضر), also an option of the sprint filter: tickets in any status of every sprint
+  whose **dates include today** (both ends count). Overlapping sprints → tickets of all of them. The sprint status is not used.
 - **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
   change status, sprint, assignee, priority or type, or delete them in one step. Every change goes into the history.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per

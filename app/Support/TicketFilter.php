@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Enums\TicketType;
+use App\Models\Sprint;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,7 +82,12 @@ class TicketFilter
             $query->where('number', (int) Dates::latinDigits(ltrim($f['number'], '#')));
         }
         if (isset($f['sprint_id'])) {
-            $f['sprint_id'] === 'none' ? $query->whereNull('sprint_id') : $query->where('sprint_id', (int) $f['sprint_id']);
+            // "current" = every sprint whose dates include today (more than one when dates overlap).
+            match ($f['sprint_id']) {
+                'none' => $query->whereNull('sprint_id'),
+                'current' => $query->whereIn('sprint_id', Sprint::current()->select('id')),
+                default => $query->where('sprint_id', (int) $f['sprint_id']),
+            };
         }
         foreach (self::ARRAY_KEYS as $key) {
             if (isset($f[$key])) {

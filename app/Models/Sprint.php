@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SprintStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,6 +19,18 @@ class Sprint extends Model
             'start_date' => 'date',
             'end_date' => 'date',
         ];
+    }
+
+    /**
+     * Sprints whose dates include today (both ends count). Found by the dates only, not by the status.
+     * Sprints without both dates are never current.
+     */
+    public function scopeCurrent(Builder $query): Builder
+    {
+        $today = now()->toDateString();
+
+        return $query->whereNotNull('start_date')->whereNotNull('end_date')
+            ->whereDate('start_date', '<=', $today)->whereDate('end_date', '>=', $today);
     }
 
     public function project(): BelongsTo

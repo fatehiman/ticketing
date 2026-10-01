@@ -109,6 +109,7 @@
                         <label class="form-label">{{ __('tickets.fields.sprint_id') }}</label>
                         <select name="sprint_id" class="form-select">
                             <option value="">{{ __('tickets.filter.any') }}</option>
+                            <option value="current" @selected($f('sprint_id') === 'current')>{{ __('tickets.current_sprint') }}</option>
                             <option value="none" @selected($f('sprint_id') === 'none')>{{ __('tickets.no_sprint') }}</option>
                             @foreach ($sprints as $sprint)
                                 <option value="{{ $sprint->id }}" @selected((string) $f('sprint_id') === (string) $sprint->id)>{{ $sprint->project->code }} · {{ $sprint->label() }}</option>
