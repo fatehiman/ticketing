@@ -25,6 +25,7 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
   each one, saved per user, with **Reset to default** (default: current order, all shown). Custom menus are not in it.
 - **Current sprint** folder (اسپرینت حاضر), also an option of the sprint filter: tickets in any status of every sprint
   whose **dates include today** (both ends count). Overlapping sprints → tickets of all of them. The sprint status is not used.
+  A current sprint is **green everywhere** (tickets grid and page, sprints page and project page rows, dashboard, sprint dropdowns).
 - **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
   change status, sprint, assignee, priority or type, or delete them in one step. Every change goes into the history.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
@@ -77,6 +78,7 @@ php artisan test
 | Roles and access rules | `app/Policies`, `app/Models/User.php` (`scopeCustomersOf`, `accessibleProjectIds`) |
 | Top-bar project switcher | `app/Support/ProjectContext.php` |
 | Ticket filters, folders, badges | `app/Support/TicketFilter.php`, `app/Support/TicketMenus.php` |
+| Current sprint (by dates), green marker | `Sprint::scopeCurrent()`, `Sprint::isCurrent()`, `resources/views/components/sprint.blade.php` (`<x-sprint>`) |
 | Order / show-hide of built-in folders | `TicketMenus::applySettings()`, `FolderSettingsController`, `users.folder_settings`, `resources/views/partials/folders-modal.blade.php`, `initFolders()` in `resources/js/app.js` |
 | Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |

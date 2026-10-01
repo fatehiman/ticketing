@@ -115,6 +115,9 @@ payments         id, customer_id, project_id(nullable), amount(int, no decimals)
   dates include today (`start_date ≤ today ≤ end_date`, both ends count; `Sprint::scopeCurrent()`). Found by the
   dates only, not by the sprint status; a sprint without both dates is never current. Overlapping sprints → all of
   their tickets. Also an option in the sprint filter of the search page.
+* A current sprint is shown in **green** everywhere: `<x-sprint :sprint="…" />` (name + dot) in the tickets grid,
+  ticket page and dashboard; the whole row on the sprints page and project page (`row-current-sprint`); green
+  options in the sprint dropdowns. Same rule as the folder: `Sprint::isCurrent()`.
 * Custom items: tick **Create menu (ایجاد کارتابل)** next to Search → JS asks a name → the
   filter set is saved → redirect to the new menu (highlighted, because the query matches).
 * Custom items have a small ✎ icon → modal: rename, change order (number list), delete.

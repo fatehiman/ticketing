@@ -125,7 +125,7 @@
                         @php($pct = $sprint->tickets_count ? round($sprint->done_count / $sprint->tickets_count * 100) : 0)
                         <a href="{{ route('tickets.index', ['sprint_id' => $sprint->id, 'project_id' => $sprint->project_id]) }}" class="d-block text-reset mb-3">
                             <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-semibold">{{ $sprint->label() }}</span>
+                                <x-sprint :sprint="$sprint" class="fw-semibold" />
                                 <span class="text-muted">{{ $sprint->done_count }}/{{ $sprint->tickets_count }}</span>
                             </div>
                             <div class="text-muted" style="font-size:.75rem">{{ $sprint->project->name }} · {{ Dates::format($sprint->end_date) }}</div>

@@ -290,7 +290,7 @@
                 <div class="card-body">
                     <dl class="meta-list row mb-0">
                         <dt class="col-6">{{ __('tickets.fields.sprint_id') }}</dt>
-                        <dd class="col-6">{{ $ticket->sprint?->label() ?? '—' }}</dd>
+                        <dd class="col-6"><x-sprint :sprint="$ticket->sprint">—</x-sprint></dd>
                         <dt class="col-6">{{ __('tickets.fields.story_points') }}</dt>
                         <dd class="col-6">{{ StoryPoint::labelFor($ticket->story_points) ?? '—' }}</dd>
                         <dt class="col-6">{{ __('tickets.fields.done_story_points') }}</dt>

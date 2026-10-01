@@ -37,9 +37,9 @@
                 <tbody>
                 @forelse ($sprints as $sprint)
                     @php($pct = $sprint->tickets_count ? round($sprint->done_count / $sprint->tickets_count * 100) : 0)
-                    <tr>
+                    <tr @class(['row-current-sprint' => $sprint->isCurrent()])>
                         <td data-col="number" class="{{ $grid->cls('number') }} t-number">{{ $sprint->number }}</td>
-                        <td data-col="name" class="{{ $grid->cls('name') }} fw-semibold">{{ $sprint->name ?: __('sprints.sprint_n', ['n' => $sprint->number]) }}</td>
+                        <td data-col="name" class="{{ $grid->cls('name') }} fw-semibold"><x-sprint :sprint="$sprint" :text="$sprint->name ?: __('sprints.sprint_n', ['n' => $sprint->number])" /></td>
                         <td data-col="project" class="{{ $grid->cls('project') }}">{{ $sprint->project->name }}</td>
                         <td data-col="status" class="{{ $grid->cls('status') }}"><span class="badge text-bg-{{ $sprint->status->color() }}">{{ $sprint->status->label() }}</span></td>
                         <td data-col="dates" class="{{ $grid->cls('dates') }} small text-nowrap">

@@ -299,6 +299,15 @@ class TicketingTest extends TestCase
         $item = collect((new \App\Support\TicketMenus($this->dev, app(\App\Support\ProjectContext::class)))->items())->firstWhere('key', 'current_sprint');
         $this->assertSame(2, $item['count']);
         $this->actingAs($this->dev)->get($item['url'])->assertOk()->assertSee('T0')->assertDontSee('T2');
+
+        // Green everywhere: only sprints 1 and 2 are current.
+        $this->assertTrue($a->isCurrent());
+        $this->assertTrue($b->isCurrent());
+        $this->assertFalse($past->isCurrent());
+        $this->assertFalse($noDates->isCurrent());
+        $page = $this->actingAs($this->dev)->get('/sprints')->assertOk()->getContent();
+        $this->assertSame(2, substr_count($page, 'row-current-sprint'));
+        $this->actingAs($this->dev)->get('/tickets')->assertOk()->assertSee('sprint-current');
     }
 
     public function test_builtin_folders_can_be_reordered_hidden_and_reset(): void

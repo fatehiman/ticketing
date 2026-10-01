@@ -103,7 +103,7 @@
                         <select id="sprint_id" name="sprint_id" data-follows-project class="form-select{{ $err('sprint_id') }}">
                             <option value="">{{ __('tickets.no_sprint') }}</option>
                             @foreach ($sprints as $sprint)
-                                <option value="{{ $sprint->id }}" data-projects="{{ $sprint->project_id }}" @selected((string) $val('sprint_id', $ticket->sprint_id) === (string) $sprint->id)>{{ $sprint->label() }} ({{ $sprint->status->label() }})</option>
+                                <option value="{{ $sprint->id }}" @class(['text-success' => $sprint->isCurrent()]) data-projects="{{ $sprint->project_id }}" @selected((string) $val('sprint_id', $ticket->sprint_id) === (string) $sprint->id)>{{ $sprint->label() }} ({{ $sprint->status->label() }})</option>
                             @endforeach
                         </select>
                     </div>

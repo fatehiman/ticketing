@@ -112,7 +112,7 @@
                             <option value="current" @selected($f('sprint_id') === 'current')>{{ __('tickets.current_sprint') }}</option>
                             <option value="none" @selected($f('sprint_id') === 'none')>{{ __('tickets.no_sprint') }}</option>
                             @foreach ($sprints as $sprint)
-                                <option value="{{ $sprint->id }}" @selected((string) $f('sprint_id') === (string) $sprint->id)>{{ $sprint->project->code }} · {{ $sprint->label() }}</option>
+                                <option value="{{ $sprint->id }}" @class(['text-success' => $sprint->isCurrent()]) @selected((string) $f('sprint_id') === (string) $sprint->id)>{{ $sprint->project->code }} · {{ $sprint->label() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -187,7 +187,7 @@
                 </select>
                 <select name="sprint_id" class="form-select form-select-sm d-none" data-bulk-for="sprint" disabled aria-label="{{ __('tickets.fields.sprint_id') }}">
                     <option value="none">{{ __('tickets.no_sprint') }}</option>
-                    @foreach ($sprints as $sprint)<option value="{{ $sprint->id }}">{{ $sprint->project->code }} · {{ $sprint->label() }}</option>@endforeach
+                    @foreach ($sprints as $sprint)<option value="{{ $sprint->id }}" @class(['text-success' => $sprint->isCurrent()])>{{ $sprint->project->code }} · {{ $sprint->label() }}</option>@endforeach
                 </select>
                 <select name="assignee_id" class="form-select form-select-sm d-none" data-bulk-for="assignee" disabled aria-label="{{ __('tickets.fields.assignee_id') }}">
                     <option value="none">{{ __('tickets.unassigned') }}</option>
@@ -240,7 +240,7 @@
                         <td data-col="type" class="{{ $grid->cls('type') }} text-nowrap"><i class="bi {{ $ticket->type->icon() }}"></i> {{ $ticket->type->label() }}</td>
                         <td data-col="status" class="{{ $grid->cls('status') }}"><x-status :status="$ticket->status" /></td>
                         <td data-col="priority" class="{{ $grid->cls('priority') }}"><x-priority :priority="$ticket->priority" /></td>
-                        <td data-col="sprint" class="{{ $grid->cls('sprint') }} text-nowrap">{{ $ticket->sprint?->label() }}</td>
+                        <td data-col="sprint" class="{{ $grid->cls('sprint') }} text-nowrap"><x-sprint :sprint="$ticket->sprint" /></td>
                         <td data-col="assignee" class="{{ $grid->cls('assignee') }} text-nowrap">
                             @if ($ticket->assignee)
                                 <x-avatar :user="$ticket->assignee" class="avatar-sm" /> <span class="small">{{ $ticket->assignee->name }}</span>

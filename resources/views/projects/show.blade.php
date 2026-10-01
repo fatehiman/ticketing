@@ -85,8 +85,8 @@
                         <table class="table table-grid">
                             <tbody>
                             @forelse ($project->sprints as $sprint)
-                                <tr>
-                                    <td class="fw-semibold">{{ $sprint->label() }}</td>
+                                <tr @class(['row-current-sprint' => $sprint->isCurrent()])>
+                                    <td class="fw-semibold"><x-sprint :sprint="$sprint" /></td>
                                     <td><span class="badge text-bg-{{ $sprint->status->color() }}">{{ $sprint->status->label() }}</span></td>
                                     <td class="small">{{ Dates::format($sprint->start_date) }} — {{ Dates::format($sprint->end_date) }}</td>
                                     <td><a href="{{ route('tickets.index', ['project_id' => $project->id, 'sprint_id' => $sprint->id]) }}">{{ $sprint->tickets_count }} <i class="bi bi-ticket"></i></a></td>

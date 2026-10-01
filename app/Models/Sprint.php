@@ -33,6 +33,17 @@ class Sprint extends Model
             ->whereDate('start_date', '<=', $today)->whereDate('end_date', '>=', $today);
     }
 
+    /** Same rule as scopeCurrent(): today is inside the dates (both ends count). Shown in green everywhere. */
+    public function isCurrent(): bool
+    {
+        if (! $this->start_date || ! $this->end_date) {
+            return false;
+        }
+        $today = now()->toDateString();
+
+        return $this->start_date->toDateString() <= $today && $this->end_date->toDateString() >= $today;
+    }
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
