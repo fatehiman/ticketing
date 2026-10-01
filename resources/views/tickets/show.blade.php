@@ -234,13 +234,15 @@
                 <div class="card-header"><i class="bi bi-clock-history text-brand"></i> {{ __('tickets.history') }}</div>
                 <div class="card-body">
                     <ul class="timeline">
-                        @forelse ($ticket->revisions as $rev)
+                        {{-- Customers do not see changes of price, time and story points (RevisionPresenter::STAFF_ONLY). --}}
+                        @php($revisions = $ticket->revisions->map(fn ($rev) => [$rev, RevisionPresenter::visibleChanges($rev->changes, $user)])->filter(fn ($r) => $r[1] !== null))
+                        @forelse ($revisions as [$rev, $changes])
                             <li>
                                 <div class="small"><span class="fw-semibold">{{ $rev->user?->name ?? __('app.unknown') }}</span>
                                     {{ __('tickets.actions.'.$rev->action) }}
                                     <span class="text-muted" title="{{ Dates::dateTime($rev->created_at) }}">· {{ Dates::dateTime($rev->created_at) }}</span>
                                 </div>
-                                @foreach ($rev->changes ?? [] as $field => $change)
+                                @foreach ($changes as $field => $change)
                                     <div class="change-row">
                                         {{ RevisionPresenter::field($field) }}:
                                         @if ($field === 'content')

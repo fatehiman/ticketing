@@ -16,6 +16,24 @@ class RevisionPresenter
 {
     private static array $cache = [];
 
+    /** Changes of these fields (price, time, story points) are not shown to customers in the history. */
+    public const STAFF_ONLY = ['story_points', 'done_story_points', 'estimated_minutes', 'logged_minutes', 'estimated_cost', 'cost'];
+
+    /**
+     * The changes of a revision that this user may see. Null = hide the whole entry
+     * (it had changes, but none of them is for this user).
+     */
+    public static function visibleChanges(?array $changes, User $user): ?array
+    {
+        $changes ??= [];
+        if ($user->isStaff()) {
+            return $changes;
+        }
+        $visible = array_diff_key($changes, array_flip(self::STAFF_ONLY));
+
+        return $changes !== [] && $visible === [] ? null : $visible;
+    }
+
     public static function field(string $field): string
     {
         return __('tickets.fields.'.$field);

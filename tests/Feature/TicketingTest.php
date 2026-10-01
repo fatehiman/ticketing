@@ -173,6 +173,28 @@ class TicketingTest extends TestCase
         $this->assertSame(3, $ticket->revisions()->count());
     }
 
+    public function test_customer_does_not_see_history_of_price_time_and_story_points(): void
+    {
+        $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->customer->id, 'title' => 'Hist']));
+        $service = app(\App\Services\TicketService::class);
+        // Only staff-only fields → the whole entry is hidden from the customer.
+        $service->update($ticket, ['cost' => 7000000, 'logged_minutes' => 90, 'story_points' => 8], $this->dev);
+        // Mixed → the customer sees the status change only.
+        $service->update($ticket->fresh(), ['status' => 'testing', 'estimated_cost' => 5000000], $this->dev);
+
+        $fields = fn ($user) => collect($ticket->revisions()->get())
+            ->map(fn ($r) => \App\Support\RevisionPresenter::visibleChanges($r->changes, $user))
+            ->filter(fn ($c) => $c !== null)->flatMap(fn ($c) => array_keys($c))->sort()->values()->all();
+
+        $this->assertSame(['cost', 'estimated_cost', 'logged_minutes', 'status', 'story_points'], $fields($this->dev));
+        $this->assertSame(['status'], $fields($this->customer));
+
+        $page = $this->actingAs($this->customer)->get('/tickets/'.$ticket->number)->assertOk();
+        $page->assertSee(TicketStatus::Testing->label());
+        $this->assertSame(1, substr_count($page->getContent(), 'change-row'));
+        $this->assertSame(2, substr_count($this->actingAs($this->dev)->get('/tickets/'.$ticket->number)->getContent(), '<div class="small"><span class="fw-semibold">'));
+    }
+
     public function test_developer_only_sees_own_projects(): void
     {
         $foreign = Ticket::create($this->ticketData(['project_id' => $this->otherProject->id, 'reporter_id' => $this->otherDev->id, 'title' => 'Secret']));

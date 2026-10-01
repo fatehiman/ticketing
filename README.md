@@ -10,7 +10,9 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
   followups, sprints or payments (no *New ticket* button, no bot login).
 - Tickets with status, priority (Jira colours), type, sprint, story points, estimates, time logged, costs,
   due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
-- Full ticket **history** (every edit is saved as a revision) and **soft delete**.
+- Full ticket **history** (every edit is saved as a revision) and **soft delete**. Customers do not see the history of
+  price, time and story points (cost, estimated cost, estimated / logged time, story points, done story points);
+  an edit with only those changes is hidden from them. Status, sprint, assignee and the rest stay visible.
 - **Followups**: a ticket is a conversation. Staff and customers reply (rich text + attachments) below the ticket.
   The ticket then **waits for a reply** from the other side: a **red badge** next to each folder's badge, a
   *Waiting for my reply* folder, a toast after login and an **I read it** button. A staff reply has a
@@ -84,7 +86,7 @@ php artisan test
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
 | Notifications hook (future SMS) | `app/Events/FollowupPosted.php` (no listener yet) |
-| History and soft delete | `app/Services/TicketService.php`, `ticket_revisions` table |
+| History and soft delete | `app/Services/TicketService.php`, `ticket_revisions` table; customer view: `RevisionPresenter::STAFF_ONLY` / `visibleChanges()` |
 | Ticket number (`id × 100 + 2 random digits`) | `app/Models/Ticket.php` |
 | Jalali / Gregorian dates | `app/Support/Dates.php`, `resources/views/components/date-input.blade.php` |
 | Grid column chooser + totals row | `app/Support/Grid.php`, `resources/views/components/grid-columns.blade.php`, `resources/views/partials/grid-totals.blade.php` |

@@ -86,6 +86,7 @@ Design details: [PLAN.md](PLAN.md).
       one ends; gaps are fine). Only a warning: the overlapping dates are red on the sprints page, and saving shows a warning
 - [x] *Current sprint* folder and sprint filter option: tickets of every sprint whose dates include today
 - [x] Current sprints are green everywhere (grids, ticket page, dashboard, dropdowns)
+- [x] Customers do not see history of price, time and story points (other changes stay visible)
 - [x] Built-in folders: ✎ next to *Tickets* → modal to change their order and show / hide them, with *Reset to default*
 
 ## Phase 2 — Collaboration
