@@ -17,7 +17,7 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Themes | Two separate themes, **tied to the language**: `fa` → **RTL theme** (Vazirmatn FD font with Persian digits, light purple/teal palette, `bootstrap.rtl`) and `en` → **LTR theme** (Inter font, light indigo/cyan palette, `bootstrap`). The theme is not chosen separately — it follows the language. Both are **light and colourful**: soft pastel gradients for the page, sidebar and cards; **buttons are always one solid colour** (no gradient). |
 | Calendar | Chosen per user in the profile, **independent of the language**: `jalali` (default) or `gregorian`. The DB always stores Gregorian. Jalali input uses `@majidh1/jalalidatepicker`, Gregorian uses native `<input type=date>`. The parser accepts both formats (year < 1700 ⇒ Jalali). |
 | Rich text | TinyMCE 7 (self-hosted, GPL licence key) with inline image upload (`POST /editor/upload`). |
-| History | Tickets are never updated in place without a trace: each change writes a row to `ticket_revisions` (diff + full snapshot). Delete = **soft delete** (`deleted_at`, `deleted_by`). |
+| History | Tickets are never updated in place without a trace: each change writes a row to `ticket_revisions` (diff + full snapshot). Delete = **soft delete** (`deleted_at`, `deleted_by`). Customers do not see changes of `RevisionPresenter::STAFF_ONLY` fields (price, time, story points); an entry with only those changes is hidden from them. |
 | Ticket number | `number = id * 100 + random(10..99)` → always increasing, integer, with 2 random digits (e.g. `#1047`, `#2083`). |
 | Story points | Fibonacci with plain labels: 1 Tiny, 2 Very small, 3 Small, 5 Medium, 8 Large, 13 Very large, 21 Huge. |
 | Time | Stored as **minutes** (int). UI input/output is `HH:MM`. "Spent time" is named **Time logged** (Jira wording). |
@@ -115,7 +115,7 @@ payments         id, customer_id, project_id(nullable), amount(int, no decimals)
   dates include today (`start_date ≤ today ≤ end_date`, both ends count; `Sprint::scopeCurrent()`). Found by the
   dates only, not by the sprint status; a sprint without both dates is never current. Overlapping sprints → all of
   their tickets. Also an option in the sprint filter of the search page.
-* A current sprint is shown in **green** everywhere: `<x-sprint :sprint="…" />` (name + dot) in the tickets grid,
+* A current sprint is shown in **green** everywhere: `<x-sprint :sprint="…" />` (green name only, no dot, no bold) in the tickets grid,
   ticket page and dashboard; the whole row on the sprints page and project page (`row-current-sprint`); green
   options in the sprint dropdowns. Same rule as the folder: `Sprint::isCurrent()`.
 * Custom items: tick **Create menu (ایجاد کارتابل)** next to Search → JS asks a name → the

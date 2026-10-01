@@ -169,8 +169,7 @@ a { text-decoration: none; }
 .side-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
 [dir="rtl"] .side-toggle[aria-expanded="false"] .chev { transform: rotate(90deg); }
 /* Sprint whose dates include today (Sprint::isCurrent(), <x-sprint>): green everywhere. */
-.sprint-current { color: var(--bs-success); font-weight: 600; }
-.sprint-current .bi { font-size: .45rem; vertical-align: middle; }
+.sprint-current { color: var(--bs-success); }
 .row-current-sprint > td { background-color: color-mix(in srgb, var(--bs-success) 9%, transparent) !important; }
 /* Pencil next to "Tickets": order and show / hide of the built-in folders. */
 .side-toggle .folders-edit { margin-inline-start: auto; }
