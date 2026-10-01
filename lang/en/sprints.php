@@ -7,6 +7,9 @@ return [
     'sprint_n' => 'Sprint :n',
     'number_hint' => 'Leave empty to use the next number.',
     'done_total_tickets' => 'Tickets (done / total)',
+    'conflict_with' => 'Date conflict: overlaps :sprints. The next sprint should start the day after the previous one ends.',
+    'conflict_saved' => 'Warning: the dates of this sprint overlap :sprints.',
+    'separator' => ', ',
     'points' => 'Story points (done / estimated)',
     'fields' => [
         'number' => 'Number',

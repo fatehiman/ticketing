@@ -30,6 +30,45 @@ class Sprint extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    /**
+     * Date conflicts between sprints of the same project (only a warning, saving is never blocked).
+     * Two sprints conflict when their days overlap (both ends count: a sprint that ends on the 12th
+     * and the next one that starts on the 12th conflict). Gaps are fine. Sprints without both dates are ignored.
+     * For each pair the end of the earlier sprint and the start of the later sprint are marked.
+     *
+     * @param  int[]  $projectIds
+     * @return array<int,array{start?:string[],end?:string[]}> sprint id => side => labels of the other sprints
+     */
+    public static function dateConflicts(array $projectIds): array
+    {
+        $out = [];
+        $byProject = self::whereIn('project_id', $projectIds)->whereNotNull('start_date')->whereNotNull('end_date')
+            ->orderBy('start_date')->orderBy('id')->get()->groupBy('project_id');
+
+        foreach ($byProject as $sprints) {
+            $sprints = $sprints->values();
+            foreach ($sprints as $i => $a) {
+                foreach ($sprints->slice($i + 1) as $b) {
+                    if ($b->start_date->gt($a->end_date)) {
+                        continue; // sorted by start: $b starts after $a ends, no overlap
+                    }
+                    $out[$a->id]['end'][] = $b->label();
+                    $out[$b->id]['start'][] = $a->label();
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /** Labels of the sprints this sprint conflicts with (for the warning after saving). */
+    public function conflictingLabels(): array
+    {
+        $conflicts = self::dateConflicts([$this->project_id])[$this->id] ?? [];
+
+        return array_values(array_unique(array_merge($conflicts['start'] ?? [], $conflicts['end'] ?? [])));
+    }
+
     /** "Sprint 4 — Checkout" */
     public function label(): string
     {

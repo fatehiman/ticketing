@@ -359,6 +359,30 @@ class TicketingTest extends TestCase
         $this->actingAs($this->admin)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'delete'])->assertForbidden();
     }
 
+    public function test_overlapping_sprint_dates_are_only_a_warning(): void
+    {
+        $one = Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'start_date' => '2026-10-05', 'end_date' => '2026-10-12', 'status' => 'active']);
+        // Starts the day after: no conflict. A gap is fine too.
+        $two = Sprint::create(['project_id' => $this->project->id, 'number' => 2, 'start_date' => '2026-10-13', 'end_date' => '2026-10-20', 'status' => 'planned']);
+        Sprint::create(['project_id' => $this->project->id, 'number' => 3, 'start_date' => '2026-11-01', 'end_date' => '2026-11-10', 'status' => 'planned']);
+        // Other projects never conflict.
+        Sprint::create(['project_id' => $this->otherProject->id, 'number' => 1, 'start_date' => '2026-10-10', 'end_date' => '2026-10-15', 'status' => 'planned']);
+        $this->assertSame([], Sprint::dateConflicts([$this->project->id, $this->otherProject->id]));
+
+        // Saving sprint 2 to start on the last day of sprint 1 works, with a warning.
+        $this->actingAs($this->dev)->put('/sprints/'.$two->id, ['project_id' => $this->project->id, 'number' => 2,
+            'start_date' => '2026-10-12', 'end_date' => '2026-10-20', 'status' => 'planned'])
+            ->assertSessionHasNoErrors()->assertSessionHas('warning');
+        $this->assertSame('2026-10-12', $two->fresh()->start_date->toDateString());
+
+        $conflicts = Sprint::dateConflicts([$this->project->id]);
+        $this->assertSame(['end'], array_keys($conflicts[$one->id]));
+        $this->assertSame(['start'], array_keys($conflicts[$two->id]));
+        $this->assertCount(2, $conflicts);
+
+        $this->actingAs($this->dev)->get('/sprints')->assertOk()->assertViewHas('conflicts', $conflicts)->assertSee('text-danger', false);
+    }
+
     public function test_attachments_are_private_and_editor_upload_works(): void
     {
         Storage::fake('local');

@@ -42,7 +42,17 @@
                         <td data-col="name" class="{{ $grid->cls('name') }} fw-semibold">{{ $sprint->name ?: __('sprints.sprint_n', ['n' => $sprint->number]) }}</td>
                         <td data-col="project" class="{{ $grid->cls('project') }}">{{ $sprint->project->name }}</td>
                         <td data-col="status" class="{{ $grid->cls('status') }}"><span class="badge text-bg-{{ $sprint->status->color() }}">{{ $sprint->status->label() }}</span></td>
-                        <td data-col="dates" class="{{ $grid->cls('dates') }} small text-nowrap">{{ Dates::format($sprint->start_date) }} — {{ Dates::format($sprint->end_date) }}</td>
+                        <td data-col="dates" class="{{ $grid->cls('dates') }} small text-nowrap">
+                            {{-- A date that overlaps another sprint of the project is red (end of the earlier, start of the later). --}}
+                            @foreach (['start' => $sprint->start_date, 'end' => $sprint->end_date] as $side => $date)
+                                @if ($side === 'end') — @endif
+                                @if ($with = $conflicts[$sprint->id][$side] ?? null)
+                                    <span class="text-danger fw-semibold" data-bs-toggle="tooltip" title="{{ __('sprints.conflict_with', ['sprints' => implode(__('sprints.separator'), $with)]) }}"><i class="bi bi-exclamation-triangle-fill"></i> {{ Dates::format($date) }}</span>
+                                @else
+                                    {{ Dates::format($date) }}
+                                @endif
+                            @endforeach
+                        </td>
                         <td data-col="tickets" class="{{ $grid->cls('tickets') }}" style="min-width: 140px">
                             <a href="{{ route('tickets.index', ['project_id' => $sprint->project_id, 'sprint_id' => $sprint->id]) }}" class="small">{{ $sprint->done_count }} / {{ $sprint->tickets_count }}</a>
                             <div class="progress" style="height:.35rem"><div class="progress-bar" style="width: {{ $pct }}%; background: var(--brand-gradient)"></div></div>

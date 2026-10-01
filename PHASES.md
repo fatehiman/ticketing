@@ -82,6 +82,8 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Developers check tickets on one page (or all of the page with the top checkbox) and change status, sprint,
       assignee, priority or type, or delete them, in one step. A sprint or assignee of another project is skipped
 - [x] Each ticket folder (built-in or custom) keeps its own visible columns; the search page choice is the fallback
+- [x] Sprint date conflicts: sprints of one project must not overlap (the next one starts the day after the previous
+      one ends; gaps are fine). Only a warning: the overlapping dates are red on the sprints page, and saving shows a warning
 
 ## Phase 2 — Collaboration
 

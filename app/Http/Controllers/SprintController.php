@@ -40,7 +40,10 @@ class SprintController extends Controller
             'goal' => __('sprints.fields.goal'),
         ], hidden: ['goal'], locked: ['number']);
 
-        return view('sprints.index', compact('sprints', 'grid') + ['statuses' => SprintStatus::cases()]);
+        // Overlapping dates inside a project are shown in red (checked against all sprints, not only this page).
+        $conflicts = Sprint::dateConflicts($sprints->pluck('project_id')->unique()->all());
+
+        return view('sprints.index', compact('sprints', 'grid', 'conflicts') + ['statuses' => SprintStatus::cases()]);
     }
 
     public function create(Request $request, ProjectContext $context)
@@ -63,9 +66,9 @@ class SprintController extends Controller
         $this->authorize('manageSprints', $project);
         $data['number'] ??= ((int) Sprint::where('project_id', $project->id)->max('number')) + 1;
 
-        Sprint::create($data);
+        $sprint = Sprint::create($data);
 
-        return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.saved'));
+        return $this->savedWithWarning($request, $sprint);
     }
 
     public function edit(Request $request, Sprint $sprint)
@@ -82,7 +85,7 @@ class SprintController extends Controller
         $this->authorize('manageSprints', Project::findOrFail($data['project_id']));
         $sprint->update($data);
 
-        return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.saved'));
+        return $this->savedWithWarning($request, $sprint);
     }
 
     public function destroy(Request $request, Sprint $sprint)
@@ -91,6 +94,15 @@ class SprintController extends Controller
         $sprint->delete(); // tickets keep existing, their sprint becomes empty
 
         return $this->redirectBack($request, route('sprints.index'))->with('success', __('app.deleted'));
+    }
+
+    /** Overlapping dates are allowed, but the user gets a warning. */
+    private function savedWithWarning(Request $request, Sprint $sprint)
+    {
+        $redirect = $this->redirectBack($request, route('sprints.index'))->with('success', __('app.saved'));
+        $others = $sprint->conflictingLabels();
+
+        return $others ? $redirect->with('warning', __('sprints.conflict_saved', ['sprints' => implode(__('sprints.separator'), $others)])) : $redirect;
     }
 
     private function validated(Request $request, ?Sprint $sprint = null): array

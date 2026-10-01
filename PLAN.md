@@ -77,6 +77,7 @@ projects         id, code, name, description(255), logo_path, status(active|on_h
                  address, contact_person, notes, created_by, soft deletes
 project_user     project_id, user_id                (developers + customers)
 sprints          id, project_id, number, name, goal, start_date, end_date, status(planned|active|closed)
+                 (sprints of one project should not overlap — both days count; only a warning, Sprint::dateConflicts())
 tickets          id, number, project_id, sprint_id, type, status, priority, title, content(html),
                  reporter_id, assignee_id, story_points, done_story_points,
                  estimated_minutes, logged_minutes, estimated_cost(int), cost(int), due_date,
