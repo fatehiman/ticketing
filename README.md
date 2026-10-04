@@ -62,6 +62,10 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   Email → a reset link (60 minutes) from `no-reply@peppasoft.com`. Mobile → a 6-digit code by SMS (template 3),
   valid 2 minutes; after a **1:50 countdown** the user can ask again: the 2nd request sends the **same code**
   by SMS, the 3rd one by a **voice call**. Limits: 5 requests per email / mobile in 12 h, 10 per IP in 24 h.
+- **Public profile pictures**: when an admin or developer saves a user (or staff save their own profile) and the
+  user has an email but no picture, the app looks for a public one on **Gravatar**, then **Libravatar**, then
+  **unavatar.io** (free, no key). The first picture found is saved; after 10 seconds it gives up. Not after "remove photo",
+  and not when a customer saves their own profile. `AVATAR_LOOKUP=false` turns it off (tests).
 - Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
 - Money is **always a whole number** in every currency: `7,000,000`, never `7,000,000.00`.
 - Latin / numeric fields (email, mobile, password, URL, code, amounts, times, dates) are always **LTR**, also in the RTL theme.
@@ -117,6 +121,7 @@ php artisan test
 | Forgot password (email link + SMS code / call) | `app/Http/Controllers/PasswordResetController.php`, `password_otps` table, `app/Mail/PasswordResetLink.php`, `resources/views/auth/{forgot,otp,new-password}.blade.php`, `initCountdown()` in `app.js` |
 | Bills, paid status | `app/Http/Controllers/BillController.php`, `app/Models/Bill.php`, `BillItem.php`, `app/Support/Bills.php` (`allocate()`, `debtOf()`), `app/Mail/BillIssued.php`, `initBillForm()` in `app.js` |
 | Payment vouchers (pending / accepted / declined) | `app/Http/Controllers/PaymentController.php`, `app/Policies/PaymentPolicy.php`, `resources/views/payments/*` |
+| Public profile pictures by email | `app/Support/PublicAvatar.php`, `findPublicAvatar()` in `Concerns/SavesAvatar.php`, `ProfileController::update()` |
 | Mail layout (colourful, inline styles) | `resources/views/mail/*` |
 | History and soft delete | `app/Services/TicketService.php`, `ticket_revisions` table; customer view: `RevisionPresenter::STAFF_ONLY` / `visibleChanges()` |
 | Ticket number (`id × 100 + 2 random digits`) | `app/Models/Ticket.php` |

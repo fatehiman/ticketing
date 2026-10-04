@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Middleware\SetLocale;
 use App\Models\ApiToken;
 use App\Support\Dates;
+use App\Support\PublicAvatar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -61,6 +62,11 @@ class ProfileController extends Controller
             'account_holder' => __('users.fields.account_holder'),
         ]))->save();
         $request->session()->put('locale', $user->locale);
+
+        // Staff saving their own profile without a picture get a public one (Gravatar, …); customers do not.
+        if ($user->isStaff()) {
+            PublicAvatar::fill($user);
+        }
 
         return back()->with('success', __('app.saved'));
     }

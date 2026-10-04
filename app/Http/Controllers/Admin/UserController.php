@@ -62,13 +62,17 @@ class UserController extends Controller
         UserRules::prepare($request);
         $data = $request->validate(UserRules::rules() + ['role' => ['required', Rule::enum(Role::class)]]);
 
-        DB::transaction(function () use ($data, $request) {
+        $user = DB::transaction(function () use ($data, $request) {
             $user = User::create(collect($data)->except(['projects', 'avatar'])->all() + ['created_by' => $request->user()->id]);
             $this->saveAvatar($request, $user);
             if ($user->role !== Role::Admin) {
                 $user->projects()->sync($data['projects'] ?? []);
             }
+
+            return $user;
         });
+
+        $this->findPublicAvatar($request, $user);
 
         return $this->redirectBack($request, route('admin.users.index'))->with('success', __('app.saved'));
     }
@@ -102,6 +106,8 @@ class UserController extends Controller
             $this->saveAvatar($request, $user);
             $user->projects()->sync($user->role === Role::Admin ? [] : ($data['projects'] ?? []));
         });
+
+        $this->findPublicAvatar($request, $user);
 
         return $this->redirectBack($request, route('admin.users.index'))->with('success', __('app.saved'));
     }

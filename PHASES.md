@@ -112,6 +112,7 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Bulk actions ask for confirmation only for delete
 - [x] The owner's folder order / show-hide and per-folder columns are the default for everyone (reset once for all users)
 - [x] New-bill page: ticket list in pages of 25 with search; ticks kept across pages, "Select all" / "Clear selection"
+- [x] Public profile pictures by email (Gravatar, Libravatar, unavatar.io) when a user is saved without one
 
 ## Phase 2 — Collaboration
 

@@ -60,14 +60,18 @@ class CustomerController extends Controller
         UserRules::prepare($request);
         $data = $request->validate(UserRules::rules());
 
-        DB::transaction(function () use ($data, $request, $developer) {
+        $customer = DB::transaction(function () use ($data, $request, $developer) {
             $customer = User::create(collect($data)->except(['projects', 'avatar'])->all() + [
                 'role' => Role::Customer->value,
                 'created_by' => $developer->id,
             ]);
             $this->saveAvatar($request, $customer);
             $customer->projects()->attach($this->allowedProjectIds($developer, $data['projects'] ?? []));
+
+            return $customer;
         });
+
+        $this->findPublicAvatar($request, $customer);
 
         return $this->redirectBack($request, route('customers.index'))->with('success', __('app.saved'));
     }
@@ -100,6 +104,8 @@ class CustomerController extends Controller
             $customer->projects()->detach(array_diff($mine, $selected));
             $customer->projects()->syncWithoutDetaching($selected);
         });
+
+        $this->findPublicAvatar($request, $customer);
 
         return $this->redirectBack($request, route('customers.index'))->with('success', __('app.saved'));
     }

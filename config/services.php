@@ -38,6 +38,11 @@ return [
         'ivr_provider' => (int) env('MSGWAY_IVR_PROVIDER', 1),
     ],
 
+    // Public profile pictures by email (App\Support\PublicAvatar). Off in tests.
+    'avatar_lookup' => [
+        'enabled' => (bool) env('AVATAR_LOOKUP', true),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
