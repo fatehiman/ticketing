@@ -425,6 +425,16 @@ class TicketingTest extends TestCase
             ->assertSessionHas('warning');
         $this->assertSame($this->dev->id, $a->fresh()->assignee_id);
 
+        // One fixed cost for many small tickets (with history); no decimals; 0 removes it.
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id, $b->id], 'action' => 'cost', 'cost' => '1.5'])
+            ->assertSessionHasErrors('cost');
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id, $b->id], 'action' => 'cost', 'cost' => '۲۵۰,۰۰۰'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame([250000, 250000], [$a->fresh()->cost, $b->fresh()->cost]);
+        $this->assertSame(['old' => null, 'new' => 250000], array_map(fn ($v) => $v === null ? null : (int) $v, $a->revisions()->latest('id')->first()->changes['cost']));
+        $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$b->id], 'action' => 'cost', 'cost' => '0']);
+        $this->assertNull($b->fresh()->cost);
+
         $this->actingAs($this->dev)->post('/tickets/bulk', ['ids' => [$a->id], 'action' => 'priority', 'priority' => 'lowest']);
         $this->assertSame('lowest', $a->fresh()->priority->value);
 

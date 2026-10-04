@@ -104,6 +104,12 @@ Design details: [PLAN.md](PLAN.md).
       number / IBAN; developers accept / decline / edit / delete vouchers or add one for the customer
 - [x] Developer bank details in the profile
 
+## Phase 1.9 — Bills for many tickets
+
+- [x] Done tickets without a cost can go on a bill (amount 0); a manual item carries the price (e.g. "Cost of phase 1")
+- [x] Sprint picker on the new-bill page: ticks all done tickets of the sprint that are not on a bill
+- [x] Bulk action **Set cost**: one fixed cost for many selected tickets (0 removes the cost)
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups

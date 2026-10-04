@@ -39,7 +39,7 @@ class TicketController extends Controller
         'logged_time', 'estimated_cost', 'due_date', 'attachments', 'created_at', 'updated_at',
     ];
 
-    public const BULK_ACTIONS = ['status', 'sprint', 'assignee', 'priority', 'type', 'delete'];
+    public const BULK_ACTIONS = ['status', 'sprint', 'assignee', 'priority', 'type', 'cost', 'delete'];
 
     public function __construct(private TicketService $tickets) {}
 
@@ -191,6 +191,9 @@ class TicketController extends Controller
     {
         abort_unless($request->user()->isDeveloper(), 403);
         $user = $request->user();
+        if ($request->input('action') === 'cost') {
+            $request->merge(['cost' => Money::parse($request->input('cost'))]); // "1,250,000" → 1250000
+        }
         $data = $request->validate([
             'ids' => ['required', 'array', 'max:100'],
             'ids.*' => ['integer'],
@@ -200,7 +203,10 @@ class TicketController extends Controller
             'type' => ['exclude_unless:action,type', 'required', Rule::enum(TicketType::class)],
             'sprint_id' => ['exclude_unless:action,sprint', 'required', 'regex:/^(none|\d+)$/'],
             'assignee_id' => ['exclude_unless:action,assignee', 'required', 'regex:/^(none|\d+)$/'],
+            // The same cost for every ticket (many small tickets with one fixed price). 0 removes the cost.
+            'cost' => ['exclude_unless:action,cost', 'required', 'integer', 'min:0', 'max:999999999999999'],
         ], [], [
+            'cost' => __('tickets.fields.cost'),
             'ids' => __('tickets.bulk.selected_label'),
             'sprint_id' => __('tickets.fields.sprint_id'),
             'assignee_id' => __('tickets.fields.assignee_id'),
@@ -231,6 +237,7 @@ class TicketController extends Controller
                 'status' => $this->tickets->changeStatus($ticket, TicketStatus::from($data['status']), $user),
                 'priority' => $this->tickets->update($ticket, ['priority' => $data['priority']], $user),
                 'type' => $this->tickets->update($ticket, ['type' => $data['type']], $user),
+                'cost' => $this->tickets->update($ticket, ['cost' => (int) $data['cost'] ?: null], $user),
                 'sprint' => $this->tickets->update($ticket, ['sprint_id' => $sprint?->id], $user),
                 'assignee' => $this->tickets->update($ticket, ['assignee_id' => $assignee?->id], $user),
                 'delete' => $this->tickets->delete($ticket, $user),

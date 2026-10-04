@@ -7,6 +7,7 @@ use App\Mail\BillIssued;
 use App\Models\Bill;
 use App\Models\BillItem;
 use App\Models\Project;
+use App\Models\Sprint;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketService;
@@ -25,7 +26,9 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Bills (صورتحساب). A developer issues a bill to a customer of a project: picked done tickets
- * that have a cost and are not on another bill, plus manual items (saved as done tickets).
+ * that are not on another bill (with or without a cost — tickets without a cost are listed for
+ * the record, and a manual item like "cost of phase 1" carries their price), plus manual items
+ * (saved as done tickets). A sprint can be picked to tick all of its done tickets at once.
  * The customer can get an SMS and / or an email about the new bill.
  */
 class BillController extends Controller
@@ -103,7 +106,7 @@ class BillController extends Controller
 
             $sort = 0;
             foreach (Ticket::whereIn('id', $data['tickets'])->orderBy('number')->get() as $ticket) {
-                $bill->items()->create(['ticket_id' => $ticket->id, 'title' => $ticket->title, 'amount' => $ticket->cost, 'sort_order' => ++$sort]);
+                $bill->items()->create(['ticket_id' => $ticket->id, 'title' => $ticket->title, 'amount' => (int) $ticket->cost, 'sort_order' => ++$sort]);
             }
             // A manual item is saved as a done ticket with that cost, so it is a cost on the transactions page too.
             foreach ($data['items'] as $item) {
@@ -180,14 +183,14 @@ class BillController extends Controller
     }
 
     /**
-     * Projects of the developer with their customers and the tickets that can go on a bill:
-     * done, with a cost, and not on another (not deleted) bill.
+     * Projects of the developer with their customers, the tickets that can go on a bill
+     * (done and not on another, not deleted, bill) and the sprints of those tickets.
      */
     private function projectOptions(User $user)
     {
         $projects = Project::query()->visibleTo($user)->with(['customers' => fn ($q) => $q->where('is_active', true)->orderBy('first_name')])
             ->orderBy('name')->get();
-        $tickets = self::billableTickets($projects->pluck('id')->all())->get()->groupBy('project_id');
+        $tickets = self::billableTickets($projects->pluck('id')->all())->with('sprint')->get()->groupBy('project_id');
 
         return $projects->map(fn (Project $p) => [
             'id' => $p->id,
@@ -197,9 +200,18 @@ class BillController extends Controller
                 'id' => $c->id, 'name' => $c->name, 'email' => (bool) $c->email, 'mobile' => (bool) $c->mobile,
             ])->values(),
             'tickets' => ($tickets[$p->id] ?? collect())->map(fn (Ticket $t) => [
-                'id' => $t->id, 'number' => $t->number, 'title' => $t->title, 'cost' => $t->cost,
+                'id' => $t->id, 'number' => $t->number, 'title' => $t->title, 'cost' => (int) $t->cost,
                 'date' => Dates::format($t->due_date ?? $t->resolved_at),
+                'sprint_id' => $t->sprint_id, 'sprint' => $t->sprint?->label(),
             ])->values(),
+            // Only sprints that have billable tickets, newest first.
+            'sprints' => ($tickets[$p->id] ?? collect())->pluck('sprint')->filter()->unique('id')
+                ->sortByDesc('number')->map(fn (Sprint $s) => [
+                    'id' => $s->id,
+                    'name' => $s->label(),
+                    'count' => $tickets[$p->id]->where('sprint_id', $s->id)->count(),
+                    'current' => $s->isCurrent(),
+                ])->values(),
         ])->values();
     }
 
@@ -207,7 +219,6 @@ class BillController extends Controller
     {
         return Ticket::whereIn('project_id', $projectIds ?: [0])
             ->where('status', TicketStatus::Done->value)
-            ->where('cost', '>', 0)
             ->whereNotIn('id', BillItem::whereNotNull('ticket_id')->whereHas('bill')->select('ticket_id'))
             ->orderByDesc('number');
     }

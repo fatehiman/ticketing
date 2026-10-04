@@ -7,6 +7,7 @@ use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\SmsMessage;
+use App\Models\Sprint;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketService;
@@ -44,12 +45,12 @@ class BillsTest extends TestCase
         $this->project->members()->attach([$this->dev->id, $this->customer->id, $this->otherCustomer->id]);
     }
 
-    private function doneTicket(int $cost = 1000, string $title = 'Login page'): Ticket
+    private function doneTicket(?int $cost = 1000, string $title = 'Login page', array $extra = []): Ticket
     {
-        return app(TicketService::class)->create([
+        return app(TicketService::class)->create(array_merge([
             'project_id' => $this->project->id, 'type' => 'task', 'priority' => 'medium', 'status' => 'done',
             'title' => $title, 'cost' => $cost, 'due_date' => '2026-09-01',
-        ], $this->dev);
+        ], $extra), $this->dev);
     }
 
     private function issue(array $extra = [])
@@ -62,8 +63,8 @@ class BillsTest extends TestCase
     public function test_developer_issues_a_bill_with_tickets_and_manual_items(): void
     {
         $ticket = $this->doneTicket(1000);
-        $this->doneTicket(0, 'No cost'); // not billable
-        $this->actingAs($this->dev)->get('/bills/create')->assertOk()->assertSee('Login page')->assertDontSee('No cost');
+        $this->doneTicket(1000, 'Still open', ['status' => 'in_progress']); // not done → not billable
+        $this->actingAs($this->dev)->get('/bills/create')->assertOk()->assertSee('Login page')->assertDontSee('Still open');
 
         $this->issue([
             'tickets' => [$ticket->id],
@@ -96,6 +97,31 @@ class BillsTest extends TestCase
         // A ticket on a bill cannot go on another bill.
         $this->actingAs($this->dev)->get('/bills/create')->assertDontSee('Login page');
         $this->issue(['tickets' => [$ticket->id]])->assertSessionHasErrors('tickets.0');
+    }
+
+    public function test_tickets_without_cost_and_sprints_on_the_bill_page(): void
+    {
+        $sprint = Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'name' => 'Phase one sprint', 'status' => 'closed']);
+        $free1 = $this->doneTicket(null, 'Free one', ['sprint_id' => $sprint->id]);
+        $free2 = $this->doneTicket(0, 'Free two', ['sprint_id' => $sprint->id]);
+
+        // Tickets without a cost are listed, with their sprint, and the sprint is offered with its count.
+        $html = $this->actingAs($this->dev)->get('/bills/create')->assertOk()->getContent();
+        $this->assertStringContainsString('Free one', $html);
+        $this->assertMatchesRegularExpression('/"sprints":\[\{"id":'.$sprint->id.',"name":"[^"]*Phase one sprint[^"]*","count":2/', $html);
+
+        // They go on the bill with amount 0; a manual item carries the price of the phase.
+        $this->issue(['tickets' => [$free1->id, $free2->id], 'items' => [['title' => 'Cost of phase 1', 'amount' => '5,000']]])
+            ->assertSessionHasNoErrors();
+        $bill = Bill::with('items')->firstOrFail();
+        $this->assertSame(5000, $bill->total);
+        $this->assertSame([0, 0, 5000], $bill->items->pluck('amount')->all());
+        $this->get('/bills/'.$bill->number)->assertOk()->assertSee('Free two')->assertSee('Cost of phase 1');
+
+        // Now they are on a bill: not offered again, and the sprint is gone from the list.
+        $html = $this->get('/bills/create')->getContent();
+        $this->assertStringNotContainsString('Free one', $html);
+        $this->assertStringContainsString('"sprints":[]', $html);
     }
 
     public function test_bill_needs_an_item_and_a_customer_of_the_project(): void

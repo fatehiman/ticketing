@@ -22,6 +22,7 @@
     </div>
 
     <script type="application/json" id="bill-data">@json($state)</script>
+    <script type="application/json" id="bill-i18n">@json(['sprint_added' => __('bills.sprint_added'), 'no_cost' => __('bills.no_cost')])</script>
 
     <form method="POST" action="{{ route('bills.store') }}" data-bill-form data-ticket-url="{{ url('tickets') }}">
         @csrf
@@ -61,10 +62,19 @@
 
         {{-- Done tickets with a cost that are not on another bill --}}
         <div class="card mb-3">
-            <div class="card-header d-flex align-items-center gap-2">
+            <div class="card-header d-flex flex-wrap align-items-center gap-2">
                 <i class="bi bi-ticket-perforated text-brand"></i> {{ __('bills.tickets_title') }}
                 <span class="small text-muted">— {{ __('bills.tickets_hint') }}</span>
+                <div class="ms-md-auto d-flex align-items-center gap-2" data-bill-sprint-box>
+                    <select class="form-select form-select-sm" data-bill-sprint style="width:auto; min-width: 200px">
+                        <option value="">{{ __('bills.choose_sprint') }}</option>
+                    </select>
+                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" data-bill-sprint-add disabled>
+                        <i class="bi bi-check2-all"></i> {{ __('bills.add_sprint') }}
+                    </button>
+                </div>
             </div>
+            <div class="small text-success px-3 pt-2 d-none" data-bill-sprint-msg></div>
             <div class="table-responsive">
                 <table class="table table-grid mb-0">
                     <thead>
@@ -72,6 +82,7 @@
                         <th style="width:36px"><input type="checkbox" class="form-check-input" data-bill-check-all title="{{ __('app.all') }}"></th>
                         <th>{{ __('tickets.fields.number') }}</th>
                         <th>{{ __('tickets.fields.title') }}</th>
+                        <th>{{ __('tickets.fields.sprint_id') }}</th>
                         <th>{{ __('transactions.fields.date') }}</th>
                         <th>{{ __('bills.fields.amount') }}</th>
                     </tr>

@@ -199,6 +199,9 @@
                 <select name="type" class="form-select form-select-sm d-none" data-bulk-for="type" disabled aria-label="{{ __('tickets.fields.type') }}">
                     @foreach ($types as $type)<option value="{{ $type->value }}">{{ $type->label() }}</option>@endforeach
                 </select>
+                <input type="text" name="cost" class="form-control form-control-sm ltr-input d-none" data-bulk-for="cost" disabled required
+                       inputmode="numeric" data-money="int" placeholder="{{ __('tickets.bulk.cost_placeholder') }}" title="{{ __('tickets.bulk.cost_hint') }}"
+                       style="width: 150px" aria-label="{{ __('tickets.fields.cost') }}">
                 <button type="submit" class="btn btn-sm btn-primary text-nowrap"><i class="bi bi-check2-all"></i> {{ __('tickets.bulk.apply') }}</button>
                 <button type="button" class="btn btn-sm btn-link text-decoration-none text-nowrap" data-bulk-clear>{{ __('tickets.bulk.clear') }}</button>
             </form>

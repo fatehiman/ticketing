@@ -30,15 +30,18 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   whose **dates include today** (both ends count). Overlapping sprints → tickets of all of them. The sprint status is not used.
   A current sprint is **green everywhere** (tickets grid and page, sprints page and project page rows, dashboard, sprint dropdowns).
 - **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
-  change status, sprint, assignee, priority or type, or delete them in one step. Every change goes into the history.
+  change status, sprint, assignee, priority, type or **cost** (one fixed cost for many small tickets; 0 removes it),
+  or delete them in one step. Every change goes into the history.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
   folder** (e.g. *Backlog* without cost, *Done* with cost); a folder without its own choice uses the search page choice. Grids with money or `HH:MM`
   columns have a **totals row** (sums of all filtered records, not only the current page).
 - **Transactions**: accepted customer payments; each done ticket with a cost is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
-- **Bills** (صورتحساب‌ها): a developer issues a bill to a customer of a project. Items are done tickets with a cost
-  that are not on another bill, and/or **manual items** (title, amount, details — e.g. monthly support) that are
-  saved as done tickets of the project, so they are costs on the transactions page too. Bill number starts at 1001.
+- **Bills** (صورتحساب‌ها): a developer issues a bill to a customer of a project. Items are done tickets that are not
+  on another bill — **with or without a cost** (a ticket without a cost is listed with amount 0, and a manual item
+  such as "Cost of phase 1" carries the price of those tickets) — and/or **manual items** (title, amount, details —
+  e.g. monthly support) that are saved as done tickets of the project, so they are costs on the transactions page too.
+  A **sprint picker** ticks all done tickets of a sprint at once. Bill number starts at 1001.
   Checkboxes tell the customer by **SMS** (template 24562, `[param1]` = bill number) and/or a colourful **email**.
   Paid / partly paid / unpaid: the accepted payments of a customer pay their bills **oldest first**.
 - **Payment vouchers** (no payment gateway yet): the customer pays to the developer's **card number / IBAN**

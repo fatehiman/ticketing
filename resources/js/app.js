@@ -105,6 +105,11 @@ function initBillForm() {
     const totalEl = form.querySelector('[data-bill-total]');
     const checkAll = form.querySelector('[data-bill-check-all]');
     const placeholder = customerSel.options[0]?.text || '';
+    const sprintSel = form.querySelector('[data-bill-sprint]');
+    const sprintAdd = form.querySelector('[data-bill-sprint-add]');
+    const sprintMsg = form.querySelector('[data-bill-sprint-msg]');
+    const sprintPlaceholder = sprintSel.options[0]?.text || '';
+    const i18n = JSON.parse(document.getElementById('bill-i18n')?.textContent || '{}');
     const money = (n) => Number(n || 0).toLocaleString('en-US');
     const num = (s) => Number(toLatin(String(s || '')).replace(/\D/g, '')) || 0;
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -146,9 +151,22 @@ function initBillForm() {
                     ${first && state.tickets.includes(String(t.id)) ? 'checked' : ''}></td>
                 <td><a href="${form.dataset.ticketUrl}/${t.number}" target="_blank" class="t-number">#${t.number}</a></td>
                 <td>${esc(t.title)}</td>
+                <td class="text-nowrap small">${esc(t.sprint)}</td>
                 <td class="text-nowrap small">${esc(t.date)}</td>
-                <td class="text-nowrap fw-semibold">${money(t.cost)}</td>
+                <td class="text-nowrap ${t.cost > 0 ? 'fw-semibold' : 'text-muted small'}">${t.cost > 0 ? money(t.cost) : esc(i18n.no_cost)}</td>
             </tr>`).join('');
+
+        // Sprints that have billable tickets: picking one ticks all of its done tickets.
+        sprintSel.innerHTML = '';
+        sprintSel.add(new Option(sprintPlaceholder, ''));
+        (p?.sprints || []).forEach((s) => {
+            const opt = new Option(`${s.name} (${s.count})`, s.id);
+            if (s.current) opt.classList.add('text-success');
+            sprintSel.add(opt);
+        });
+        sprintAdd.disabled = true;
+        sprintMsg.classList.add('d-none');
+        form.querySelector('[data-bill-sprint-box]').classList.toggle('d-none', !(p?.sprints || []).length);
         form.querySelector('[data-bill-no-tickets]').classList.toggle('d-none', tickets.length > 0);
         checkAll.checked = false;
         form.querySelectorAll('[data-currency]').forEach((el) => { el.textContent = p?.currency || ''; });
@@ -177,6 +195,17 @@ function initBillForm() {
     total();
 
     projectSel.addEventListener('change', () => fillProject(false));
+    sprintSel.addEventListener('change', () => { sprintAdd.disabled = !sprintSel.value; });
+    sprintAdd.addEventListener('click', () => {
+        const ids = (project()?.tickets || []).filter((t) => String(t.sprint_id) === sprintSel.value).map((t) => String(t.id));
+        let added = 0;
+        tbody.querySelectorAll('input[type=checkbox]').forEach((c) => {
+            if (ids.includes(c.value) && !c.checked) { c.checked = true; added += 1; }
+        });
+        sprintMsg.textContent = (i18n.sprint_added || ':count').replace(':count', added);
+        sprintMsg.classList.remove('d-none');
+        total();
+    });
     customerSel.addEventListener('change', notify);
     tbody.addEventListener('change', total);
     checkAll.addEventListener('change', () => {

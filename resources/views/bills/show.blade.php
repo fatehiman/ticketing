@@ -94,7 +94,7 @@
                                 <a href="{{ route('tickets.show', $item->ticket) }}" class="t-number">#{{ $item->ticket->number }}</a>
                             @endif
                         </td>
-                        <td class="text-end text-nowrap fw-semibold">{{ Money::format($item->amount) }}</td>
+                        <td class="text-end text-nowrap fw-semibold">{{ $item->amount ? Money::format($item->amount) : '—' }}</td>
                     </tr>
                 @endforeach
                 </tbody>

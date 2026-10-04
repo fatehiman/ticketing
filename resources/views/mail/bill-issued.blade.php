@@ -45,7 +45,7 @@
                     {{ $item->title }}
                     @if ($item->details)<div style="font-size:12px;color:#6b7280">{{ $item->details }}</div>@endif
                 </td>
-                <td style="padding:9px 12px;border-top:1px solid #f3e8ff;text-align:{{ $end }};white-space:nowrap;font-weight:bold">{{ Money::format($item->amount) }}</td>
+                <td style="padding:9px 12px;border-top:1px solid #f3e8ff;text-align:{{ $end }};white-space:nowrap;font-weight:bold">{{ $item->amount ? Money::format($item->amount) : '—' }}</td>
             </tr>
         @endforeach
         <tr style="background:#f5f3ff">
