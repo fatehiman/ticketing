@@ -48,7 +48,7 @@ class PublicAvatar
 
             $type = strtolower(strtok((string) $response->header('Content-Type'), ';'));
             $body = $response->body();
-            $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$type] ?? null;
+            $ext = ['image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$type] ?? null;
             if (! $response->successful() || ! $ext || $body === '' || strlen($body) > self::MAX_BYTES) {
                 continue;
             }

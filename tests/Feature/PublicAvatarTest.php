@@ -29,7 +29,7 @@ class PublicAvatarTest extends TestCase
     {
         Http::fake([
             'www.gravatar.com/*' => Http::response('', 404),
-            'seccdn.libravatar.org/*' => Http::response(self::JPEG, 200, ['Content-Type' => 'image/jpeg']),
+            'seccdn.libravatar.org/*' => Http::response(self::JPEG, 200, ['Content-Type' => 'image/jpg']), // Libravatar's non-standard name
             'unavatar.io/*' => Http::response(self::JPEG, 200, ['Content-Type' => 'image/jpeg']),
         ]);
         $user = User::factory()->customer()->create(['email' => ' Ali@Example.com ', 'avatar_path' => null]);
