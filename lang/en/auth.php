@@ -10,6 +10,8 @@ return [
     'login' => 'Email or mobile',
     'password_label' => 'Password',
     'remember' => 'Remember me',
+    'show_password' => 'Show password',
+    'hide_password' => 'Hide password',
 
     'forgot_link' => 'Forgot your password?',
     'forgot_title' => 'Password recovery',

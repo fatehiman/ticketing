@@ -10,6 +10,8 @@ return [
     'login' => 'ایمیل یا موبایل',
     'password_label' => 'رمز عبور',
     'remember' => 'مرا به خاطر بسپار',
+    'show_password' => 'نمایش رمز عبور',
+    'hide_password' => 'پنهان کردن رمز عبور',
 
     'forgot_link' => 'رمز عبور را فراموش کرده‌اید؟',
     'forgot_title' => 'بازیابی رمز عبور',

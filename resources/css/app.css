@@ -384,6 +384,21 @@ a { text-decoration: none; }
 .auth-card { width: 100%; max-width: 420px; border-radius: calc(var(--card-radius) + 6px); }
 .otp-input { letter-spacing: .5em; font-weight: 600; }
 
+/* Show / hide password eye (login). */
+.pw-eye { color: var(--bs-secondary-color); cursor: pointer; padding-inline: .6rem; }
+.pw-eye:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: -2px; }
+.pw-eye:hover, .pw-eye:focus-visible { color: var(--bs-primary); }
+.pw-eye .eye-open { display: none; }
+.pw-eye.is-open { color: var(--bs-primary); }
+.pw-eye.is-open .eye-open { display: inline; }
+.pw-eye.is-open .eye-closed { display: none; }
+.pw-eye .eye-ball { transform-box: fill-box; transform-origin: center; transition: transform .09s ease-in; }
+.pw-eye .eye-ball.blink { transform: scaleY(.08); }
+.pw-eye .eye-pupil { transition: transform .12s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+    .pw-eye .eye-ball, .pw-eye .eye-pupil { transition: none; }
+}
+
 /* Bills: print only the bill, without the sidebar and top bar. */
 @media print {
     .sidebar, .topbar, .sidebar-backdrop { display: none !important; }

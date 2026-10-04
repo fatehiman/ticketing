@@ -626,6 +626,72 @@ function initCountdown() {
     }, 1000);
 }
 
+/* ---------- Password eye: show / hide; the open eye blinks, looks around and follows the mouse ---------- */
+function initPasswordEye() {
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('[data-eye-for]').forEach((btn) => {
+        const input = document.getElementById(btn.dataset.eyeFor);
+        const ball = btn.querySelector('.eye-ball');
+        const pupil = btn.querySelector('.eye-pupil');
+        if (!input || !ball || !pupil) return;
+        const MAX = 2.6; // how far the pupil may move (SVG units)
+        let blinkTimer = null;
+        let idleTimer = null;
+
+        const look = (dx, dy) => { pupil.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px)`; };
+        const lookAt = (x, y) => {
+            const box = btn.getBoundingClientRect();
+            const vx = x - (box.left + box.width / 2);
+            const vy = y - (box.top + box.height / 2);
+            const dist = Math.hypot(vx, vy) || 1;
+            const reach = Math.min(1, dist / 120) * MAX; // near the eye = small move
+            look((vx / dist) * reach, (vy / dist) * reach * 0.7);
+        };
+        const blink = () => {
+            ball.classList.add('blink');
+            setTimeout(() => ball.classList.remove('blink'), 140);
+            // Sometimes a double blink.
+            if (Math.random() < 0.25) setTimeout(() => { ball.classList.add('blink'); setTimeout(() => ball.classList.remove('blink'), 140); }, 320);
+            blinkTimer = setTimeout(blink, 2200 + Math.random() * 3200);
+        };
+        // When the mouse is still (or on a phone), glance around now and then.
+        const wander = () => {
+            look((Math.random() * 2 - 1) * MAX, (Math.random() * 2 - 1) * MAX * 0.6);
+            idleTimer = setTimeout(wander, 900 + Math.random() * 1600);
+        };
+        const onMove = (e) => {
+            clearTimeout(idleTimer);
+            lookAt(e.clientX, e.clientY);
+            idleTimer = setTimeout(wander, 2500);
+        };
+
+        const setOpen = (open) => {
+            input.type = open ? 'text' : 'password';
+            btn.classList.toggle('is-open', open);
+            btn.setAttribute('aria-pressed', open ? 'true' : 'false');
+            const label = open ? btn.dataset.labelHide : btn.dataset.labelShow;
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+            clearTimeout(blinkTimer);
+            clearTimeout(idleTimer);
+            document.removeEventListener('mousemove', onMove);
+            look(0, 0);
+            if (open && !still) {
+                blinkTimer = setTimeout(blink, 600);
+                idleTimer = setTimeout(wander, 1500);
+                document.addEventListener('mousemove', onMove);
+            }
+        };
+
+        btn.addEventListener('click', () => {
+            setOpen(input.type === 'password');
+            input.focus();
+        });
+        // Do not leave the password visible when the form is sent.
+        input.form?.addEventListener('submit', () => setOpen(false));
+    });
+}
+
 /* ---------- Copy buttons (card number, IBAN) ---------- */
 function initCopy() {
     document.querySelectorAll('[data-copy]').forEach((btn) => btn.addEventListener('click', () => {
@@ -661,5 +727,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initEditors();
     initCountdown();
     initCopy();
+    initPasswordEye();
     initTooltips();
 });

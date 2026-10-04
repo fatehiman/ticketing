@@ -24,6 +24,7 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-lock"></i></span>
                         <input id="password" type="password" name="password" required autocomplete="current-password" class="form-control ltr-input">
+                        @include('partials.password-eye', ['for' => 'password'])
                     </div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mb-4">

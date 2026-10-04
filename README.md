@@ -96,7 +96,7 @@ php artisan serve
 
 Default login: `admin@ticketing.local` / the `SEED_PASSWORD` value (`password` if not set).
 Demo users (when demo data is seeded): `dev1@`, `dev2@`, `customer1@`, `customer2@`, `customer3@ticketing.local`.
-You can sign in with the email **or** the mobile number.
+You can sign in with the email **or** the mobile number. The password field has an **eye button** to show / hide the password (the open eye blinks, looks around and follows the mouse).
 
 ## Tests
 
