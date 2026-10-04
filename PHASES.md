@@ -89,10 +89,26 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Customers do not see history of price, time and story points (other changes stay visible)
 - [x] Built-in folders: ✎ next to *Tickets* → modal to change their order and show / hide them, with *Reset to default*
 
+## Phase 1.8 — SMS, password recovery, bills and vouchers
+
+- [x] Tagline is now «سامانه پشتیبانی کیمیا» (main title stays «تیکتینگ»)
+- [x] msgway SMS gateway: outbox table + queue worker (`ticketing-queue` systemd unit), retries 1 / 5 / 10 / 30 min
+      (OTP: 1 min once), no retry on a bad request
+- [x] SMS to developers when a customer creates a ticket or writes a followup (template 24564)
+- [x] SMS to the customer when a developer's reply waits for them (template 24561)
+- [x] Forgot password by email (reset link from `no-reply@peppasoft.com` through ger1) or mobile (6-digit code,
+      1:50 countdown, same code on resend, 3rd time by a voice call), with rate limits
+- [x] Bills: developer page to issue a bill from done tickets and manual items, SMS (template 24562) and colourful
+      email to the customer, paid / partly paid / unpaid (payments pay the oldest bill first), print
+- [x] Bills page for customers; payment vouchers (amount, pay date, time, tracking number) with the developer's card
+      number / IBAN; developers accept / decline / edit / delete vouchers or add one for the customer
+- [x] Developer bank details in the profile
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups
-- [ ] SMS / email notifications (new followup waiting for reply, status change, assignment) — listener on `FollowupPosted`
+- [ ] More notifications (status change, assignment, voucher accepted) — SMS templates must be approved first
+- [ ] Admin page for the SMS outbox (`sms_messages`) and failed jobs
 - [ ] Time log entries (who, when, how long) that sum into *Time logged*
 - [ ] Kanban board per sprint (drag & drop status change)
 - [ ] Admin screen for deleted tickets (view / restore)
@@ -108,5 +124,6 @@ Design details: [PLAN.md](PLAN.md).
 ## Phase 4 — Integrations
 
 - [ ] Bot API: update ticket (status, assignee), add followup
+- [ ] Online payment gateway (today: bank vouchers)
 - [ ] Create tickets from email
 - [ ] Two-factor login / SSO

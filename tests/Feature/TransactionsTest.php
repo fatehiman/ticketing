@@ -205,10 +205,17 @@ class TransactionsTest extends TestCase
         $this->actingAs($this->customer)->get('/transactions?customer_id='.$this->otherCustomer->id)->assertOk()
             ->assertSee('My payment')->assertSee('My project cost')
             ->assertDontSee('Other payment')->assertDontSee('Other project cost')
-            ->assertDontSee(route('payments.create'));
+            ->assertSee(route('payments.create')); // customers register payment vouchers
 
-        $this->get('/payments/create')->assertForbidden();
-        $this->post('/payments', ['customer_id' => $this->customer->id, 'amount' => 1, 'paid_on' => '2026-01-01'])->assertForbidden();
+        // A customer's voucher waits for a developer: it is not a payment on this page yet.
+        $this->post('/payments', [
+            'customer_id' => $this->otherCustomer->id, 'amount' => 1, 'paid_on' => '2026-01-01', 'paid_time' => '10:00', 'reference_no' => '123',
+            'description' => 'Pending voucher', 'status' => 'accepted',
+        ])->assertSessionHasErrors('status');
+        $this->post('/payments', ['amount' => 1, 'paid_on' => '2026-01-01', 'paid_time' => '10:00', 'reference_no' => '123', 'description' => 'Pending voucher'])
+            ->assertRedirect('/payments');
+        $this->assertDatabaseHas('payments', ['description' => 'Pending voucher', 'customer_id' => $this->customer->id, 'status' => 'pending']);
+        $this->get('/transactions')->assertDontSee('Pending voucher');
     }
 
     public function test_developer_adds_payment_with_validation(): void

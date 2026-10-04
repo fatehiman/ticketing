@@ -382,6 +382,13 @@ a { text-decoration: none; }
 /* ---------- Auth page ---------- */
 .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: var(--auth-bg); }
 .auth-card { width: 100%; max-width: 420px; border-radius: calc(var(--card-radius) + 6px); }
+.otp-input { letter-spacing: .5em; font-weight: 600; }
+
+/* Bills: print only the bill, without the sidebar and top bar. */
+@media print {
+    .sidebar, .topbar, .sidebar-backdrop { display: none !important; }
+    .main { margin: 0 !important; padding: 0 !important; }
+}
 
 /* ---------- Misc ---------- */
 .required::after { content: ' *'; color: #dc2626; }

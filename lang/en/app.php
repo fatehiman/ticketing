@@ -2,7 +2,7 @@
 
 return [
     'name' => 'Ticketing',
-    'tagline' => 'Lightweight tickets & projects',
+    'tagline' => 'Kimia Support System',
     'dashboard' => 'Dashboard',
     'tickets' => 'Tickets',
     'new_ticket' => 'New ticket',

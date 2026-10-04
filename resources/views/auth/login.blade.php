@@ -4,19 +4,7 @@
 @section('content')
     <div class="card auth-card shadow-lg border-0">
         <div class="card-body p-4 p-md-5">
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="avatar" style="--s:48px;border-radius:14px"><i class="bi bi-ticket-perforated fs-4"></i></span>
-                    <div>
-                        <div class="fw-bold fs-5">{{ __('app.name') }}</div>
-                        <div class="text-muted small">{{ __('app.tagline') }}</div>
-                    </div>
-                </div>
-                <div class="btn-group btn-group-sm">
-                    <a href="{{ route('locale', 'fa') }}" @class(['btn', 'btn-primary' => app()->getLocale() === 'fa', 'btn-outline-secondary' => app()->getLocale() !== 'fa'])>فا</a>
-                    <a href="{{ route('locale', 'en') }}" @class(['btn', 'btn-primary' => app()->getLocale() === 'en', 'btn-outline-secondary' => app()->getLocale() !== 'en'])>EN</a>
-                </div>
-            </div>
+            @include('partials.auth-brand')
 
             <h1 class="h5 fw-bold mb-3">{{ __('auth.sign_in_title') }}</h1>
 
@@ -38,9 +26,12 @@
                         <input id="password" type="password" name="password" required autocomplete="current-password" class="form-control ltr-input">
                     </div>
                 </div>
-                <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1">
-                    <label class="form-check-label" for="remember">{{ __('auth.remember') }}</label>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1">
+                        <label class="form-check-label" for="remember">{{ __('auth.remember') }}</label>
+                    </div>
+                    <a href="{{ route('password.request') }}" class="small">{{ __('auth.forgot_link') }}</a>
                 </div>
                 <button class="btn btn-primary w-100 py-2 fw-semibold">
                     <i class="bi bi-box-arrow-in-{{ app()->getLocale() === 'fa' ? 'left' : 'right' }}"></i> {{ __('auth.sign_in') }}

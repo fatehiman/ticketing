@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BillController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\FolderSettingsController;
 use App\Http\Controllers\FollowupController;
 use App\Http\Controllers\GridPreferenceController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
@@ -30,6 +32,17 @@ Route::get('/bot-login/{publicId}', [ApiAuthController::class, 'show'])->name('a
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
+
+    // Forgot password: email → reset link; mobile → SMS code (same code on resend, 3rd time by a call).
+    Route::get('/forgot-password', [PasswordResetController::class, 'showRequest'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendRequest'])->middleware('throttle:20,1')->name('password.email');
+    Route::get('/forgot-password/code', [PasswordResetController::class, 'showCode'])->name('password.otp');
+    Route::post('/forgot-password/code', [PasswordResetController::class, 'verify'])->middleware('throttle:20,1')->name('password.otp.verify');
+    Route::post('/forgot-password/resend', [PasswordResetController::class, 'resend'])->middleware('throttle:10,1')->name('password.otp.resend');
+    Route::get('/forgot-password/new', [PasswordResetController::class, 'showNewPassword'])->name('password.otp.new');
+    Route::post('/forgot-password/new', [PasswordResetController::class, 'saveNewPassword'])->name('password.otp.save');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:20,1')->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
@@ -71,6 +84,18 @@ Route::middleware('auth')->group(function () {
     // Transactions: payments + costs of done tickets. Customers see theirs read-only.
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
+    // Bills: developers issue them; customers and admins read. Payments (vouchers): customers register
+    // theirs (pending), developers add / accept / decline / edit / delete them (checked by the policies).
+    Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
+    Route::middleware('role:developer')->group(function () {
+        Route::get('/bills/create', [BillController::class, 'create'])->name('bills.create');
+        Route::post('/bills', [BillController::class, 'store'])->name('bills.store');
+        Route::delete('/bills/{bill}', [BillController::class, 'destroy'])->name('bills.destroy');
+        Route::post('/payments/{payment}/review', [PaymentController::class, 'review'])->name('payments.review');
+    });
+    Route::get('/bills/{bill}', [BillController::class, 'show'])->name('bills.show');
+    Route::resource('payments', PaymentController::class)->except('show');
+
     // Projects are visible to members; managing them needs admin/developer (checked by the policy).
     Route::resource('projects', ProjectController::class);
 
@@ -79,7 +104,6 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:developer')->group(function () {
         Route::resource('sprints', SprintController::class)->except(['index', 'show']);
-        Route::resource('payments', PaymentController::class)->except(['index', 'show']);
         Route::resource('customers', CustomerController::class)->except('show')->parameters(['customers' => 'customer']);
     });
 

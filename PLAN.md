@@ -32,6 +32,13 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Default assignee | A new ticket made by a **developer** (web form or bot token) is assigned to that developer, if they are a member of the project. Tickets made by customers start **unassigned**. The bot can send `assignee: "none"` to skip it. |
 | After saving a form | Every create / edit / delete goes **back to the list page the user came from** (folder, filtered list, page number). Each browser tab keeps its last list page in `sessionStorage` (`App\Support\ReturnTo` + `initReturnTo()` in `app.js`); detail (`*.show`) and form (`*.create`, `*.edit`) pages do not change it, and POST forms send it as `_back` (same-site URLs only). A page opened directly (no referrer from this site) has no list page → the default page (*All tickets*, *Users*, …; a new ticket / project opens its own page). |
 | Files | Attachments on the private disk, served by an authorised controller. Inline editor images on the public disk. Max 10 MB each. |
+| Name | Main title **تیکتینگ**, tagline **سامانه پشتیبانی کیمیا** (en: *Kimia Support System*). |
+| SMS | msgway.com, template based (`config/sms.php` maps a meaning to a template ID). `[paramN]` values go as a positional array, `[code]` as a top-level field. `Sms::send()` writes a row to `sms_messages` (outbox + log) and dispatches `SendSms` **after commit**; the database queue worker sends it. Retries: 1, 5, 10, 30 min, then *failed*; OTP: one retry after 1 min. A `badRequest` (2001010102) or another 4xx is never retried. Voice call = `method: ivr`, IVR template 2, provider 1 (`MSGWAY_IVR_*`). |
+| Mail | Queued mailables (same retries as SMS), sent through ger1 Postfix as `no-reply@peppasoft.com` (DKIM `peppasoft.com`). Colourful HTML layout with inline styles, in the receiver's language; dates in the receiver's calendar (`Dates::formatIn()`). |
+| Password recovery | One box: email or mobile. Unknown → "not found" (the owner's choice). Email → Laravel password broker token (60 min) in a queued mail. Mobile → `password_otps` row: 6-digit code (encrypted, because a resend sends the **same** code), valid 2 min after **each** send; resend after 110 s (1:50 countdown); 3 sends max: SMS, SMS, **voice call**; 5 wrong codes → start over; after a correct code 10 min to save the new password. Limits (`RateLimiter`): 5 per email / mobile per 12 h, 10 per IP per 24 h (separately for email and SMS; every try counts for the IP). |
+| Bills | `bills` + `bill_items`. Items are always tickets: picked done tickets with a cost not on another bill, or manual items saved as done tickets (cost = amount, due date = bill date, assignee = the developer). Title / amount copied into `bill_items`. Number = id + 1000. Deleting a bill soft-deletes it and the tickets of its manual items (picked tickets become billable again). |
+| Debt and paid status | Debt stays **costs of done tickets − accepted payments** (the transactions page). A bill's paid amount: the customer's accepted payments pay their bills oldest first (`Bills::allocate()`), so a payment can be less or more than a bill. |
+| Payment vouchers | `payments.status` = `pending` (customer voucher) / `accepted` (counted) / `declined`, plus `paid_time` (HH:MM), `reference_no`, optional `bill_id` (the payment then gets the bill's project). Bank details (card number, IBAN, holder) live on the **developer** (`users.card_number`, `iban`, `account_holder`); a bill shows its issuer's, the payment form shows the bill issuer's or those of the developers of the customer's projects. |
 
 ## 2. Roles
 
@@ -44,9 +51,12 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 Followups: developers can reply at any time; customers only while the ticket is **not closed**.
 Rating: only customers, only on closed tickets; the customer who rated can change it. Staff only read it.
 
-Payments: only developers add them. A developer sees and manages (edit/delete) payments of
-**their customers** that have no project or are on one of the developer's projects — also payments
-added by another developer. Admins see all payments (read-only).
+Payments: developers add them (accepted at once). A developer sees and manages (edit / accept / decline / delete)
+payments of **their customers** that have no project or are on one of the developer's projects — also payments
+added by another developer. A customer registers their own **vouchers** (pending) and may edit / delete them only
+while pending. Admins see all payments (read-only).
+
+Bills: developers issue and delete bills of their projects; customers read their own; admins read all.
 
 Profile page (all roles): language, calendar, password, profile picture.
 Customers and developers cannot edit their own name / email / mobile (read-only).
@@ -93,8 +103,17 @@ api_tokens       id, user_id, project_id(nullable = no fixed project), name, tok
                  last_used_at, expires_at(+30 days)
 api_auth_requests id, public_id(in the link), secret_hash(sha256), name, user_id, project_id, api_token_id,
                  opened_at, approved_at, claimed_at      (one bot login attempt)
-payments         id, customer_id, project_id(nullable), amount(int, no decimals), paid_on(date),
+payments         id, customer_id, project_id(nullable), bill_id(nullable), amount(int, no decimals),
+                 status(pending|accepted|declined), paid_on(date), paid_time(HH:MM), reference_no,
                  description(500), created_by, updated_by, soft deletes
+users            … card_number, iban, account_holder        (developer bank details)
+bills            id, number(id+1000, unique), project_id, customer_id, issued_on, due_on, description,
+                 total(int), created_by, soft deletes
+bill_items       id, bill_id, ticket_id, title, details, amount(int), is_manual, sort_order
+sms_messages     id, mobile(E.164), method(sms|ivr), template_id, params(json), code(encrypted), purpose,
+                 status(queued|sent|failed), attempts, reference_id, last_error, sent_at
+password_otps    id, user_id, mobile, code(encrypted), sends, attempts, last_sent_at, expires_at,
+                 verified_at, used_at
 ```
 
 ## 5. Project switcher (top bar)
@@ -145,13 +164,17 @@ unassigned, created date range, updated date range, due date range, sort, per pa
 * Sidebar: every folder shows its count and, in red, how many of its tickets wait for **my side**.
   Built-in folder **Waiting for my reply** = filter `awaiting=me`. Grid rows show a red dot.
 * After login a toast shows how many tickets (in all the user's projects) wait for the user's reply.
-* `App\Events\FollowupPosted` is fired after each followup — the place to add SMS later.
+* `App\Events\FollowupPosted` is fired after each followup, `App\Events\TicketCreated` after each new ticket.
+  `App\Listeners\SendTicketSms` sends SMS: customer ticket / followup → the developers of the project;
+  developer followup that waits for the customer → the reporter (a customer), or every customer of the project
+  when staff made the ticket.
 * Creating a ticket does not set `awaiting_reply` (new customer tickets are in *Pending review*).
 
 ## 8. Transactions
 
-* One page `/transactions` for every role. Sidebar: **Finance → Transactions**, and **Add payment** for developers.
-* Rows = customer **payments** + **ticket costs**. A ticket is a cost row only while
+* One page `/transactions` for every role. Sidebar: **Finance → Transactions, Bills, Issue a bill (developers),
+  Payment vouchers** (red badge = pending vouchers) and **Add payment** / **Register a payment voucher**.
+* Rows = customer **payments** (accepted only) + **ticket costs**. A ticket is a cost row only while
   `status = done` **and** `cost > 0`. The row date is the due date; without a due date, the day the ticket
   was done (`resolved_at`).
 * Costs belong to customers **by project**: a customer's costs are the costs of their projects.

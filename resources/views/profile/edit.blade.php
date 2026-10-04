@@ -90,6 +90,32 @@
                     </div>
                 </div>
 
+                @if ($user->isDeveloper())
+                    <div class="card card-accent mb-3">
+                        <div class="card-header"><i class="bi bi-bank text-brand"></i> {{ __('users.bank_info') }}</div>
+                        <div class="card-body">
+                            <div class="small text-muted mb-2">{{ __('users.bank_info_note') }}</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="card_number">{{ __('users.fields.card_number') }}</label>
+                                    <input type="text" id="card_number" name="card_number" value="{{ old('card_number', $user->card_number) }}" inputmode="numeric"
+                                           placeholder="6037 99xx xxxx xxxx" @class(['form-control ltr-input', 'is-invalid' => $errors->has('card_number')])>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="account_holder">{{ __('users.fields.account_holder') }}</label>
+                                    <input type="text" id="account_holder" name="account_holder" value="{{ old('account_holder', $user->account_holder) }}" maxlength="150"
+                                           @class(['form-control', 'is-invalid' => $errors->has('account_holder')])>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="iban">{{ __('users.fields.iban') }}</label>
+                                    <input type="text" id="iban" name="iban" value="{{ old('iban', $user->iban) }}" placeholder="IR00 0000 0000 0000 0000 0000 00"
+                                           @class(['form-control ltr-input', 'is-invalid' => $errors->has('iban')])>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="card card-accent">
                     <div class="card-header"><i class="bi bi-palette text-brand"></i> {{ __('users.preferences') }}</div>
                     <div class="card-body">

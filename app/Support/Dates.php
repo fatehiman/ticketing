@@ -38,6 +38,17 @@ class Dates
         return $date->format($withTime ? 'Y-m-d H:i' : 'Y-m-d');
     }
 
+    /** Display a date in a given calendar (for mails sent by the queue, where there is no signed-in user). */
+    public static function formatIn(?CarbonInterface $date, ?string $calendar): string
+    {
+        if (! $date) {
+            return '';
+        }
+        $date = $date->copy()->setTimezone(config('app.timezone'));
+
+        return $calendar === 'gregorian' ? $date->format('Y-m-d') : Jalalian::fromCarbon(Carbon::instance($date))->format('Y/m/d');
+    }
+
     public static function dateTime(?CarbonInterface $date): string
     {
         return self::format($date, true);

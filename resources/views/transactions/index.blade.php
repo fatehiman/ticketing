@@ -18,7 +18,7 @@
             <div class="sub">{{ $user->isStaff() ? __('transactions.subtitle_staff') : __('transactions.subtitle_customer') }} · {{ __('app.results', ['count' => $rows->total()]) }}</div>
         </div>
         @can('create', App\Models\Payment::class)
-            <a href="{{ route('payments.create', array_filter(['customer_id' => $f('customer_id')])) }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ __('transactions.new_payment') }}</a>
+            <a href="{{ route('payments.create', array_filter(['customer_id' => $f('customer_id')])) }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {{ $user->isCustomer() ? __('transactions.new_voucher') : __('transactions.new_payment') }}</a>
         @endcan
     </div>
 

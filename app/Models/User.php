@@ -19,7 +19,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'first_name', 'last_name', 'email', 'mobile', 'password', 'role', 'avatar_path',
+        'first_name', 'last_name', 'email', 'mobile', 'card_number', 'iban', 'account_holder', 'password', 'role', 'avatar_path',
         'locale', 'calendar', 'current_project_id', 'is_active', 'created_by', 'last_login_at', 'folder_settings',
     ];
 
@@ -68,6 +68,12 @@ class User extends Authenticatable
     public function avatarUrl(): ?string
     {
         return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : null;
+    }
+
+    /** A developer's bank details for customers who pay by card or bank transfer. */
+    public function hasBankInfo(): bool
+    {
+        return (bool) ($this->card_number || $this->iban);
     }
 
     public function isAdmin(): bool

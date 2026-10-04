@@ -1,0 +1,19 @@
+# Queue worker of the ticketing app: sends SMS (msgway) and emails in the background,
+# with retries, so a slow or broken gateway never slows down the site.
+# Install: cp deploy/ticketing-queue.service /etc/systemd/system/ && systemctl enable --now ticketing-queue
+# After each deploy: php artisan queue:restart (the worker stops after its current job; systemd starts it again).
+[Unit]
+Description=Ticketing queue worker (SMS and mail)
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/ticketing
+ExecStart=/usr/bin/php artisan queue:work --sleep=3 --max-time=3600 --memory=192
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

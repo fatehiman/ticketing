@@ -28,6 +28,16 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // SMS gateway (template based). See App\Sms\MsgwayClient.
+    'msgway' => [
+        'key' => env('MSGWAY_API_KEY'),
+        'url' => env('MSGWAY_URL', 'https://api.msgway.com'),
+        'timeout' => (int) env('MSGWAY_TIMEOUT', 10),
+        // Voice call (IVR) route: its own template and a provider number.
+        'ivr_template' => (int) env('MSGWAY_IVR_TEMPLATE', 2),
+        'ivr_provider' => (int) env('MSGWAY_IVR_PROVIDER', 1),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

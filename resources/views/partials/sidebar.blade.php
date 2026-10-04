@@ -3,6 +3,8 @@
     $builtin = collect($ticketMenus)->where('custom', false)->where('hidden', false);
     $custom = collect($ticketMenus)->where('custom', true)->sortBy([['sort_order', 'asc'], ['id', 'asc']]);
     $onTickets = request()->routeIs('tickets.*');
+    // Vouchers waiting for a developer (developers) / for the developer's answer (customers).
+    $pendingVouchers = $user->isAdmin() ? 0 : App\Models\Payment::visibleTo($user)->where('status', App\Models\Payment::PENDING)->count();
 @endphp
 <aside class="sidebar">
     <a href="{{ route('dashboard') }}" class="brand">
@@ -88,9 +90,23 @@
         <a href="{{ route('transactions.index') }}" @class(['side-link', 'active' => request()->routeIs('transactions.*')])>
             <i class="bi bi-cash-coin"></i><span>{{ __('transactions.title') }}</span>
         </a>
+        <a href="{{ route('bills.index') }}" @class(['side-link', 'active' => request()->routeIs('bills.index', 'bills.show')])>
+            <i class="bi bi-receipt-cutoff"></i><span>{{ __('bills.title') }}</span>
+        </a>
+        @can('create', App\Models\Bill::class)
+            <a href="{{ route('bills.create') }}" @class(['side-link', 'active' => request()->routeIs('bills.create')])>
+                <i class="bi bi-file-earmark-plus"></i><span>{{ __('bills.new') }}</span>
+            </a>
+        @endcan
+        <a href="{{ route('payments.index') }}" @class(['side-link', 'active' => request()->routeIs('payments.index', 'payments.edit')])>
+            <i class="bi bi-wallet2"></i><span>{{ __('transactions.vouchers') }}</span>
+            @if ($pendingVouchers)
+                <span class="side-badges"><span class="side-badge side-badge-alert" title="{{ __('transactions.statuses.pending') }}">{{ $pendingVouchers }}</span></span>
+            @endif
+        </a>
         @can('create', App\Models\Payment::class)
-            <a href="{{ route('payments.create') }}" @class(['side-link', 'active' => request()->routeIs('payments.*')])>
-                <i class="bi bi-wallet2"></i><span>{{ __('transactions.new_payment') }}</span>
+            <a href="{{ route('payments.create') }}" @class(['side-link', 'active' => request()->routeIs('payments.create')])>
+                <i class="bi bi-plus-circle"></i><span>{{ $user->isCustomer() ? __('transactions.new_voucher') : __('transactions.new_payment') }}</span>
             </a>
         @endcan
 

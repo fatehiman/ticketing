@@ -78,15 +78,112 @@ function initInputs() {
             input.value = v;
         });
     });
-    document.querySelectorAll('[data-money]').forEach((input) => {
-        // Money is always a whole number (all currencies): 7,000,000 — no decimal point.
-        const format = () => {
-            const raw = toLatin(input.value).replace(/\.\d*$/, '').replace(/\D/g, '');
-            input.value = raw === '' ? '' : Number(raw).toLocaleString('en-US');
-        };
-        input.addEventListener('input', format);
-        format();
+    document.querySelectorAll('[data-money]').forEach(bindMoney);
+}
+
+// Money is always a whole number (all currencies): 7,000,000 — no decimal point.
+function bindMoney(input) {
+    const format = () => {
+        const raw = toLatin(input.value).replace(/\.\d*$/, '').replace(/\D/g, '');
+        input.value = raw === '' ? '' : Number(raw).toLocaleString('en-US');
+    };
+    input.addEventListener('input', format);
+    format();
+}
+
+/* ---------- New bill: customers and tickets follow the project, manual item rows, live total ---------- */
+function initBillForm() {
+    const form = document.querySelector('[data-bill-form]');
+    const dataEl = document.getElementById('bill-data');
+    if (!form || !dataEl) return;
+    const state = JSON.parse(dataEl.textContent);
+    const projectSel = form.querySelector('[data-bill-project]');
+    const customerSel = form.querySelector('[data-bill-customer]');
+    const tbody = form.querySelector('[data-bill-tickets]');
+    const itemsBox = form.querySelector('[data-bill-items]');
+    const template = form.querySelector('[data-bill-item-template]');
+    const totalEl = form.querySelector('[data-bill-total]');
+    const checkAll = form.querySelector('[data-bill-check-all]');
+    const placeholder = customerSel.options[0]?.text || '';
+    const money = (n) => Number(n || 0).toLocaleString('en-US');
+    const num = (s) => Number(toLatin(String(s || '')).replace(/\D/g, '')) || 0;
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const project = () => state.projects.find((p) => String(p.id) === projectSel.value);
+    let rowIndex = 0;
+
+    const total = () => {
+        let sum = 0;
+        tbody.querySelectorAll('input[type=checkbox]:checked').forEach((c) => { sum += Number(c.dataset.cost); });
+        itemsBox.querySelectorAll('[data-name="amount"]').forEach((i) => { sum += num(i.value); });
+        totalEl.textContent = money(sum);
+    };
+
+    // SMS / email boxes are only possible when the customer has a mobile / an email.
+    form.querySelectorAll('[data-notify]').forEach((box) => box.addEventListener('change', () => { box.dataset.touched = '1'; }));
+    const notify = () => {
+        const customer = project()?.customers.find((c) => String(c.id) === customerSel.value);
+        form.querySelectorAll('[data-notify]').forEach((box) => {
+            const ok = !customer || !!customer[box.dataset.notify];
+            box.disabled = !ok;
+            if (!ok) box.checked = false;
+            else if (box.dataset.touched !== '1' && customer) box.checked = true;
+        });
+    };
+
+    const fillProject = (first) => {
+        const p = project();
+        customerSel.innerHTML = '';
+        customerSel.add(new Option(placeholder, ''));
+        (p?.customers || []).forEach((c) => customerSel.add(new Option(c.name, c.id)));
+        if (first && state.customer) customerSel.value = state.customer;
+        if (!customerSel.value && p?.customers.length === 1) customerSel.value = String(p.customers[0].id);
+        form.querySelector('[data-no-customer]').classList.toggle('d-none', !p || p.customers.length > 0);
+
+        const tickets = p?.tickets || [];
+        tbody.innerHTML = tickets.map((t) => `
+            <tr>
+                <td><input type="checkbox" class="form-check-input" name="tickets[]" value="${t.id}" data-cost="${t.cost}"
+                    ${first && state.tickets.includes(String(t.id)) ? 'checked' : ''}></td>
+                <td><a href="${form.dataset.ticketUrl}/${t.number}" target="_blank" class="t-number">#${t.number}</a></td>
+                <td>${esc(t.title)}</td>
+                <td class="text-nowrap small">${esc(t.date)}</td>
+                <td class="text-nowrap fw-semibold">${money(t.cost)}</td>
+            </tr>`).join('');
+        form.querySelector('[data-bill-no-tickets]').classList.toggle('d-none', tickets.length > 0);
+        checkAll.checked = false;
+        form.querySelectorAll('[data-currency]').forEach((el) => { el.textContent = p?.currency || ''; });
+        notify();
+        total();
+    };
+
+    const addItem = (values = {}) => {
+        const row = template.content.firstElementChild.cloneNode(true);
+        const i = rowIndex++;
+        row.querySelectorAll('[data-name]').forEach((input) => {
+            input.name = `items[${i}][${input.dataset.name}]`;
+            input.value = values[input.dataset.name] ?? '';
+        });
+        row.querySelectorAll('[data-currency]').forEach((el) => { el.textContent = project()?.currency || ''; });
+        row.querySelector('[data-money]') && bindMoney(row.querySelector('[data-money]'));
+        row.querySelector('[data-bill-remove]').addEventListener('click', () => { row.remove(); total(); });
+        row.addEventListener('input', total);
+        itemsBox.appendChild(row);
+        return row;
+    };
+
+    projectSel.value = state.project;
+    fillProject(true);
+    (state.items.length ? state.items : [{}]).forEach((item) => addItem(item));
+    total();
+
+    projectSel.addEventListener('change', () => fillProject(false));
+    customerSel.addEventListener('change', notify);
+    tbody.addEventListener('change', total);
+    checkAll.addEventListener('change', () => {
+        tbody.querySelectorAll('input[type=checkbox]').forEach((c) => { c.checked = checkAll.checked; });
+        total();
     });
+    form.querySelector('[data-bill-add]').addEventListener('click', () => addItem().querySelector('input')?.focus());
 }
 
 /* ---------- Payment form: projects follow the customer ---------- */
@@ -406,6 +503,39 @@ function initReturnTo() {
     document.querySelectorAll('a[data-return-link]').forEach((a) => { a.href = back; });
 }
 
+/* ---------- OTP countdown: "send again" is enabled at 0:00 ---------- */
+function initCountdown() {
+    const el = document.querySelector('[data-countdown]');
+    const button = document.querySelector('[data-countdown-button]');
+    if (!el || !button) return;
+    let left = parseInt(el.dataset.countdown, 10) || 0;
+    const show = () => {
+        el.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+        if (left <= 0) {
+            button.disabled = false;
+            el.closest('[data-countdown-wrap]')?.setAttribute('hidden', '');
+            return false;
+        }
+        return true;
+    };
+    if (!show()) return;
+    const timer = setInterval(() => {
+        left -= 1;
+        if (!show()) clearInterval(timer);
+    }, 1000);
+}
+
+/* ---------- Copy buttons (card number, IBAN) ---------- */
+function initCopy() {
+    document.querySelectorAll('[data-copy]').forEach((btn) => btn.addEventListener('click', () => {
+        navigator.clipboard?.writeText(btn.dataset.copy).then(() => {
+            const icon = btn.querySelector('i');
+            icon?.classList.replace('bi-copy', 'bi-check2');
+            setTimeout(() => icon?.classList.replace('bi-check2', 'bi-copy'), 1500);
+        });
+    }));
+}
+
 /* ---------- Tooltips ---------- */
 function initTooltips() {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
@@ -419,6 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDatePickers();
     initInputs();
     initPaymentForm();
+    initBillForm();
     initGrids();
     initTicketFilter();
     initBulk();
@@ -427,5 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFolders();
     initTicketForm();
     initEditors();
+    initCountdown();
+    initCopy();
     initTooltips();
 });

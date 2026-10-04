@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Middleware\SetLocale;
 use App\Models\ApiToken;
+use App\Support\Dates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +34,18 @@ class ProfileController extends Controller
             'locale' => ['required', Rule::in(SetLocale::LOCALES)],
             'calendar' => ['required', Rule::in(['jalali', 'gregorian'])],
         ];
+        if ($user->isDeveloper()) {
+            // Bank details shown to customers on bills and on the payment form.
+            $request->merge([
+                'card_number' => preg_replace('/\D/', '', Dates::latinDigits((string) $request->input('card_number'))) ?: null,
+                'iban' => strtoupper(preg_replace('/[\s-]/', '', Dates::latinDigits((string) $request->input('iban')))) ?: null,
+            ]);
+            $rules += [
+                'card_number' => ['nullable', 'digits:16'],
+                'iban' => ['nullable', 'regex:/^IR\d{24}$/'],
+                'account_holder' => ['nullable', 'string', 'max:150'],
+            ];
+        }
         if ($user->isAdmin()) {
             $rules += [
                 'first_name' => ['required', 'string', 'max:100'],
@@ -42,7 +55,11 @@ class ProfileController extends Controller
             ];
         }
 
-        $user->fill($request->validate($rules))->save();
+        $user->fill($request->validate($rules, [], [
+            'card_number' => __('users.fields.card_number'),
+            'iban' => __('users.fields.iban'),
+            'account_holder' => __('users.fields.account_holder'),
+        ]))->save();
         $request->session()->put('locale', $user->locale);
 
         return back()->with('success', __('app.saved'));

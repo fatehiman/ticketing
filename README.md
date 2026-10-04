@@ -1,6 +1,7 @@
 # Ticketing
 
-A lightweight ticketing and project management app built with **Laravel 12**, Blade and Bootstrap 5.
+**تیکتینگ — سامانه پشتیبانی کیمیا** (Kimia Support System): a lightweight ticketing and project management app
+built with **Laravel 12**, Blade and Bootstrap 5.
 
 - Two languages: **Persian (default)** and **English** — PHP translation files in `lang/fa` and `lang/en`.
 - Two themes that follow the language: **RTL theme** for Persian, **LTR theme** for English.
@@ -33,8 +34,27 @@ A lightweight ticketing and project management app built with **Laravel 12**, Bl
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
   folder** (e.g. *Backlog* without cost, *Done* with cost); a folder without its own choice uses the search page choice. Grids with money or `HH:MM`
   columns have a **totals row** (sums of all filtered records, not only the current page).
-- **Transactions**: staff add customer payments; each done ticket with a cost is shown as a
+- **Transactions**: accepted customer payments; each done ticket with a cost is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
+- **Bills** (صورتحساب‌ها): a developer issues a bill to a customer of a project. Items are done tickets with a cost
+  that are not on another bill, and/or **manual items** (title, amount, details — e.g. monthly support) that are
+  saved as done tickets of the project, so they are costs on the transactions page too. Bill number starts at 1001.
+  Checkboxes tell the customer by **SMS** (template 24562, `[param1]` = bill number) and/or a colourful **email**.
+  Paid / partly paid / unpaid: the accepted payments of a customer pay their bills **oldest first**.
+- **Payment vouchers** (no payment gateway yet): the customer pays to the developer's **card number / IBAN**
+  (set in the developer's profile) and registers the voucher: amount (default = the **whole debt now**, can be less
+  or more), pay date, pay time, tracking number, optional bill. It is *pending* until a developer **accepts** it
+  (or declines, edits, deletes it). Developers can also register a payment for the customer (accepted at once).
+  Only accepted payments count on the transactions page.
+- **SMS** through [msgway.com](https://msgway.com) (template based). Every SMS is written to an outbox
+  (`sms_messages`) and sent by the **queue worker**, so a slow or broken gateway never slows down the site.
+  Failed sends are retried after **1, 5, 10 and 30 minutes**, then marked *failed*; OTP codes only once after 1 minute.
+  - customer creates a ticket or writes a followup → every developer of the project (template 24564: project name, ticket number);
+  - developer reply that **waits for the customer** → the customer (template 24561: ticket number).
+- **Forgot password**: one box takes the email **or** the mobile number (an unknown one shows "not found").
+  Email → a reset link (60 minutes) from `no-reply@peppasoft.com`. Mobile → a 6-digit code by SMS (template 3),
+  valid 2 minutes; after a **1:50 countdown** the user can ask again: the 2nd request sends the **same code**
+  by SMS, the 3rd one by a **voice call**. Limits: 5 requests per email / mobile in 12 h, 10 per IP in 24 h.
 - Light, colourful themes: soft gradients for backgrounds and cards, solid colours for buttons.
 - Money is **always a whole number** in every currency: `7,000,000`, never `7,000,000.00`.
 - Latin / numeric fields (email, mobile, password, URL, code, amounts, times, dates) are always **LTR**, also in the RTL theme.
@@ -85,7 +105,12 @@ php artisan test
 | Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
-| Notifications hook (future SMS) | `app/Events/FollowupPosted.php` (no listener yet) |
+| SMS (msgway client, outbox, queue job, retries) | `app/Sms/MsgwayClient.php`, `app/Sms/Sms.php` (`Sms::send()`), `app/Jobs/SendSms.php`, `sms_messages` table, template IDs in `config/sms.php` |
+| SMS about tickets | `app/Listeners/SendTicketSms.php` (on `TicketCreated` and `FollowupPosted`) |
+| Forgot password (email link + SMS code / call) | `app/Http/Controllers/PasswordResetController.php`, `password_otps` table, `app/Mail/PasswordResetLink.php`, `resources/views/auth/{forgot,otp,new-password}.blade.php`, `initCountdown()` in `app.js` |
+| Bills, paid status | `app/Http/Controllers/BillController.php`, `app/Models/Bill.php`, `BillItem.php`, `app/Support/Bills.php` (`allocate()`, `debtOf()`), `app/Mail/BillIssued.php`, `initBillForm()` in `app.js` |
+| Payment vouchers (pending / accepted / declined) | `app/Http/Controllers/PaymentController.php`, `app/Policies/PaymentPolicy.php`, `resources/views/payments/*` |
+| Mail layout (colourful, inline styles) | `resources/views/mail/*` |
 | History and soft delete | `app/Services/TicketService.php`, `ticket_revisions` table; customer view: `RevisionPresenter::STAFF_ONLY` / `visibleChanges()` |
 | Ticket number (`id × 100 + 2 random digits`) | `app/Models/Ticket.php` |
 | Jalali / Gregorian dates | `app/Support/Dates.php`, `resources/views/components/date-input.blade.php` |
@@ -111,6 +136,10 @@ Served at `http://ticketing.localkimia.com` (LAN, hosts file → `192.168.1.10`)
 - nginx vhost: [deploy/nginx-ticketing.conf](deploy/nginx-ticketing.conf) (raises PHP upload limits for this site only).
 - Database: MariaDB `ticketing`.
 
+Background jobs (SMS and mail) need the **queue worker**: systemd unit
+[deploy/ticketing-queue.service](deploy/ticketing-queue.service) (`systemctl enable --now ticketing-queue`).
+deb10 has no `MSGWAY_API_KEY` (SMS rows end as *failed* with "not set") and `MAIL_MAILER=log`, so it never texts or mails real people.
+
 Update steps:
 
 ```bash
@@ -123,7 +152,7 @@ scp /tmp/ticketing.tgz deb10:/tmp/
 ssh deb10 'cd /var/www/ticketing && tar xzf /tmp/ticketing.tgz \
   && composer install --no-dev --optimize-autoloader \
   && php artisan migrate --force && php artisan optimize \
-  && chown -R www-data:www-data . && systemctl reload php8.4-fpm'
+  && chown -R www-data:www-data . && systemctl reload php8.4-fpm && php artisan queue:restart'
 ```
 
 ### waybill (`ticketing.kimiasoft.ir`)
@@ -136,6 +165,11 @@ ssh deb10 'cd /var/www/ticketing && tar xzf /tmp/ticketing.tgz \
 - `.env` has `TRUSTED_PROXIES=*` (real visitor IP for the login rate limit) and `SESSION_SECURE_COOKIE=true`;
   an `https://` `APP_URL` makes every generated URL https.
 - No demo data. Admin `admin@ticketing.local`; password in `E:wwwmyLanedentials.md`.
+- Queue worker: systemd unit `ticketing-queue` (same file as deb10).
+- `.env` has `MSGWAY_API_KEY` (msgway SMS) and mail through **ger1** Postfix: `MAIL_MAILER=smtp`,
+  `MAIL_HOST=smtp.peppasoft.com`, `MAIL_PORT=25`, `MAIL_FROM_ADDRESS=no-reply@peppasoft.com`. ger1 trusts the waybill IP
+  `130.185.76.10` (Postfix `mynetworks` and OpenDKIM `InternalHosts`, so the mail is DKIM-signed for `peppasoft.com`);
+  the Hetzner cloud firewall allows TCP 25 / 587 from that IP.
 
 Update steps (same archive as deb10; mod_php needs no reload):
 
@@ -143,5 +177,5 @@ Update steps (same archive as deb10; mod_php needs no reload):
 scp /tmp/ticketing.tgz waybill:/tmp/
 ssh waybill 'cd /var/www/ticketing && mariadb-dump ticketing | gzip > /root/ticketing-db-$(date +%F-%H%M).sql.gz \
   && tar xzf /tmp/ticketing.tgz && COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader \
-  && php artisan migrate --force && php artisan optimize && chown -R www-data:www-data .'
+  && php artisan migrate --force && php artisan optimize && chown -R www-data:www-data . && php artisan queue:restart'
 ```

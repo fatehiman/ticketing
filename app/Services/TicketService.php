@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\TicketStatus;
 use App\Events\FollowupPosted;
+use App\Events\TicketCreated;
 use App\Models\Attachment;
 use App\Models\Ticket;
 use App\Models\TicketFollowup;
@@ -23,7 +24,7 @@ class TicketService
 {
     public function create(array $data, User $user, array $files = []): Ticket
     {
-        return DB::transaction(function () use ($data, $user, $files) {
+        $ticket = DB::transaction(function () use ($data, $user, $files) {
             $data['content'] = Html::clean($data['content'] ?? null);
             $ticket = new Ticket($data);
             $ticket->reporter_id = $user->id;
@@ -38,6 +39,10 @@ class TicketService
 
             return $ticket;
         });
+
+        TicketCreated::dispatch($ticket, $user);
+
+        return $ticket;
     }
 
     public function update(Ticket $ticket, array $data, User $user, array $files = [], string $action = 'updated'): Ticket

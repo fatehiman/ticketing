@@ -12,7 +12,7 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The transactions ledger: customer payments + costs of done tickets, in one query.
+ * The transactions ledger: customer payments (accepted vouchers only) + costs of done tickets, in one query.
  *
  * A ticket is a "cost" row only while it is done AND has a cost. Its date is the due date,
  * or the day it was done when it has no due date (TX_DATE_COST).
@@ -90,6 +90,7 @@ class Transactions
 
         // --- payments ---------------------------------------------------------------
         $payments = Payment::query()->visibleTo($user)
+            ->where('payments.status', Payment::ACCEPTED) // pending / declined vouchers are not money yet
             ->when($customerId !== null, fn ($q) => $q->where('payments.customer_id', $customerId))
             ->when($projectFilter, fn ($q) => $q->where(function ($w) use ($projectIds, $withoutProject) {
                 $w->whereIn('payments.project_id', $projectIds ?: [0]);
