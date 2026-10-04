@@ -13,7 +13,7 @@
         <div class="card-body row g-3">
             <div class="col-md-8">
                 <label class="form-label required">{{ __('sprints.fields.project_id') }}</label>
-                <select name="project_id" class="form-select" required>
+                <select name="project_id" class="form-select" required @isset($defaults) data-sprint-defaults='@json($defaults)' @endisset>
                     @foreach ($projects as $project)
                         <option value="{{ $project->id }}" @selected((string) old('project_id', $sprint->project_id) === (string) $project->id)>{{ $project->name }}</option>
                     @endforeach

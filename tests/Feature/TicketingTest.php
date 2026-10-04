@@ -495,6 +495,22 @@ class TicketingTest extends TestCase
         $this->actingAs($this->dev)->get('/sprints')->assertOk()->assertViewHas('conflicts', $conflicts)->assertSee('text-danger', false);
     }
 
+    public function test_new_sprint_starts_the_day_after_the_last_sprint_of_the_project(): void
+    {
+        $this->actingAs($this->dev)->get('/sprints/create')->assertOk()
+            ->assertViewHas('sprint', fn ($s) => $s->number === 1 && $s->start_date === null);
+
+        Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'start_date' => '2026-10-05', 'end_date' => '2026-10-16', 'status' => 'closed']);
+        Sprint::create(['project_id' => $this->project->id, 'number' => 2, 'start_date' => '2026-10-17', 'end_date' => '2026-10-23', 'status' => 'active']);
+        Sprint::create(['project_id' => $this->project->id, 'number' => 3, 'status' => 'planned']); // no dates: ignored
+
+        // 23rd is a Friday: the next sprint still starts on Saturday the 24th (weekends included).
+        $this->actingAs($this->dev)->get('/sprints/create')->assertOk()
+            ->assertViewHas('sprint', fn ($s) => $s->number === 4 && $s->start_date->toDateString() === '2026-10-24')
+            ->assertViewHas('defaults', fn ($d) => $d[$this->project->id]['number'] === 4 && $d[$this->project->id]['start_date'] !== '')
+            ->assertSee('data-sprint-defaults', false);
+    }
+
     public function test_attachments_are_private_and_editor_upload_works(): void
     {
         Storage::fake('local');

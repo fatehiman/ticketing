@@ -23,6 +23,9 @@ built with **Laravel 12**, Blade and Bootstrap 5.
 - **Sprints** per project, with a **Days** column (end − start + 1, weekends included: 5th → 12th = 8 days). Dates of two sprints of the same project should not overlap (the next sprint starts
   the day after the previous one ends; gaps are fine). This is only a warning: the overlapping dates are **red**
   on the sprints page (end of the earlier sprint and start of the later one), and saving shows a warning.
+  On **New sprint**, the number and the **start date** are filled for the chosen project: start = latest end date of
+  its sprints **+ 1 day** (weekends included; empty when no sprint has an end date). Changing the project fills them
+  again, but a value typed by hand stays.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
   A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
   each one, saved per user, with **Reset to default**. Default = the owner's choice (`TicketMenus::DEFAULT_ORDER` /
@@ -112,6 +115,7 @@ php artisan test
 | Top-bar project switcher | `app/Support/ProjectContext.php` |
 | Ticket filters, folders, badges | `app/Support/TicketFilter.php`, `app/Support/TicketMenus.php` |
 | Current sprint (by dates), green marker | `Sprint::scopeCurrent()`, `Sprint::isCurrent()`, `resources/views/components/sprint.blade.php` (`<x-sprint>`) |
+| New sprint defaults (number, start date per project) | `SprintController::newSprintDefaults()`, `initSprintForm()` in `resources/js/app.js` |
 | Order / show-hide of built-in folders | `TicketMenus::applySettings()`, `FolderSettingsController`, `users.folder_settings`, `resources/views/partials/folders-modal.blade.php`, `initFolders()` in `resources/js/app.js` |
 | Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |

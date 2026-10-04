@@ -10,6 +10,7 @@ use App\Support\Dates;
 use App\Support\Grid;
 use App\Support\ProjectContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class SprintController extends Controller
@@ -51,13 +52,35 @@ class SprintController extends Controller
     {
         $projects = $this->editableProjects($request);
         $projectId = $context->id() ?? $projects->first()?->id;
+        $defaults = $this->newSprintDefaults($projects->pluck('id')->all());
         $sprint = new Sprint([
             'project_id' => $projectId,
             'status' => SprintStatus::Planned,
-            'number' => $projectId ? ((int) Sprint::where('project_id', $projectId)->max('number')) + 1 : 1,
+            'number' => $defaults[$projectId]['number'] ?? 1,
+            'start_date' => $defaults[$projectId]['start_date'] ?? null,
         ]);
 
-        return view('sprints.form', ['sprint' => $sprint, 'projects' => $projects, 'statuses' => SprintStatus::cases()]);
+        // The form fills number and start date again when the user picks another project.
+        $defaults = collect($defaults)->map(fn ($d) => ['number' => $d['number'], 'start_date' => Dates::input($d['start_date'])]);
+
+        return view('sprints.form', ['sprint' => $sprint, 'projects' => $projects, 'statuses' => SprintStatus::cases(), 'defaults' => $defaults]);
+    }
+
+    /**
+     * Next number and start date of a new sprint, per project. The start date is the day after the
+     * latest end date of the project's sprints (weekends included); null when no sprint has an end date.
+     *
+     * @return array<int, array{number: int, start_date: ?\Illuminate\Support\Carbon}>
+     */
+    private function newSprintDefaults(array $projectIds): array
+    {
+        $rows = Sprint::whereIn('project_id', $projectIds)->groupBy('project_id')
+            ->selectRaw('project_id, MAX(number) as max_number, MAX(end_date) as last_end')->get()->keyBy('project_id');
+
+        return collect($projectIds)->mapWithKeys(fn ($id) => [$id => [
+            'number' => ((int) $rows->get($id)?->max_number) + 1,
+            'start_date' => $rows->get($id)?->last_end ? Carbon::parse($rows->get($id)->last_end)->addDay() : null,
+        ]])->all();
     }
 
     public function store(Request $request)

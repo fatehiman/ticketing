@@ -84,6 +84,8 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Each ticket folder (built-in or custom) keeps its own visible columns; the search page choice is the fallback
 - [x] Sprint date conflicts: sprints of one project must not overlap (the next one starts the day after the previous
       one ends; gaps are fine). Only a warning: the overlapping dates are red on the sprints page, and saving shows a warning
+- [x] New sprint: start date = last end date of the chosen project + 1 day (weekends included); number and start date
+      follow the project dropdown (ED-8132)
 - [x] *Current sprint* folder and sprint filter option: tickets of every sprint whose dates include today
 - [x] Current sprints are green everywhere (grids, ticket page, dashboard, dropdowns)
 - [x] Customers do not see history of price, time and story points (other changes stay visible)

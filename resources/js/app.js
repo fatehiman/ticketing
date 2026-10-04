@@ -519,6 +519,24 @@ function initTicketForm() {
     sync();
 }
 
+/* ---------- New sprint: number and start date follow the project ---------- */
+function initSprintForm() {
+    const project = document.querySelector('[data-sprint-defaults]');
+    if (!project) return;
+    const defaults = JSON.parse(project.dataset.sprintDefaults);
+    const form = project.closest('form');
+    const fields = { number: form.elements.number, start_date: form.elements.start_date };
+    let current = defaults[project.value] || {};
+    project.addEventListener('change', () => {
+        const next = defaults[project.value] || {};
+        // A value the user typed by hand stays; only the previous project's default is replaced.
+        Object.entries(fields).forEach(([key, input]) => {
+            if (input.value === String(current[key] ?? '')) input.value = next[key] ?? '';
+        });
+        current = next;
+    });
+}
+
 /* ---------- Rich text editor (TinyMCE, self-hosted) ---------- */
 function initEditors() {
     if (!window.tinymce || !document.querySelector('textarea[data-editor]')) return;
@@ -724,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMenuEdit();
     initFolders();
     initTicketForm();
+    initSprintForm();
     initEditors();
     initCountdown();
     initCopy();
