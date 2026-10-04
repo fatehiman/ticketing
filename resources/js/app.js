@@ -359,7 +359,9 @@ function initMenuEdit() {
     const modalEl = document.getElementById('menuEditModal');
     if (!modalEl) return;
     const modal = new bootstrap.Modal(modalEl);
-    document.querySelectorAll('.menu-edit').forEach((btn) =>
+    // Only custom folders (they have their own URLs). The pencil of "Tickets" also has .menu-edit
+    // for its look, but opens the built-in folders modal (initFolders).
+    document.querySelectorAll('.menu-edit[data-update-url]').forEach((btn) =>
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
