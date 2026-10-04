@@ -336,8 +336,11 @@ class TicketingTest extends TestCase
     {
         $keys = fn (User $u) => collect((new \App\Support\TicketMenus($u, app(\App\Support\ProjectContext::class)))->items())
             ->reject(fn ($i) => $i['hidden'])->pluck('key')->all();
+        // Default (the owner's choice): "all" first; "open", cancelled, rejected, mine, unassigned, reported hidden.
         $default = $keys($this->customer);
-        $this->assertSame('open', $default[0]);
+        $this->assertSame('all', $default[0]);
+        $this->assertNotContains('open', $default);
+        $this->assertNotContains('reported', $default);
 
         // Customer: "all" first, "open" hidden, an unknown key is dropped; missing folders come at the end.
         $this->actingAs($this->customer)->put('/folder-settings', [
@@ -376,7 +379,18 @@ class TicketingTest extends TestCase
     {
         $this->actingAs($this->dev)->postJson('/grid-preferences', ['grid' => 'tickets', 'columns' => ['number', 'title', 'cost']])->assertOk();
         $this->assertDatabaseHas('grid_preferences', ['user_id' => $this->dev->id, 'grid_key' => 'tickets']);
-        $this->actingAs($this->dev)->get('/tickets')->assertOk()->assertViewHas('grid', fn ($g) => $g->visible('cost') && ! $g->visible('status'));
+        $this->actingAs($this->dev)->get('/tickets?q=x')->assertOk()->assertViewHas('grid', fn ($g) => $g->visible('cost') && ! $g->visible('status'));
+    }
+
+    public function test_folders_have_default_columns(): void
+    {
+        // Nobody changed anything: each folder shows its default columns.
+        $this->actingAs($this->customer)->get('/tickets?status[]=done')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->visible('sprint') && $g->visible('cost') && ! $g->visible('type') && ! $g->visible('status'));
+        $this->actingAs($this->customer)->get('/tickets?status[]=pending_review')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->visible('priority') && ! $g->visible('sprint') && ! $g->visible('status'));
+        $this->actingAs($this->customer)->get('/tickets?q=x')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->visible('status') && $g->visible('cost')); // search page
     }
 
     public function test_each_ticket_folder_keeps_its_own_columns(): void
@@ -387,8 +401,12 @@ class TicketingTest extends TestCase
 
         $this->actingAs($this->dev)->get('/tickets?status[]=done')->assertOk()
             ->assertViewHas('grid', fn ($g) => $g->key === 'tickets-status_done' && $g->visible('cost') && ! $g->visible('status'));
+        // A folder without default columns (testing) falls back to the search page choice;
+        // a folder with default columns (backlog) keeps its defaults.
+        $this->actingAs($this->dev)->get('/tickets?status[]=testing')->assertOk()
+            ->assertViewHas('grid', fn ($g) => $g->key === 'tickets-status_testing' && $g->visible('status') && ! $g->visible('cost'));
         $this->actingAs($this->dev)->get('/tickets?status[]=backlog')->assertOk()
-            ->assertViewHas('grid', fn ($g) => $g->key === 'tickets-status_backlog' && $g->visible('status') && ! $g->visible('cost'));
+            ->assertViewHas('grid', fn ($g) => $g->key === 'tickets-status_backlog' && $g->visible('estimated_cost') && ! $g->visible('status'));
         $this->actingAs($this->dev)->get('/tickets?q=xyz')->assertOk()
             ->assertViewHas('grid', fn ($g) => $g->key === 'tickets' && $g->visible('status'));
     }

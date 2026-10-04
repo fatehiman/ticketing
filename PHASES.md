@@ -109,6 +109,9 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Done tickets without a cost can go on a bill (amount 0); a manual item carries the price (e.g. "Cost of phase 1")
 - [x] Sprint picker on the new-bill page: ticks all done tickets of the sprint that are not on a bill
 - [x] Bulk action **Set cost**: one fixed cost for many selected tickets (0 removes the cost)
+- [x] Bulk actions ask for confirmation only for delete
+- [x] The owner's folder order / show-hide and per-folder columns are the default for everyone (reset once for all users)
+- [x] New-bill page: ticket list in pages of 25 with search; ticks kept across pages, "Select all" / "Clear selection"
 
 ## Phase 2 — Collaboration
 

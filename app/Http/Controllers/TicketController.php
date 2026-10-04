@@ -39,6 +39,19 @@ class TicketController extends Controller
         'logged_time', 'estimated_cost', 'due_date', 'attachments', 'created_at', 'updated_at',
     ];
 
+    /**
+     * Default visible columns of some folders (key = folder). Copied from the owner's choice (2026-10-04).
+     * Other folders (and custom ones) use the user's search page choice, else HIDDEN_COLUMNS.
+     */
+    public const FOLDER_COLUMNS = [
+        'all' => ['number', 'title', 'type', 'status', 'priority', 'sprint'],
+        'awaiting' => ['number', 'title', 'type', 'status', 'priority', 'sprint'],
+        'status_pending_review' => ['number', 'title', 'type', 'priority'],
+        'status_backlog' => ['number', 'title', 'type', 'priority', 'sprint', 'estimated_cost'],
+        'status_in_progress' => ['number', 'title', 'type', 'status', 'priority', 'sprint', 'estimated_cost'],
+        'status_done' => ['number', 'title', 'sprint', 'cost'],
+    ];
+
     public const BULK_ACTIONS = ['status', 'sprint', 'assignee', 'priority', 'type', 'cost', 'delete'];
 
     public function __construct(private TicketService $tickets) {}
@@ -57,7 +70,8 @@ class TicketController extends Controller
         // Each folder keeps its own columns (backlog needs other columns than done).
         // A folder without its own choice uses the choice of the search page ("tickets").
         $folder = TicketMenus::activeKey($user, $request);
-        $grid = Grid::make($folder ? 'tickets-'.$folder : 'tickets', [
+        $folderColumns = self::FOLDER_COLUMNS[$folder] ?? null;
+        $columns = [
             'number' => __('tickets.fields.number'),
             'title' => __('tickets.fields.title'),
             'project' => __('tickets.fields.project_id'),
@@ -77,7 +91,11 @@ class TicketController extends Controller
             'attachments' => __('tickets.fields.attachments'),
             'created_at' => __('tickets.fields.created_at'),
             'updated_at' => __('tickets.fields.updated_at'),
-        ], hidden: self::HIDDEN_COLUMNS, locked: ['number', 'title'], fallback: 'tickets');
+        ];
+        // A folder with its own default columns does not fall back to the search page choice.
+        $grid = Grid::make($folder ? 'tickets-'.$folder : 'tickets', $columns,
+            hidden: $folderColumns ? array_values(array_diff(array_keys($columns), $folderColumns)) : self::HIDDEN_COLUMNS,
+            locked: ['number', 'title'], fallback: $folderColumns ? null : 'tickets');
         // Totals row: sums over all filtered tickets, not only this page.
         $grid->totals($query, [
             'story_points' => ['story_points', Grid::NUMBER],

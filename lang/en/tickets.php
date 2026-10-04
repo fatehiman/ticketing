@@ -78,7 +78,6 @@ return [
         'cost_placeholder' => 'Cost of each ticket',
         'cost_hint' => 'This cost is saved on each selected ticket. 0 removes the cost.',
         'delete' => 'Delete',
-        'confirm' => 'Apply this action to the selected tickets?',
         'confirm_delete' => 'Delete the selected tickets?',
         'done' => '{0} No ticket was changed.|{1} 1 ticket was changed.|[2,*] :count tickets were changed.',
         'skipped' => '{1} 1 ticket was skipped (no access, or the sprint / assignee belongs to another project).|[2,*] :count tickets were skipped (no access, or the sprint / assignee belongs to another project).',

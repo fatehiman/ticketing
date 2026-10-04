@@ -22,7 +22,8 @@
     </div>
 
     <script type="application/json" id="bill-data">@json($state)</script>
-    <script type="application/json" id="bill-i18n">@json(['sprint_added' => __('bills.sprint_added'), 'no_cost' => __('bills.no_cost')])</script>
+    @php($billTexts = ['sprint_added' => __('bills.sprint_added'), 'no_cost' => __('bills.no_cost'), 'selected' => __('bills.selected'), 'page' => __('bills.page')])
+    <script type="application/json" id="bill-i18n">@json($billTexts)</script>
 
     <form method="POST" action="{{ route('bills.store') }}" data-bill-form data-ticket-url="{{ url('tickets') }}">
         @csrf
@@ -75,11 +76,21 @@
                 </div>
             </div>
             <div class="small text-success px-3 pt-2 d-none" data-bill-sprint-msg></div>
+            <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-2" data-bill-tools>
+                <div class="input-group input-group-sm" style="max-width: 320px">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="search" class="form-control" data-bill-search placeholder="{{ __('bills.search_tickets') }}">
+                </div>
+                <span class="small fw-semibold text-brand" data-bill-selected-count></span>
+                <button type="button" class="btn btn-sm btn-link text-decoration-none" data-bill-select-all>{{ __('bills.select_all') }}</button>
+                <button type="button" class="btn btn-sm btn-link text-decoration-none text-danger" data-bill-select-none>{{ __('bills.select_none') }}</button>
+            </div>
+            <div data-bill-selected></div>
             <div class="table-responsive">
                 <table class="table table-grid mb-0">
                     <thead>
                     <tr>
-                        <th style="width:36px"><input type="checkbox" class="form-check-input" data-bill-check-all title="{{ __('app.all') }}"></th>
+                        <th style="width:36px"><input type="checkbox" class="form-check-input" data-bill-check-all title="{{ __('bills.check_page') }}"></th>
                         <th>{{ __('tickets.fields.number') }}</th>
                         <th>{{ __('tickets.fields.title') }}</th>
                         <th>{{ __('tickets.fields.sprint_id') }}</th>
@@ -91,6 +102,12 @@
                 </table>
             </div>
             <div class="card-body py-2 small text-muted d-none" data-bill-no-tickets>{{ __('bills.no_tickets') }}</div>
+            <div class="card-body py-2 small text-muted d-none" data-bill-no-match>{{ __('app.no_results') }}</div>
+            <div class="card-footer bg-transparent d-flex align-items-center justify-content-center gap-3 d-none" data-bill-pager>
+                <button type="button" class="btn btn-sm btn-light" data-bill-prev><i class="bi bi-chevron-{{ app()->getLocale() === 'fa' ? 'right' : 'left' }}"></i> {{ __('bills.prev') }}</button>
+                <span class="small text-muted" data-bill-page-info></span>
+                <button type="button" class="btn btn-sm btn-light" data-bill-next>{{ __('bills.next') }} <i class="bi bi-chevron-{{ app()->getLocale() === 'fa' ? 'left' : 'right' }}"></i></button>
+            </div>
         </div>
 
         {{-- Manual items: saved as done tickets of the project --}}

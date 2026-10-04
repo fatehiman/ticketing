@@ -71,7 +71,7 @@ class TransactionsTest extends TestCase
     public function test_tickets_grid_default_columns(): void
     {
         $this->ticket(['cost' => 250]);
-        $html = $this->actingAs($this->dev)->get('/tickets')->assertOk()->getContent();
+        $html = $this->actingAs($this->dev)->get('/tickets?q=login')->assertOk()->getContent(); // the search page, not a folder
 
         foreach (['number', 'title', 'type', 'status', 'priority', 'sprint', 'cost'] as $col) {
             $this->assertMatchesRegularExpression('/<th data-col="'.$col.'" class="\s*"/', $html, "$col should be visible");
@@ -84,7 +84,7 @@ class TransactionsTest extends TestCase
     public function test_user_column_choice_is_kept(): void
     {
         $this->actingAs($this->dev)->postJson('/grid-preferences', ['grid' => 'tickets', 'columns' => ['number', 'title', 'project']])->assertOk();
-        $html = $this->get('/tickets')->getContent();
+        $html = $this->get('/tickets?q=login')->getContent();
         $this->assertMatchesRegularExpression('/<th data-col="project" class="\s*"/', $html);
         $this->assertMatchesRegularExpression('/<th data-col="cost" class="d-none"/', $html);
         $this->assertSame(1, GridPreference::count());
@@ -98,7 +98,7 @@ class TransactionsTest extends TestCase
         $this->actingAs($this->dev);
         $this->postJson('/grid-preferences', ['grid' => 'tickets', 'columns' => ['number', 'title', 'cost', 'logged_time']]);
 
-        $response = $this->get('/tickets?per_page=10')->assertOk();
+        $response = $this->get('/tickets?q=login&per_page=10')->assertOk();
         $response->assertSee('1,200');   // 12 × 100, although only 10 rows are on the page
         $response->assertSee('06:00');   // 12 × 30 minutes
         $this->assertStringNotContainsString('grid-totals d-none', $response->getContent());

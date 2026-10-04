@@ -25,15 +25,18 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   on the sprints page (end of the earlier sprint and start of the later one), and saving shows a warning.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
   A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
-  each one, saved per user, with **Reset to default** (default: current order, all shown). Custom menus are not in it.
+  each one, saved per user, with **Reset to default**. Default = the owner's choice (`TicketMenus::DEFAULT_ORDER` /
+  `DEFAULT_HIDDEN`): *All* first; *Open*, *Cancelled*, *Rejected*, *Assigned to me*, *Unassigned*, *Reported by me* hidden.
+  Custom menus are not in it.
 - **Current sprint** folder (اسپرینت حاضر), also an option of the sprint filter: tickets in any status of every sprint
   whose **dates include today** (both ends count). Overlapping sprints → tickets of all of them. The sprint status is not used.
   A current sprint is **green everywhere** (tickets grid and page, sprints page and project page rows, dashboard, sprint dropdowns).
 - **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
   change status, sprint, assignee, priority, type or **cost** (one fixed cost for many small tickets; 0 removes it),
-  or delete them in one step. Every change goes into the history.
+  or delete them in one step. Every change goes into the history. Only **delete** asks for confirmation.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
-  folder** (e.g. *Backlog* without cost, *Done* with cost); a folder without its own choice uses the search page choice. Grids with money or `HH:MM`
+  folder** (e.g. *Backlog* without cost, *Done* with cost). Some folders have **default columns**
+  (`TicketController::FOLDER_COLUMNS`, the owner's choice); other folders without the user's own choice use the search page choice. Grids with money or `HH:MM`
   columns have a **totals row** (sums of all filtered records, not only the current page).
 - **Transactions**: accepted customer payments; each done ticket with a cost is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
@@ -41,7 +44,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   on another bill — **with or without a cost** (a ticket without a cost is listed with amount 0, and a manual item
   such as "Cost of phase 1" carries the price of those tickets) — and/or **manual items** (title, amount, details —
   e.g. monthly support) that are saved as done tickets of the project, so they are costs on the transactions page too.
-  A **sprint picker** ticks all done tickets of a sprint at once. Bill number starts at 1001.
+  A **sprint picker** ticks all done tickets of a sprint at once. The ticket list has **pages** (25 per page) and a search
+  box; ticks are kept across pages ("Select all" ticks every ticket of the search). Bill number starts at 1001.
   Checkboxes tell the customer by **SMS** (template 24562, `[param1]` = bill number) and/or a colourful **email**.
   Paid / partly paid / unpaid: the accepted payments of a customer pay their bills **oldest first**.
 - **Payment vouchers** (no payment gateway yet): the customer pays to the developer's **card number / IBAN**

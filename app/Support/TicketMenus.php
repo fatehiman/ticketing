@@ -84,6 +84,18 @@ class TicketMenus
         return $items;
     }
 
+    /**
+     * Default order and hidden folders for every user who has not changed them (the pencil next
+     * to "Tickets"; "Reset to default" comes back here). Copied from the owner's choice (2026-10-04).
+     * A folder missing from the order (e.g. a new status) comes at the end.
+     */
+    public const DEFAULT_ORDER = [
+        'open', 'all', 'awaiting', 'status_pending_review', 'status_backlog', 'status_in_progress', 'status_testing',
+        'status_done', 'status_cancelled', 'status_rejected', 'mine', 'unassigned', 'reported', 'current_sprint',
+    ];
+
+    public const DEFAULT_HIDDEN = ['open', 'status_cancelled', 'status_rejected', 'mine', 'unassigned', 'reported'];
+
     /** Keys of all built-in folders (for every role). */
     public static function builtinKeys(): array
     {
@@ -102,8 +114,8 @@ class TicketMenus
     private function applySettings(array $items): array
     {
         $settings = $this->user->folder_settings ?? [];
-        $order = array_flip($settings['order'] ?? []);
-        $hidden = $settings['hidden'] ?? [];
+        $order = array_flip($settings['order'] ?? self::DEFAULT_ORDER);
+        $hidden = $settings['hidden'] ?? self::DEFAULT_HIDDEN;
 
         foreach ($items as $i => &$item) {
             $item['hidden'] = in_array($item['key'], $hidden, true);

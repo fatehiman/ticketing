@@ -173,7 +173,7 @@
         @if ($bulk)
             {{-- Bulk actions on the checked tickets of this page (app.js shows the bar while a ticket is checked). --}}
             <form method="POST" action="{{ route('tickets.bulk') }}" id="bulk-form" class="bulk-bar d-none"
-                  data-confirm="{{ __('tickets.bulk.confirm') }}" data-confirm-delete="{{ __('tickets.bulk.confirm_delete') }}">
+                  data-confirm-delete="{{ __('tickets.bulk.confirm_delete') }}">
                 @csrf
                 <span class="fw-semibold text-nowrap" data-bulk-count data-label-one="{{ trans_choice('tickets.bulk.selected', 1) }}" data-label-many="{{ trans_choice('tickets.bulk.selected', 2, ['count' => '#']) }}"></span>
                 <select name="action" class="form-select form-select-sm" data-bulk-action required aria-label="{{ __('tickets.bulk.action') }}">

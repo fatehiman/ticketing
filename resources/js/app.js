@@ -104,6 +104,10 @@ function initBillForm() {
     const template = form.querySelector('[data-bill-item-template]');
     const totalEl = form.querySelector('[data-bill-total]');
     const checkAll = form.querySelector('[data-bill-check-all]');
+    const search = form.querySelector('[data-bill-search]');
+    const pager = form.querySelector('[data-bill-pager]');
+    const selectedBox = form.querySelector('[data-bill-selected]');
+    const selectedCount = form.querySelector('[data-bill-selected-count]');
     const placeholder = customerSel.options[0]?.text || '';
     const sprintSel = form.querySelector('[data-bill-sprint]');
     const sprintAdd = form.querySelector('[data-bill-sprint-add]');
@@ -114,13 +118,63 @@ function initBillForm() {
     const num = (s) => Number(toLatin(String(s || '')).replace(/\D/g, '')) || 0;
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const project = () => state.projects.find((p) => String(p.id) === projectSel.value);
+    const PER_PAGE = 25;
     let rowIndex = 0;
+    let page = 1;
+    // Ticked tickets of the project, kept across pages and searches; sent as hidden inputs.
+    let selected = new Set();
+
+    const tickets = () => project()?.tickets || [];
+    const filtered = () => {
+        const q = toLatin(search.value.trim().toLowerCase()).replace(/^#/, '');
+        if (!q) return tickets();
+        return tickets().filter((t) => String(t.number).includes(q) || String(t.title).toLowerCase().includes(q) || String(t.sprint || '').toLowerCase().includes(q));
+    };
 
     const total = () => {
         let sum = 0;
-        tbody.querySelectorAll('input[type=checkbox]:checked').forEach((c) => { sum += Number(c.dataset.cost); });
+        tickets().forEach((t) => { if (selected.has(String(t.id))) sum += Number(t.cost); });
         itemsBox.querySelectorAll('[data-name="amount"]').forEach((i) => { sum += num(i.value); });
         totalEl.textContent = money(sum);
+    };
+
+    const syncSelected = () => {
+        selectedBox.innerHTML = '';
+        selected.forEach((id) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'tickets[]';
+            input.value = id;
+            selectedBox.appendChild(input);
+        });
+        selectedCount.textContent = (i18n.selected || ':count').replace(':count', selected.size);
+        total();
+    };
+
+    const renderTickets = () => {
+        const list = filtered();
+        const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+        page = Math.min(Math.max(1, page), pages);
+        const rows = list.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+        tbody.innerHTML = rows.map((t) => `
+            <tr>
+                <td><input type="checkbox" class="form-check-input" value="${t.id}" ${selected.has(String(t.id)) ? 'checked' : ''}></td>
+                <td><a href="${form.dataset.ticketUrl}/${t.number}" target="_blank" class="t-number">#${t.number}</a></td>
+                <td>${esc(t.title)}</td>
+                <td class="text-nowrap small">${esc(t.sprint)}</td>
+                <td class="text-nowrap small">${esc(t.date)}</td>
+                <td class="text-nowrap ${t.cost > 0 ? 'fw-semibold' : 'text-muted small'}">${t.cost > 0 ? money(t.cost) : esc(i18n.no_cost)}</td>
+            </tr>`).join('');
+        checkAll.checked = rows.length > 0 && rows.every((t) => selected.has(String(t.id)));
+
+        // Pager: « prev  page X of Y (N tickets)  next »
+        pager.classList.toggle('d-none', list.length <= PER_PAGE);
+        pager.querySelector('[data-bill-page-info]').textContent = (i18n.page || ':page / :pages')
+            .replace(':page', page).replace(':pages', pages).replace(':count', list.length);
+        pager.querySelector('[data-bill-prev]').disabled = page <= 1;
+        pager.querySelector('[data-bill-next]').disabled = page >= pages;
+        form.querySelector('[data-bill-no-tickets]').classList.toggle('d-none', tickets().length > 0);
+        form.querySelector('[data-bill-no-match]').classList.toggle('d-none', tickets().length === 0 || list.length > 0);
     };
 
     // SMS / email boxes are only possible when the customer has a mobile / an email.
@@ -144,17 +198,11 @@ function initBillForm() {
         if (!customerSel.value && p?.customers.length === 1) customerSel.value = String(p.customers[0].id);
         form.querySelector('[data-no-customer]').classList.toggle('d-none', !p || p.customers.length > 0);
 
-        const tickets = p?.tickets || [];
-        tbody.innerHTML = tickets.map((t) => `
-            <tr>
-                <td><input type="checkbox" class="form-check-input" name="tickets[]" value="${t.id}" data-cost="${t.cost}"
-                    ${first && state.tickets.includes(String(t.id)) ? 'checked' : ''}></td>
-                <td><a href="${form.dataset.ticketUrl}/${t.number}" target="_blank" class="t-number">#${t.number}</a></td>
-                <td>${esc(t.title)}</td>
-                <td class="text-nowrap small">${esc(t.sprint)}</td>
-                <td class="text-nowrap small">${esc(t.date)}</td>
-                <td class="text-nowrap ${t.cost > 0 ? 'fw-semibold' : 'text-muted small'}">${t.cost > 0 ? money(t.cost) : esc(i18n.no_cost)}</td>
-            </tr>`).join('');
+        // A new project starts with no ticks (after a validation error: the ticks sent before).
+        const ids = new Set(tickets().map((t) => String(t.id)));
+        selected = new Set(first ? state.tickets.filter((id) => ids.has(String(id))).map(String) : []);
+        search.value = '';
+        page = 1;
 
         // Sprints that have billable tickets: picking one ticks all of its done tickets.
         sprintSel.innerHTML = '';
@@ -167,11 +215,11 @@ function initBillForm() {
         sprintAdd.disabled = true;
         sprintMsg.classList.add('d-none');
         form.querySelector('[data-bill-sprint-box]').classList.toggle('d-none', !(p?.sprints || []).length);
-        form.querySelector('[data-bill-no-tickets]').classList.toggle('d-none', tickets.length > 0);
-        checkAll.checked = false;
+        form.querySelector('[data-bill-tools]').classList.toggle('d-none', tickets().length === 0);
         form.querySelectorAll('[data-currency]').forEach((el) => { el.textContent = p?.currency || ''; });
+        renderTickets();
+        syncSelected();
         notify();
-        total();
     };
 
     const addItem = (values = {}) => {
@@ -197,21 +245,43 @@ function initBillForm() {
     projectSel.addEventListener('change', () => fillProject(false));
     sprintSel.addEventListener('change', () => { sprintAdd.disabled = !sprintSel.value; });
     sprintAdd.addEventListener('click', () => {
-        const ids = (project()?.tickets || []).filter((t) => String(t.sprint_id) === sprintSel.value).map((t) => String(t.id));
         let added = 0;
-        tbody.querySelectorAll('input[type=checkbox]').forEach((c) => {
-            if (ids.includes(c.value) && !c.checked) { c.checked = true; added += 1; }
+        tickets().filter((t) => String(t.sprint_id) === sprintSel.value).forEach((t) => {
+            if (!selected.has(String(t.id))) { selected.add(String(t.id)); added += 1; }
         });
         sprintMsg.textContent = (i18n.sprint_added || ':count').replace(':count', added);
         sprintMsg.classList.remove('d-none');
-        total();
+        renderTickets();
+        syncSelected();
     });
-    customerSel.addEventListener('change', notify);
-    tbody.addEventListener('change', total);
+    tbody.addEventListener('change', (e) => {
+        if (e.target.type !== 'checkbox') return;
+        if (e.target.checked) selected.add(e.target.value); else selected.delete(e.target.value);
+        renderTickets();
+        syncSelected();
+    });
+    // The header box ticks / unticks the tickets of this page only.
     checkAll.addEventListener('change', () => {
-        tbody.querySelectorAll('input[type=checkbox]').forEach((c) => { c.checked = checkAll.checked; });
-        total();
+        tbody.querySelectorAll('input[type=checkbox]').forEach((c) => {
+            if (checkAll.checked) selected.add(c.value); else selected.delete(c.value);
+        });
+        renderTickets();
+        syncSelected();
     });
+    form.querySelector('[data-bill-select-all]').addEventListener('click', () => {
+        filtered().forEach((t) => selected.add(String(t.id)));
+        renderTickets();
+        syncSelected();
+    });
+    form.querySelector('[data-bill-select-none]').addEventListener('click', () => {
+        selected.clear();
+        renderTickets();
+        syncSelected();
+    });
+    search.addEventListener('input', () => { page = 1; renderTickets(); });
+    search.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+    pager.querySelector('[data-bill-prev]').addEventListener('click', () => { page -= 1; renderTickets(); });
+    pager.querySelector('[data-bill-next]').addEventListener('click', () => { page += 1; renderTickets(); });
     form.querySelector('[data-bill-add]').addEventListener('click', () => addItem().querySelector('input')?.focus());
 }
 
@@ -283,9 +353,9 @@ function initBulk() {
             el.classList.toggle('d-none', !on);
             el.disabled = !on;
         });
-        form.dataset.confirm = action.value === 'delete' ? form.dataset.confirmDelete : form.dataset.confirmDefault;
+        // Only delete asks first; the other actions are plain edits (and are in the history).
+        form.dataset.confirm = action.value === 'delete' ? form.dataset.confirmDelete : '';
     };
-    form.dataset.confirmDefault = form.dataset.confirm;
 
     rows.forEach((r) => r.addEventListener('change', refresh));
     all.addEventListener('change', () => {
