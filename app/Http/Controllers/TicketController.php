@@ -239,29 +239,31 @@ class TicketController extends Controller
 
         $done = $skipped = 0;
         $tickets = Ticket::whereIn('id', $data['ids'])->get();
-        foreach ($tickets as $ticket) {
-            $fits = match ($action) {
-                'sprint' => ! $sprint || $sprint->project_id === $ticket->project_id,
-                'assignee' => ! $assignee || $assignee->projects->contains('id', $ticket->project_id),
-                default => true,
-            };
-            if (! $fits || ! $user->can($action === 'status' ? 'changeStatus' : ($action === 'delete' ? 'delete' : 'update'), $ticket)) {
-                $skipped++;
+        $this->tickets->batch(function () use ($tickets, $action, $sprint, $assignee, $user, $data, &$done, &$skipped) {
+            foreach ($tickets as $ticket) {
+                $fits = match ($action) {
+                    'sprint' => ! $sprint || $sprint->project_id === $ticket->project_id,
+                    'assignee' => ! $assignee || $assignee->projects->contains('id', $ticket->project_id),
+                    default => true,
+                };
+                if (! $fits || ! $user->can($action === 'status' ? 'changeStatus' : ($action === 'delete' ? 'delete' : 'update'), $ticket)) {
+                    $skipped++;
 
-                continue;
+                    continue;
+                }
+
+                match ($action) {
+                    'status' => $this->tickets->changeStatus($ticket, TicketStatus::from($data['status']), $user),
+                    'priority' => $this->tickets->update($ticket, ['priority' => $data['priority']], $user),
+                    'type' => $this->tickets->update($ticket, ['type' => $data['type']], $user),
+                    'cost' => $this->tickets->update($ticket, ['cost' => (int) $data['cost'] ?: null], $user),
+                    'sprint' => $this->tickets->update($ticket, ['sprint_id' => $sprint?->id], $user),
+                    'assignee' => $this->tickets->update($ticket, ['assignee_id' => $assignee?->id], $user),
+                    'delete' => $this->tickets->delete($ticket, $user),
+                };
+                $done++;
             }
-
-            match ($action) {
-                'status' => $this->tickets->changeStatus($ticket, TicketStatus::from($data['status']), $user),
-                'priority' => $this->tickets->update($ticket, ['priority' => $data['priority']], $user),
-                'type' => $this->tickets->update($ticket, ['type' => $data['type']], $user),
-                'cost' => $this->tickets->update($ticket, ['cost' => (int) $data['cost'] ?: null], $user),
-                'sprint' => $this->tickets->update($ticket, ['sprint_id' => $sprint?->id], $user),
-                'assignee' => $this->tickets->update($ticket, ['assignee_id' => $assignee?->id], $user),
-                'delete' => $this->tickets->delete($ticket, $user),
-            };
-            $done++;
-        }
+        });
         $skipped += count(array_unique($data['ids'])) - $tickets->count();
 
         $redirect = back()->with('success', trans_choice('tickets.bulk.done', $done, ['count' => $done]));

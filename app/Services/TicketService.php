@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TicketStatus;
 use App\Events\FollowupPosted;
 use App\Events\TicketCreated;
+use App\Events\TicketDone;
 use App\Models\Attachment;
 use App\Models\Ticket;
 use App\Models\TicketFollowup;
@@ -22,6 +23,9 @@ use Illuminate\Support\Str;
  */
 class TicketService
 {
+    /** Tickets that became Done during batch(); null = not batching. */
+    private ?array $doneBuffer = null;
+
     public function create(array $data, User $user, array $files = []): Ticket
     {
         $ticket = DB::transaction(function () use ($data, $user, $files) {
@@ -47,7 +51,9 @@ class TicketService
 
     public function update(Ticket $ticket, array $data, User $user, array $files = [], string $action = 'updated'): Ticket
     {
-        return DB::transaction(function () use ($ticket, $data, $user, $files, $action) {
+        $becameDone = false;
+
+        $ticket = DB::transaction(function () use ($ticket, $data, $user, $files, $action, &$becameDone) {
             if (array_key_exists('content', $data)) {
                 $data['content'] = Html::clean($data['content']);
             }
@@ -55,6 +61,7 @@ class TicketService
 
             if ($ticket->isDirty('status')) {
                 $ticket->resolved_at = $ticket->status === TicketStatus::Done ? now() : null;
+                $becameDone = $ticket->status === TicketStatus::Done;
             }
 
             $changes = [];
@@ -75,6 +82,31 @@ class TicketService
 
             return $ticket;
         });
+
+        if ($becameDone) {
+            if ($this->doneBuffer === null) {
+                TicketDone::dispatch([$ticket]);
+            } else {
+                $this->doneBuffer[] = $ticket;
+            }
+        }
+
+        return $ticket;
+    }
+
+    /** Run many updates; tickets that become Done get one TicketDone event (one SMS per customer) at the end. */
+    public function batch(callable $work): void
+    {
+        $this->doneBuffer = [];
+        try {
+            $work();
+        } finally {
+            $done = $this->doneBuffer;
+            $this->doneBuffer = null;
+            if ($done) {
+                TicketDone::dispatch($done);
+            }
+        }
     }
 
     public function changeStatus(Ticket $ticket, TicketStatus $status, User $user): Ticket

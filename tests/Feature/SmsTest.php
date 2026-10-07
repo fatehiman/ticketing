@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TicketStatus;
 use App\Jobs\SendSms;
 use App\Models\Project;
 use App\Models\SmsMessage;
@@ -123,5 +124,47 @@ class SmsTest extends TestCase
         // A developer's own new ticket → no SMS.
         $service->create(['project_id' => $project->id, 'type' => 'task', 'priority' => 'medium', 'status' => 'backlog', 'title' => 'Internal'], $dev);
         $this->assertSame(3, SmsMessage::count());
+    }
+
+    public function test_done_status_sends_sms_to_the_customer_once(): void
+    {
+        Queue::fake();
+        $dev = User::factory()->developer()->create();
+        $customer = User::factory()->customer()->create(['mobile' => '09120000002']);
+        $project = Project::create(['code' => 'SH', 'name' => 'Shop']);
+        $project->members()->attach([$dev->id, $customer->id]);
+        $service = app(TicketService::class);
+        $ticket = $service->create(['project_id' => $project->id, 'type' => 'task', 'priority' => 'medium', 'status' => 'pending_review', 'title' => 'Help'], $customer);
+        SmsMessage::query()->delete();
+
+        $service->changeStatus($ticket, TicketStatus::InProgress, $dev);
+        $this->assertSame(0, SmsMessage::count());
+
+        $service->changeStatus($ticket, TicketStatus::Done, $dev);
+        $this->assertDatabaseHas('sms_messages', ['mobile' => '+989120000002', 'template_id' => 24610, 'purpose' => 'ticket_done']);
+        $this->assertSame([(string) $ticket->number], SmsMessage::first()->params);
+
+        // Still Done: no second SMS.
+        $service->changeStatus($ticket, TicketStatus::Done, $dev);
+        $this->assertSame(1, SmsMessage::count());
+    }
+
+    public function test_bulk_done_sends_one_sms_per_customer_with_all_numbers(): void
+    {
+        Queue::fake();
+        $dev = User::factory()->developer()->create();
+        $customer = User::factory()->customer()->create(['mobile' => '09120000002']);
+        $project = Project::create(['code' => 'SH', 'name' => 'Shop']);
+        $project->members()->attach([$dev->id, $customer->id]);
+        $service = app(TicketService::class);
+        $make = fn ($title) => $service->create(['project_id' => $project->id, 'type' => 'task', 'priority' => 'medium', 'status' => 'backlog', 'title' => $title], $customer);
+        $a = $make('A');
+        $b = $make('B');
+        SmsMessage::query()->delete();
+
+        $this->actingAs($dev)->post(route('tickets.bulk'), ['action' => 'status', 'status' => 'done', 'ids' => [$a->id, $b->id]])->assertRedirect();
+
+        $this->assertSame(1, SmsMessage::count());
+        $this->assertSame([$a->number.','.$b->number], SmsMessage::first()->params);
     }
 }

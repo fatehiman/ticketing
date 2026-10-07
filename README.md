@@ -60,7 +60,9 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   (`sms_messages`) and sent by the **queue worker**, so a slow or broken gateway never slows down the site.
   Failed sends are retried after **1, 5, 10 and 30 minutes**, then marked *failed*; OTP codes only once after 1 minute.
   - customer creates a ticket or writes a followup → every developer of the project (template 24564: project name, ticket number);
-  - developer reply that **waits for the customer** → the customer (template 24561: ticket number).
+  - developer reply that **waits for the customer** → the customer (template 24561: ticket number);
+  - a ticket's status changes to **Done** (any way: edit, status button, bulk) → the customer (template 24610: `[param1]` = ticket number).
+    A **bulk** change to Done sends **one** SMS per customer with all ticket numbers separated by commas (`1001,1002`).
 - **Forgot password**: one box takes the email **or** the mobile number (an unknown one shows "not found").
   Email → a reset link (60 minutes) from `no-reply@peppasoft.com`. Mobile → a 6-digit code by SMS (template 3),
   valid 2 minutes; after a **1:50 countdown** the user can ask again: the 2nd request sends the **same code**
@@ -121,7 +123,7 @@ php artisan test
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
 | SMS (msgway client, outbox, queue job, retries) | `app/Sms/MsgwayClient.php`, `app/Sms/Sms.php` (`Sms::send()`), `app/Jobs/SendSms.php`, `sms_messages` table, template IDs in `config/sms.php` |
-| SMS about tickets | `app/Listeners/SendTicketSms.php` (on `TicketCreated` and `FollowupPosted`) |
+| SMS about tickets | `app/Listeners/SendTicketSms.php` (on `TicketCreated`, `FollowupPosted` and `TicketDone`; `TicketService::batch()` groups the Done tickets of a bulk action) |
 | Forgot password (email link + SMS code / call) | `app/Http/Controllers/PasswordResetController.php`, `password_otps` table, `app/Mail/PasswordResetLink.php`, `resources/views/auth/{forgot,otp,new-password}.blade.php`, `initCountdown()` in `app.js` |
 | Bills, paid status | `app/Http/Controllers/BillController.php`, `app/Models/Bill.php`, `BillItem.php`, `app/Support/Bills.php` (`allocate()`, `debtOf()`), `app/Mail/BillIssued.php`, `initBillForm()` in `app.js` |
 | Payment vouchers (pending / accepted / declined) | `app/Http/Controllers/PaymentController.php`, `app/Policies/PaymentPolicy.php`, `resources/views/payments/*` |

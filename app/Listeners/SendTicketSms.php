@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\FollowupPosted;
 use App\Events\TicketCreated;
+use App\Events\TicketDone;
 use App\Models\Ticket;
 use App\Sms\Sms;
 use Illuminate\Support\Collection;
@@ -13,7 +14,9 @@ use Illuminate\Support\Collection;
  * - a customer creates a ticket or writes a followup → every developer of the project
  *   (template ticket_to_developer: project name, ticket number);
  * - a developer writes a followup that waits for the customer's reply → the customer
- *   (template reply_to_customer: ticket number).
+ *   (template reply_to_customer: ticket number);
+ * - a ticket's status changes to Done → the customer (template ticket_done: ticket numbers, comma separated;
+ *   a bulk action sends one SMS per customer for all its tickets).
  */
 class SendTicketSms
 {
@@ -36,6 +39,22 @@ class SendTicketSms
             foreach ($this->customersOf($ticket) as $customer) {
                 Sms::send($customer->mobile, 'reply_to_customer', [$ticket->number]);
             }
+        }
+    }
+
+    /** One SMS per customer, with every Done ticket number of that customer separated by commas. */
+    public function handleTicketDone(TicketDone $event): void
+    {
+        $numbers = [];
+        $customers = [];
+        foreach ($event->tickets as $ticket) {
+            foreach ($this->customersOf($ticket) as $customer) {
+                $customers[$customer->id] = $customer;
+                $numbers[$customer->id][] = $ticket->number;
+            }
+        }
+        foreach ($customers as $id => $customer) {
+            Sms::send($customer->mobile, 'ticket_done', [implode(',', $numbers[$id])]);
         }
     }
 
