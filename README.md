@@ -191,7 +191,7 @@ Update steps:
 
 ```bash
 npm run build
-tar czf /tmp/ticketing.tgz --exclude=.git --exclude=node_modules --exclude=./vendor \
+tar czf /tmp/ticketing.tgz --exclude=.git --exclude=node_modules --exclude=./vendor --exclude='*.md' --exclude=reference-docs \
     --exclude=storage/logs --exclude=.env --exclude='*.sqlite' --exclude='bootstrap/cache/*.php' \
     --exclude=public/storage --exclude=public/hot --exclude='storage/app/public/*' \
     --exclude='storage/app/private/*' --exclude='storage/framework/sessions/*' --exclude='storage/framework/views/*' .
