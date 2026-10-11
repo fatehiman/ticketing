@@ -109,6 +109,9 @@ class BillController extends Controller
                 $bill->items()->create(['ticket_id' => $ticket->id, 'title' => $ticket->title, 'amount' => (int) $ticket->cost, 'sort_order' => ++$sort]);
             }
             // A manual item is saved as a done ticket with that cost, so it is a cost on the transactions page too.
+            // Its body links to the bill. The link is relative (no domain), so it survives a domain change.
+            $billPath = route('bills.show', $bill, false);
+            $billLink = '<p><a href="'.e($billPath).'">'.e($billPath).'</a></p>';
             foreach ($data['items'] as $item) {
                 $ticket = $this->tickets->create([
                     'project_id' => $bill->project_id,
@@ -116,7 +119,7 @@ class BillController extends Controller
                     'priority' => 'medium',
                     'status' => TicketStatus::Done->value,
                     'title' => $item['title'],
-                    'content' => $item['details'] ? '<p>'.nl2br(e($item['details'])).'</p>' : null,
+                    'content' => ($item['details'] ? '<p>'.nl2br(e($item['details'])).'</p>' : '').$billLink,
                     'cost' => $item['amount'],
                     'due_date' => $bill->issued_on->toDateString(),
                     'assignee_id' => $user->id,

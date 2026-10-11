@@ -47,6 +47,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   on another bill — **with or without a cost** (a ticket without a cost is listed with amount 0, and a manual item
   such as "Cost of phase 1" carries the price of those tickets) — and/or **manual items** (title, amount, details —
   e.g. monthly support) that are saved as done tickets of the project, so they are costs on the transactions page too.
+  The body of such a ticket has the details (if any) and a **relative link to the bill** (`/bills/1001`, no domain, so it
+  still works if the domain changes).
   A **sprint picker** ticks all done tickets of a sprint at once. The ticket list has **pages** (25 per page) and a search
   box; ticks are kept across pages ("Select all" ticks every ticket of the search). Bill number starts at 1001.
   Checkboxes tell the customer by **SMS** (template 24562, `[param1]` = bill number) and/or a colourful **email**.

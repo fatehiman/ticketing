@@ -84,6 +84,8 @@ class BillsTest extends TestCase
         $manual = Ticket::where('title', 'Support October')->firstOrFail();
         $this->assertSame('done', $manual->status->value);
         $this->assertSame(2500000, $manual->cost);
+        // Its body is a relative link to the bill (no domain).
+        $this->assertStringContainsString('href="/bills/'.Bill::firstOrFail()->number.'"', $manual->content);
         $this->assertSame(2501000, Bills::debtOf($this->customer));
 
         // The customer is told by SMS (bill number) and email.
