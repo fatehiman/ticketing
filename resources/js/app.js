@@ -358,6 +358,83 @@ function initMultiSelects() {
     });
 }
 
+/* ---------- Row actions of the tickets grid: a modal per action, saved by AJAX without a reload ---------- */
+function initRowActions() {
+    const modalEl = document.getElementById('row-action-modal');
+    if (!modalEl) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    const form = modalEl.querySelector('form');
+    const error = form.querySelector('[data-row-action-error]');
+    const costInput = form.querySelector('[name="cost"]');
+    const sprintSel = form.querySelector('[name="sprint_id"]');
+    let row = null;
+    let action = null;
+
+    const showError = (text) => { error.textContent = text; error.classList.toggle('d-none', !text); };
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-row-action]');
+        if (!btn) return;
+        bootstrap.Tooltip.getInstance(btn)?.hide();
+        row = btn.closest('tr[data-ticket]');
+        action = btn.dataset.rowAction;
+        form.querySelectorAll('[data-row-action-field]').forEach((f) => f.classList.toggle('d-none', f.dataset.rowActionField !== action));
+        const field = form.querySelector(`[data-row-action-field="${action}"]`);
+        form.querySelector('[data-row-action-title]').textContent = field.dataset.title;
+        form.querySelector('[data-row-action-number]').textContent = row.querySelector('.t-number')?.textContent || '';
+        showError('');
+        if (action === 'cost') {
+            costInput.value = row.dataset.cost === '' ? '' : Number(row.dataset.cost).toLocaleString('en-US');
+        } else if (action === 'sprint') {
+            // Only the sprints of the ticket's project.
+            [...sprintSel.options].forEach((o) => { o.hidden = !!o.dataset.project && o.dataset.project !== row.dataset.project; });
+            sprintSel.value = row.dataset.sprint || 'none';
+        }
+        modal.show();
+    });
+    modalEl.addEventListener('shown.bs.modal', () => (action === 'cost' ? costInput : sprintSel).focus());
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = { ids: [row.dataset.ticket], action };
+        if (action === 'cost') data.cost = costInput.value.trim();
+        if (action === 'sprint') data.sprint_id = sprintSel.value;
+        const submit = form.querySelector('[type="submit"]');
+        submit.disabled = true;
+        fetch(form.dataset.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf(), 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(data),
+        })
+            .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+            .then(({ ok, body }) => {
+                if (!ok) {
+                    showError(body.errors ? Object.values(body.errors).flat().join(' ') : body.message || 'Error');
+                    return;
+                }
+                const tk = body.ticket;
+                if (action === 'cost') {
+                    // The totals row is for all filtered tickets: add the change of this ticket.
+                    const total = document.querySelector('.grid-totals [data-col="cost"]');
+                    if (total) {
+                        const sum = Number(toLatin(total.textContent).replace(/\D/g, '')) || 0;
+                        total.textContent = (sum - (Number(row.dataset.cost) || 0) + (Number(tk.cost) || 0)).toLocaleString('en-US');
+                    }
+                    row.dataset.cost = tk.cost ?? '';
+                    row.querySelector('[data-col="cost"]').textContent = tk.cost_text;
+                } else if (action === 'sprint') {
+                    row.dataset.sprint = tk.sprint_id ?? '';
+                    row.querySelector('[data-col="sprint"]').innerHTML = tk.sprint_html;
+                }
+                modal.hide();
+                row.classList.add('row-saved');
+                setTimeout(() => row.classList.remove('row-saved'), 1500);
+            })
+            .catch(() => showError('Error'))
+            .finally(() => { submit.disabled = false; });
+    });
+}
+
 /* ---------- "More filters" button: its caption says what a click does (more / fewer) ---------- */
 function initFilterToggles() {
     document.querySelectorAll('[data-filter-toggle]').forEach((btn) => {
@@ -788,6 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initBillForm();
     initGrids();
     initMultiSelects();
+    initRowActions();
     initFilterToggles();
     initTicketFilter();
     initBulk();

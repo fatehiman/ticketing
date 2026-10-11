@@ -247,7 +247,7 @@
                 <tbody>
                 @forelse ($tickets as $ticket)
                     @php($overdue = $ticket->due_date && $ticket->due_date->isPast() && ! $ticket->status->isClosed())
-                    <tr>
+                    <tr data-ticket="{{ $ticket->id }}" data-project="{{ $ticket->project_id }}" data-cost="{{ $ticket->cost }}" data-sprint="{{ $ticket->sprint_id }}">
                         @if ($bulk)
                             <td class="bulk-col"><input type="checkbox" class="form-check-input" name="ids[]" value="{{ $ticket->id }}" form="bulk-form" data-bulk-row aria-label="{{ __('tickets.bulk.select') }} #{{ $ticket->number }}"></td>
                         @endif
@@ -283,6 +283,13 @@
                         <td data-col="attachments" class="{{ $grid->cls('attachments') }}">@if ($ticket->attachments_count)<i class="bi bi-paperclip"></i> {{ $ticket->attachments_count }}@endif</td>
                         <td data-col="created_at" class="{{ $grid->cls('created_at') }} text-nowrap small">{{ Dates::dateTime($ticket->created_at) }}</td>
                         <td data-col="updated_at" class="{{ $grid->cls('updated_at') }} text-nowrap small" title="{{ Dates::dateTime($ticket->updated_at) }}">{{ Dates::ago($ticket->updated_at) }}</td>
+                        @isset($grid->columns['actions'])
+                            {{-- Row actions: a coloured icon each (name in the tooltip); app.js opens #row-action-modal. --}}
+                            <td data-col="actions" class="{{ $grid->cls('actions') }} text-nowrap">
+                                <button type="button" class="row-action" style="--c: #16a34a" data-row-action="cost" data-bs-toggle="tooltip" title="{{ __('tickets.row_actions.cost') }}" aria-label="{{ __('tickets.row_actions.cost') }}"><i class="bi bi-cash-coin"></i></button>
+                                <button type="button" class="row-action" style="--c: #7c3aed" data-row-action="sprint" data-bs-toggle="tooltip" title="{{ __('tickets.row_actions.sprint') }}" aria-label="{{ __('tickets.row_actions.sprint') }}"><i class="bi bi-flag"></i></button>
+                            </td>
+                        @endisset
                     </tr>
                 @empty
                     <tr><td colspan="{{ count($grid->columns) }}" class="empty-state"><i class="bi bi-inbox"></i>{{ __('app.no_results') }}</td></tr>
@@ -295,4 +302,39 @@
             <div class="card-footer bg-transparent pt-3">{{ $tickets->links() }}</div>
         @endif
     </div>
+
+    @isset($grid->columns['actions'])
+        {{-- One modal for every row action: it shows the field of the clicked action and saves by AJAX (TicketController::bulk). --}}
+        <div class="modal fade" id="row-action-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <form class="modal-content" data-url="{{ route('tickets.bulk') }}" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title fs-6"><span data-row-action-title></span> <span class="t-number" data-row-action-number></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('app.cancel') }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div data-row-action-field="cost" data-title="{{ __('tickets.row_actions.cost') }}">
+                            <label class="form-label" for="row-cost">{{ __('tickets.fields.cost') }}</label>
+                            <input type="text" id="row-cost" name="cost" class="form-control ltr-input" inputmode="numeric" data-money="int">
+                            <div class="form-text">{{ __('tickets.row_actions.cost_hint') }}</div>
+                        </div>
+                        <div data-row-action-field="sprint" data-title="{{ __('tickets.row_actions.sprint') }}">
+                            <label class="form-label" for="row-sprint">{{ __('tickets.fields.sprint_id') }}</label>
+                            <select id="row-sprint" name="sprint_id" class="form-select">
+                                <option value="none">{{ __('tickets.no_sprint') }}</option>
+                                @foreach ($sprints as $sprint)
+                                    <option value="{{ $sprint->id }}" data-project="{{ $sprint->project_id }}" @class(['text-success' => $sprint->isCurrent()])>{{ $sprint->project->code }} · {{ $sprint->label() }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="text-danger small mt-2 d-none" data-row-action-error></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('app.cancel') }}</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endisset
 @endsection

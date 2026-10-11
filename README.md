@@ -47,6 +47,10 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   change status, sprint, assignee, priority, type or **cost** (one fixed cost for many small tickets; an empty box
   removes the cost, 0 is a real cost of 0),
   or delete them in one step. Every change goes into the history. Only **delete** asks for confirmation.
+- **Row actions** (developers): an *Actions* column (last, hidden by default — tick it in the column chooser) with a
+  coloured icon per action (name in the tooltip): **set cost** (empty = no cost, 0 = 0) and **set sprint** (sprints of the
+  ticket's project). Each opens a small modal and saves by **AJAX** (same `tickets.bulk` route, JSON answer): the row's
+  cost / sprint and the totals row change without a reload. New actions = a button, a field in the modal, a key in `ROW_ACTIONS`.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
   folder** (e.g. *Backlog* without cost, *Done* with cost). Some folders have **default columns**
   (`TicketController::FOLDER_COLUMNS`, the owner's choice); other folders without the user's own choice use the search page choice. Grids with money or `HH:MM`
@@ -137,6 +141,7 @@ php artisan test
 | New sprint defaults (number, start date per project) | `SprintController::newSprintDefaults()`, `initSprintForm()` in `resources/js/app.js` |
 | Order / show-hide of built-in folders | `TicketMenus::applySettings()`, `FolderSettingsController`, `users.folder_settings`, `resources/views/partials/folders-modal.blade.php`, `initFolders()` in `resources/js/app.js` |
 | Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
+| Row actions (Actions column, modal + AJAX) | `TicketController::ROW_ACTIONS`, JSON answer of `bulk()`, `#row-action-modal` in `tickets/index.blade.php`, `initRowActions()` in `app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
 | SMS (msgway client, outbox, queue job, retries) | `app/Sms/MsgwayClient.php`, `app/Sms/Sms.php` (`Sms::send()`), `app/Jobs/SendSms.php`, `sms_messages` table, template IDs in `config/sms.php` |

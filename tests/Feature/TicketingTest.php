@@ -437,6 +437,37 @@ class TicketingTest extends TestCase
         $this->assertSame(2, substr_count($html, '<i class="bi bi-send"></i> '.__('app.create').'</button>'));
     }
 
+    public function test_row_actions_column_and_ajax_save(): void
+    {
+        $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'cost' => 500]));
+        $sprint = Sprint::create(['project_id' => $this->project->id, 'number' => 4, 'status' => 'active']);
+        $other = Sprint::create(['project_id' => $this->otherProject->id, 'number' => 9, 'status' => 'active']);
+
+        // Developers only, hidden by default in every folder, shown when ticked.
+        $this->actingAs($this->dev)->get('/tickets')->assertViewHas('grid', fn ($g) => isset($g->columns['actions']) && ! $g->visible('actions'));
+        $this->get('/tickets?status[]=backlog')->assertViewHas('grid', fn ($g) => ! $g->visible('actions'));
+        $this->postJson('/grid-preferences', ['grid' => 'tickets', 'columns' => ['number', 'title', 'cost', 'actions']])->assertOk();
+        $this->get('/tickets?q=Login')->assertViewHas('grid', fn ($g) => $g->visible('actions'))
+            ->assertSee('data-row-action="cost"', false)->assertSee('data-row-action="sprint"', false)->assertSee('id="row-action-modal"', false);
+        $this->actingAs($this->customer)->get('/tickets')->assertViewHas('grid', fn ($g) => ! isset($g->columns['actions']));
+
+        // Set cost: empty = null, 0 = 0, a number; JSON answer with the new values.
+        $this->actingAs($this->dev)->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'cost', 'cost' => '1,250'])
+            ->assertOk()->assertJsonPath('ticket.cost', 1250)->assertJsonPath('ticket.cost_text', '1,250');
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'cost', 'cost' => '0'])->assertJsonPath('ticket.cost', 0);
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'cost', 'cost' => ''])
+            ->assertJsonPath('ticket.cost', null)->assertJsonPath('ticket.cost_text', '');
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'cost', 'cost' => 'abc'])->assertStatus(422);
+
+        // Set sprint: only a sprint of the ticket's project.
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'sprint', 'sprint_id' => $sprint->id])
+            ->assertOk()->assertJsonPath('ticket.sprint_id', $sprint->id);
+        $this->assertStringContainsString($sprint->label(), $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'sprint', 'sprint_id' => $sprint->id])->json('ticket.sprint_html'));
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'sprint', 'sprint_id' => $other->id])->assertStatus(422);
+        $this->assertSame($sprint->id, $ticket->fresh()->sprint_id);
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'sprint', 'sprint_id' => 'none'])->assertJsonPath('ticket.sprint_id', null);
+    }
+
     public function test_more_filters_button_says_fewer_when_open(): void
     {
         $this->actingAs($this->dev)->get('/tickets')->assertSee(__('app.more_filters'))->assertSee('aria-expanded="false"', false);

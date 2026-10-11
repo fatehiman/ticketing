@@ -20,6 +20,7 @@ use App\Support\ProjectContext;
 use App\Support\TicketFilter;
 use App\Support\TicketMenus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
@@ -36,8 +37,11 @@ class TicketController extends Controller
     /** Default grid: number, title, type, status, priority, sprint, cost. Each user can change it. */
     public const HIDDEN_COLUMNS = [
         'project', 'assignee', 'reporter', 'story_points', 'done_story_points', 'estimated_time',
-        'logged_time', 'estimated_cost', 'due_date', 'attachments', 'created_at', 'updated_at',
+        'logged_time', 'estimated_cost', 'due_date', 'attachments', 'created_at', 'updated_at', 'actions',
     ];
+
+    /** Row actions in the "actions" column (developers): each one opens a small modal and saves by AJAX. */
+    public const ROW_ACTIONS = ['cost', 'sprint'];
 
     /**
      * Default visible columns of some folders (key = folder). Copied from the owner's choice (2026-10-04).
@@ -92,6 +96,9 @@ class TicketController extends Controller
             'created_at' => __('tickets.fields.created_at'),
             'updated_at' => __('tickets.fields.updated_at'),
         ];
+        if ($user->isDeveloper()) {
+            $columns['actions'] = __('app.actions'); // last column; hidden until the developer ticks it
+        }
         // A folder with its own default columns does not fall back to the search page choice.
         $grid = Grid::make($folder ? 'tickets-'.$folder : 'tickets', $columns,
             hidden: $folderColumns ? array_values(array_diff(array_keys($columns), $folderColumns)) : self::HIDDEN_COLUMNS,
@@ -266,6 +273,25 @@ class TicketController extends Controller
             }
         });
         $skipped += count(array_unique($data['ids'])) - $tickets->count();
+
+        // Row actions (AJAX, one ticket): the new values, so the row is updated without a reload.
+        if ($request->expectsJson()) {
+            $ticket = count($data['ids']) === 1 ? Ticket::with('sprint')->find($data['ids'][0]) : null;
+
+            return response()->json([
+                'done' => $done,
+                'message' => $done
+                    ? trans_choice('tickets.bulk.done', $done, ['count' => $done])
+                    : trans_choice('tickets.bulk.skipped', $skipped, ['count' => $skipped]),
+                'ticket' => $ticket ? [
+                    'id' => $ticket->id,
+                    'cost' => $ticket->cost,
+                    'cost_text' => Money::format($ticket->cost),
+                    'sprint_id' => $ticket->sprint_id,
+                    'sprint_html' => Blade::render('<x-sprint :sprint="$sprint" />', ['sprint' => $ticket->sprint]),
+                ] : null,
+            ], $done ? 200 : 422);
+        }
 
         $redirect = back()->with('success', trans_choice('tickets.bulk.done', $done, ['count' => $done]));
 

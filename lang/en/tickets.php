@@ -60,6 +60,11 @@ return [
         'none' => 'The customer has not rated this ticket yet.',
     ],
 
+    'row_actions' => [
+        'cost' => 'Set cost',
+        'sprint' => 'Set sprint',
+        'cost_hint' => 'Empty = no cost; 0 is a cost of 0.',
+    ],
     'bulk' => [
         'selected' => '{1} 1 ticket selected|[2,*] :count tickets selected',
         'selected_label' => 'Selected tickets',

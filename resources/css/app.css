@@ -436,3 +436,12 @@ input[type="number"], input[type="date"] { text-align: left; }
 /* Signed numbers: keep the minus sign on the left, also in RTL. */
 .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
 .min-w-0 { min-width: 0; }
+
+/* Row actions of the tickets grid: a coloured icon button each (name in the tooltip). */
+.row-action {
+    border: 0; border-radius: .4rem; padding: .15rem .35rem; line-height: 1;
+    color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent);
+}
+.row-action:hover { background: var(--c); color: #fff; }
+.row-action + .row-action { margin-inline-start: .25rem; }
+tr.row-saved > td { background-color: color-mix(in srgb, var(--bs-success) 15%, transparent) !important; transition: background-color .3s; }
