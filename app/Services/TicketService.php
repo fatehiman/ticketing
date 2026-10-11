@@ -33,7 +33,7 @@ class TicketService
             $ticket = new Ticket($data);
             $ticket->reporter_id = $user->id;
             $ticket->updated_by = $user->id;
-            if ($ticket->status === TicketStatus::Done) {
+            if ($ticket->status->isDone()) {
                 $ticket->resolved_at = now();
             }
             $ticket->save();
@@ -60,7 +60,9 @@ class TicketService
             $ticket->fill(Arr::only($data, Ticket::TRACKED));
 
             if ($ticket->isDirty('status')) {
-                $ticket->resolved_at = $ticket->status === TicketStatus::Done ? now() : null;
+                // Done -> Delivered keeps the first resolve date (the date of the cost on the transactions page).
+                $wasDone = TicketStatus::tryFrom((string) $ticket->getRawOriginal('status'))?->isDone() ?? false;
+                $ticket->resolved_at = $ticket->status->isDone() ? ($wasDone ? ($ticket->resolved_at ?? now()) : now()) : null;
                 $becameDone = $ticket->status === TicketStatus::Done;
             }
 

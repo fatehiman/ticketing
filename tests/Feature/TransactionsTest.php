@@ -153,6 +153,18 @@ class TransactionsTest extends TestCase
         $this->get('/transactions?sort=tx_date&dir=asc')->assertOk()->assertSee('Done in June');
     }
 
+    public function test_delivered_ticket_is_a_cost_and_keeps_the_day_it_was_done(): void
+    {
+        $this->travelTo('2026-06-20 10:00');
+        $ticket = $this->ticket(['title' => 'Delivered later', 'due_date' => null]);
+        $this->travelTo('2026-07-05 10:00');
+        app(TicketService::class)->changeStatus($ticket, TicketStatus::Delivered, $this->dev);
+        $this->travelBack();
+
+        $this->assertSame('2026-06-20', $ticket->fresh()->resolved_at->toDateString());
+        $this->actingAs($this->dev)->get('/transactions?date_from=2026-06-01&date_to=2026-06-30')->assertSee('Delivered later');
+    }
+
     public function test_deleted_ticket_is_not_a_cost(): void
     {
         $ticket = $this->ticket(['title' => 'Deleted ticket']);

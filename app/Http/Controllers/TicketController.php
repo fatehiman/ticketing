@@ -54,6 +54,7 @@ class TicketController extends Controller
         'status_backlog' => ['number', 'title', 'type', 'priority', 'sprint', 'estimated_cost'],
         'status_in_progress' => ['number', 'title', 'type', 'status', 'priority', 'sprint', 'estimated_cost'],
         'status_done' => ['number', 'title', 'sprint', 'cost'],
+        'status_delivered' => ['number', 'title', 'sprint', 'cost'],
     ];
 
     public const BULK_ACTIONS = ['status', 'sprint', 'assignee', 'priority', 'type', 'cost', 'delete'];

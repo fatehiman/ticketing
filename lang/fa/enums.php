@@ -12,6 +12,7 @@ return [
         'in_progress' => 'درحال انجام',
         'testing' => 'درحال تست',
         'done' => 'انجام شده',
+        'delivered' => 'تحویل شده',
         'cancelled' => 'لغو شده',
         'rejected' => 'رد شده',
     ],

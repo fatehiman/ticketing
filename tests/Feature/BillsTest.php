@@ -126,6 +126,12 @@ class BillsTest extends TestCase
         $this->assertStringContainsString('"sprints":[]', $html);
     }
 
+    public function test_delivered_tickets_can_be_billed(): void
+    {
+        $this->doneTicket(1000, 'Delivered one', ['status' => 'delivered']);
+        $this->actingAs($this->dev)->get('/bills/create')->assertOk()->assertSee('Delivered one');
+    }
+
     public function test_bill_needs_an_item_and_a_customer_of_the_project(): void
     {
         $this->issue()->assertSessionHasErrors('items');

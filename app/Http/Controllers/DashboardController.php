@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $totals = [
             'open' => $byStatus->only($openStatuses)->sum(),
             'in_progress' => (int) ($byStatus[TicketStatus::InProgress->value] ?? 0),
-            'done' => (int) ($byStatus[TicketStatus::Done->value] ?? 0),
+            'done' => (int) $byStatus->only(TicketStatus::doneValues())->sum(),
             'all' => $byStatus->sum(),
             'mine' => $user->isStaff() ? $base()->where('assignee_id', $user->id)->whereIn('status', $openStatuses)->count() : null,
             'overdue' => $base()->whereIn('status', $openStatuses)->whereNotNull('due_date')->whereDate('due_date', '<', today())->count(),
@@ -36,7 +36,7 @@ class DashboardController extends Controller
         $activeSprints = Sprint::with('project')
             ->where('status', 'active')
             ->when($projectIds !== null, fn ($q) => $q->whereIn('project_id', $projectIds))
-            ->withCount(['tickets', 'tickets as done_count' => fn ($q) => $q->where('status', TicketStatus::Done->value)])
+            ->withCount(['tickets', 'tickets as done_count' => fn ($q) => $q->whereIn('status', TicketStatus::doneValues())])
             ->withSum('tickets as points_total', 'story_points')
             ->withSum('tickets as points_done', 'done_story_points')
             ->limit(6)->get();

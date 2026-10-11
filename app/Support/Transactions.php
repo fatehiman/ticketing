@@ -119,7 +119,7 @@ class Transactions
 
         // --- ticket costs -----------------------------------------------------------
         $costs = Ticket::query()->visibleTo($user)
-            ->where('tickets.status', TicketStatus::Done->value)
+            ->whereIn('tickets.status', TicketStatus::doneValues())
             ->where('tickets.cost', '>', 0)
             ->when($scope !== null, fn ($q) => $q->whereIn('tickets.project_id', $scope))
             ->when($customerProjectIds !== null, fn ($q) => $q->whereIn('tickets.project_id', $customerProjectIds ?: [0]))

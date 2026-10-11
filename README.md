@@ -13,6 +13,10 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
   On desktop the ticket form has a **second Save button** under *Planning and estimates* (no long scroll to save a cost);
   on mobile the columns stack, so there is only the one at the bottom.
+- **Delivered** (تحویل شده) status comes after **Done**: the work is handed over (old / archived / paid tickets), so
+  Done keeps only the new finished work. Delivered **counts as Done everywhere** (`TicketStatus::isDone()` /
+  `doneValues()`): costs on the transactions page, bills, closed (rating, no customer reply), dashboard *Done* card
+  and sprint progress. Done → Delivered keeps the date it was done (`resolved_at`). It sends **no SMS**.
 - Full ticket **history** (every edit is saved as a revision) and **soft delete**. Customers do not see the history of
   price, time and story points (cost, estimated cost, estimated / logged time, story points, done story points);
   an edit with only those changes is hidden from them. Status, sprint, assignee and the rest stay visible.
@@ -20,7 +24,7 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   The ticket then **waits for a reply** from the other side: a **red badge** next to each folder's badge, a
   *Waiting for my reply* folder, a toast after login and an **I read it** button. A staff reply has a
   checkbox (on by default) to decide if the customer must answer. Customers cannot reply to closed tickets.
-- **Rating**: on a closed ticket (done, cancelled, rejected) a customer gives 1–5 stars and an optional comment.
+- **Rating**: on a closed ticket (done, delivered, cancelled, rejected) a customer gives 1–5 stars and an optional comment.
   One rating per ticket; staff can only read it.
 - **Sprints** per project, with a **Days** column (end − start + 1, weekends included: 5th → 12th = 8 days). Dates of two sprints of the same project should not overlap (the next sprint starts
   the day after the previous one ends; gaps are fine). This is only a warning: the overlapping dates are **red**
@@ -38,7 +42,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   a ticket without a cost is never in a range.
   A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
   each one, saved per user, with **Reset to default**. Default = the owner's choice (`TicketMenus::DEFAULT_ORDER` /
-  `DEFAULT_HIDDEN`): *All* first; *Open*, *Cancelled*, *Rejected*, *Assigned to me*, *Unassigned*, *Reported by me* hidden.
+  `DEFAULT_HIDDEN`): *All* first; *Delivered* right after *Done* (before *Current sprint*); *Open*, *Testing*,
+  *Cancelled*, *Rejected*, *Assigned to me*, *Unassigned*, *Reported by me* hidden.
   Custom menus are not in it.
 - **Current sprint** folder (اسپرینت حاضر), also an option of the sprint filter: tickets in any status of every sprint
   whose **dates include today** (both ends count). Overlapping sprints → tickets of all of them. The sprint status is not used.
@@ -78,7 +83,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   Failed sends are retried after **1, 5, 10 and 30 minutes**, then marked *failed*; OTP codes only once after 1 minute.
   - customer creates a ticket or writes a followup → every developer of the project (template 24564: project name, ticket number);
   - developer reply that **waits for the customer** → the customer (template 24561: ticket number);
-  - a ticket's status changes to **Done** (any way: edit, status button, bulk) → the customer (template 24610: `[param1]` = ticket number).
+  - a ticket's status changes to **Done** (any way: edit, status button, bulk) → the customer (template 24610: `[param1]` = ticket number;
+    not again for **Delivered**).
     A **bulk** change to Done sends **one** SMS per customer with all ticket numbers separated by commas (`1001,1002`).
 - **Forgot password**: one box takes the email **or** the mobile number (an unknown one shows "not found").
   Email → a reset link (60 minutes) from `no-reply@peppasoft.com`. Mobile → a 6-digit code by SMS (template 3),

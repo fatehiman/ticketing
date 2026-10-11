@@ -223,7 +223,7 @@ class BillController extends Controller
     public static function billableTickets(array $projectIds)
     {
         return Ticket::whereIn('project_id', $projectIds ?: [0])
-            ->where('status', TicketStatus::Done->value)
+            ->whereIn('status', TicketStatus::doneValues())
             ->whereNotIn('id', BillItem::whereNotNull('ticket_id')->whereHas('bill')->select('ticket_id'))
             ->orderByDesc('number');
     }

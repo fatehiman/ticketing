@@ -12,6 +12,7 @@ return [
         'in_progress' => 'In progress',
         'testing' => 'Testing',
         'done' => 'Done',
+        'delivered' => 'Delivered',
         'cancelled' => 'Cancelled',
         'rejected' => 'Rejected',
     ],

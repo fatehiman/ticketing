@@ -23,7 +23,7 @@ class SprintController extends Controller
         $sprints = Sprint::with('project')
             ->when($projectIds !== null, fn ($q) => $q->whereIn('project_id', $projectIds))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->withCount(['tickets', 'tickets as done_count' => fn ($q) => $q->where('status', TicketStatus::Done->value)])
+            ->withCount(['tickets', 'tickets as done_count' => fn ($q) => $q->whereIn('status', TicketStatus::doneValues())])
             ->withSum('tickets as points_total', 'story_points')
             ->withSum('tickets as points_done', 'done_story_points')
             ->orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'planned' THEN 1 ELSE 2 END")

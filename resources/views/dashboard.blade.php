@@ -32,7 +32,7 @@
             </a>
         </div>
         <div class="col-6 col-xl-2 col-md-4">
-            <a href="{{ route('tickets.index', ['status' => ['done']]) }}" class="stat-card grad-3 d-block">
+            <a href="{{ route('tickets.index', ['status' => \App\Enums\TicketStatus::doneValues()]) }}" class="stat-card grad-3 d-block">
                 <div class="stat-value">{{ $totals['done'] }}</div><div class="stat-label">{{ __('app.dash.done') }}</div><i class="bi bi-check2-circle"></i>
             </a>
         </div>

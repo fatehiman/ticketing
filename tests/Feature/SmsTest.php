@@ -147,6 +147,10 @@ class SmsTest extends TestCase
         // Still Done: no second SMS.
         $service->changeStatus($ticket, TicketStatus::Done, $dev);
         $this->assertSame(1, SmsMessage::count());
+
+        // Delivered (after Done): no SMS either.
+        $service->changeStatus($ticket, TicketStatus::Delivered, $dev);
+        $this->assertSame(1, SmsMessage::count());
     }
 
     public function test_bulk_done_sends_one_sms_per_customer_with_all_numbers(): void

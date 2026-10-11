@@ -367,6 +367,40 @@ class TicketingTest extends TestCase
         $this->assertSame($default, $keys($this->customer->fresh()));
     }
 
+    public function test_delivered_folder_follows_done_and_testing_is_hidden_by_default(): void
+    {
+        foreach ([$this->admin, $this->dev, $this->customer] as $user) {
+            $keys = collect((new TicketMenus($user, app(ProjectContext::class)))->items())
+                ->reject(fn ($i) => $i['hidden'])->pluck('key')->all();
+            $done = array_search('status_done', $keys, true);
+            $this->assertSame(['status_done', 'status_delivered', 'current_sprint'], array_slice($keys, $done, 3));
+            $this->assertNotContains('status_testing', $keys);
+        }
+    }
+
+    public function test_migration_adds_delivered_after_done_and_hides_testing_for_saved_settings(): void
+    {
+        $this->dev->update(['folder_settings' => ['order' => ['all', 'status_done', 'status_testing', 'status_delivered'], 'hidden' => ['open']]]);
+
+        (require database_path('migrations/2026_10_12_000100_delivered_folder_and_hide_testing.php'))->up();
+
+        $this->assertSame(
+            ['order' => ['all', 'status_done', 'status_delivered', 'status_testing'], 'hidden' => ['open', 'status_testing']],
+            $this->dev->fresh()->folder_settings,
+        );
+        $this->assertNull($this->customer->fresh()->folder_settings);
+    }
+
+    public function test_delivered_counts_as_done_and_closed(): void
+    {
+        $this->assertTrue(TicketStatus::Delivered->isClosed());
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'status' => 'done']));
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'status' => 'delivered']));
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'status' => 'testing']));
+
+        $this->actingAs($this->dev)->get('/')->assertOk()->assertViewHas('totals', fn ($t) => $t['done'] === 2 && $t['open'] === 1);
+    }
+
     public function test_filters_and_project_override(): void
     {
         Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'Alpha', 'status' => 'testing']));

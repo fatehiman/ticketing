@@ -73,6 +73,7 @@ Developers edit their customers in *Customers*; admin edits everyone.
 | `in_progress` | درحال انجام | In progress (to do / doing) | |
 | `testing` | درحال تست | Testing | |
 | `done` | انجام شده | Done / deployed | |
+| `delivered` | تحویل شده | Delivered | After Done: handed over, archived / paid. Counts as Done everywhere (costs, bills, closed, done counts); no SMS |
 | `cancelled` | لغو شده | Cancelled | Any time |
 | `rejected` | رد شده | Rejected | Developer rejects the request |
 

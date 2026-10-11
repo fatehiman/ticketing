@@ -126,6 +126,7 @@ and `assignees` (developers of the project: id, name). Call it when unsure about
 | `in_progress` | درحال انجام | In progress |
 | `testing` | درحال تست | Testing |
 | `done` | انجام شده | Done |
+| `delivered` | تحویل شده | Delivered (after Done: handed over, archived / paid) |
 | `cancelled` | لغو شده | Cancelled |
 | `rejected` | رد شده | Rejected |
 | **priority** | | |
