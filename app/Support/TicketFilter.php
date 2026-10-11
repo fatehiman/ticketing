@@ -20,12 +20,16 @@ class TicketFilter
     public const KEYS = [
         'q', 'number', 'project_id', 'sprint_id', 'status', 'priority', 'type', 'assignee_id', 'reporter_id',
         'awaiting', 'created_from', 'created_to', 'updated_from', 'updated_to', 'due_from', 'due_to',
-        'cost_from', 'cost_to',
+        'cost', 'cost_from', 'cost_to',
     ];
 
     public const ARRAY_KEYS = ['status', 'priority', 'type'];
 
-    /** Money range keys: whole numbers; "0" is a real value (empty = no filter). */
+    /**
+     * Cost filter: cost=none → tickets without a cost (null), cost=any → tickets with a cost (0 too). A range → cost_from and / or cost_to
+     * (both ends included; tickets without a cost are never in a range). "0" is a real value.
+     * Money range keys are whole numbers; empty = no limit on that side.
+     */
     public const MONEY_KEYS = ['cost_from', 'cost_to'];
 
     public const SORTS = ['number', 'title', 'status', 'priority', 'created_at', 'updated_at', 'due_date', 'story_points'];
@@ -56,6 +60,12 @@ class TicketFilter
                     unset($out[$key]);
                 }
             }
+        }
+        // "Undefined" / "Defined" and a range cannot be used together; a range is said by its from / to only.
+        if (in_array($out['cost'] ?? null, ['none', 'any'], true)) {
+            unset($out['cost_from'], $out['cost_to']);
+        } else {
+            unset($out['cost']);
         }
         ksort($out);
 
@@ -131,12 +141,16 @@ class TicketFilter
             }
         }
 
-        // Cost range, both ends included. A ticket without a cost counts as 0.
+        // Cost: undefined (null), defined (not null, 0 too), or a range with both ends included.
+        // A null cost is never in a range.
+        if (isset($f['cost'])) {
+            $f['cost'] === 'none' ? $query->whereNull('tickets.cost') : $query->whereNotNull('tickets.cost');
+        }
         if (isset($f['cost_from'])) {
-            $query->whereRaw('COALESCE(tickets.cost, 0) >= ?', [(int) $f['cost_from']]);
+            $query->where('tickets.cost', '>=', (int) $f['cost_from']);
         }
         if (isset($f['cost_to'])) {
-            $query->whereRaw('COALESCE(tickets.cost, 0) <= ?', [(int) $f['cost_to']]);
+            $query->where('tickets.cost', '<=', (int) $f['cost_to']);
         }
 
         return $query;

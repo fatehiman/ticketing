@@ -448,6 +448,17 @@ function initTicketFilter() {
         });
     });
 
+    // Cost: From / To are shown (and sent) only when "Range" is picked.
+    const costMode = form.querySelector('[data-cost-mode]');
+    costMode?.addEventListener('change', () => {
+        const range = costMode.value === 'range';
+        form.querySelectorAll('[data-cost-range]').forEach((el) => {
+            el.classList.toggle('d-none', !range);
+            if (el.tagName === 'INPUT') el.disabled = !range;
+        });
+        if (range) form.querySelector('input[name="cost_from"]')?.focus();
+    });
+
     // Changing page size or sort submits right away.
     form.querySelectorAll('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => form.requestSubmit()));
 }

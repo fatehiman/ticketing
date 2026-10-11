@@ -138,14 +138,22 @@
                             </div>
                         </div>
                     @endforeach
-                    {{-- Cost range: empty = no filter; 0 is a real value (from 0 to 0 = tickets without a cost). --}}
-                    <div class="col-md-4">
+                    {{-- Cost: All / Undefined (no cost) / Defined (any cost, 0 too) / Range. From and To are shown only for Range;
+                         an empty side has no limit, 0 is a real value. --}}
+                    @php($costMode = in_array($f('cost'), ['none', 'any'], true) ? $f('cost') : ($f('cost_from') !== null || $f('cost_to') !== null ? 'range' : ''))
+                    <div class="col-md-4" data-cost-filter>
                         <label class="form-label">{{ __('tickets.filter.cost') }}</label>
                         <div class="input-group">
-                            <span class="input-group-text small">{{ __('app.from') }}</span>
-                            <input type="text" name="cost_from" value="{{ $f('cost_from') }}" class="form-control ltr-input" inputmode="numeric" data-money="int">
-                            <span class="input-group-text small">{{ __('app.to') }}</span>
-                            <input type="text" name="cost_to" value="{{ $f('cost_to') }}" class="form-control ltr-input" inputmode="numeric" data-money="int">
+                            <select name="cost" class="form-select" style="max-width: 9.5rem" data-cost-mode aria-label="{{ __('tickets.filter.cost') }}">
+                                <option value="">{{ __('tickets.filter.any') }}</option>
+                                <option value="none" @selected($costMode === 'none')>{{ __('tickets.filter.cost_none') }}</option>
+                                <option value="any" @selected($costMode === 'any')>{{ __('tickets.filter.cost_any') }}</option>
+                                <option value="range" @selected($costMode === 'range')>{{ __('tickets.filter.cost_range') }}</option>
+                            </select>
+                            <span class="input-group-text small" data-cost-range @class(['d-none' => $costMode !== 'range'])>{{ __('app.from') }}</span>
+                            <input type="text" name="cost_from" value="{{ $f('cost_from') }}" class="form-control ltr-input {{ $costMode !== 'range' ? 'd-none' : '' }}" inputmode="numeric" data-money="int" data-cost-range @disabled($costMode !== 'range') aria-label="{{ __('tickets.filter.cost') }} {{ __('app.from') }}">
+                            <span class="input-group-text small" data-cost-range @class(['d-none' => $costMode !== 'range'])>{{ __('app.to') }}</span>
+                            <input type="text" name="cost_to" value="{{ $f('cost_to') }}" class="form-control ltr-input {{ $costMode !== 'range' ? 'd-none' : '' }}" inputmode="numeric" data-money="int" data-cost-range @disabled($costMode !== 'range') aria-label="{{ __('tickets.filter.cost') }} {{ __('app.to') }}">
                         </div>
                     </div>
                 </div>

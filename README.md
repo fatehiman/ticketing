@@ -30,9 +30,10 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   **transactions, bills and payment vouchers**. Filter lists show only that project's things (sprints, people,
   customers). Payments **without a project** of the project's customers are shown too. *All projects* shows everything.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
-  *More filters* opens the rest of the filters; the button then says *Fewer filters*. A **cost range** filter
-  (from / to, both ends included): empty = no filter, `0` is a real value, a ticket without a cost counts as 0
-  (from 0 to 0 = tickets without a cost).
+  *More filters* opens the rest of the filters; the button then says *Fewer filters*. A **cost** filter is a listbox:
+  *All*, *Undefined* (no cost, `cost=none`), *Defined* (any cost, `0` too, `cost=any`) or *Range* — only *Range* shows
+  **From / To** (both ends included; only From = cost ≥ From, only To = cost ≤ To). `0` is a real cost, not "undefined":
+  a ticket without a cost is never in a range.
   A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
   each one, saved per user, with **Reset to default**. Default = the owner's choice (`TicketMenus::DEFAULT_ORDER` /
   `DEFAULT_HIDDEN`): *All* first; *Open*, *Cancelled*, *Rejected*, *Assigned to me*, *Unassigned*, *Reported by me* hidden.

@@ -397,7 +397,7 @@ class TicketingTest extends TestCase
         $this->get('/tickets')->assertViewHas('sprints', fn ($s) => $s->contains('id', $other->id) && $s->contains('id', $mine->id));
     }
 
-    public function test_cost_range_filter_includes_both_ends_and_zero(): void
+    public function test_cost_filter_undefined_or_range(): void
     {
         Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'NoCost']));
         Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'ZeroCost', 'cost' => 0]));
@@ -405,13 +405,24 @@ class TicketingTest extends TestCase
         Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'BigCost', 'cost' => 2500000]));
 
         $this->actingAs($this->dev);
-        $this->get('/tickets?cost_from=0&cost_to=1')->assertSee('NoCost')->assertSee('ZeroCost')->assertSee('OneCost')->assertDontSee('BigCost');
-        $this->get('/tickets?cost_from=0&cost_to=0')->assertSee('NoCost')->assertSee('ZeroCost')->assertDontSee('OneCost');
+        // Range: both ends included; 0 is a real value; a ticket without a cost is never in a range.
+        $this->get('/tickets?cost=range&cost_from=0&cost_to=1')->assertSee('ZeroCost')->assertSee('OneCost')->assertDontSee('NoCost')->assertDontSee('BigCost');
+        $this->get('/tickets?cost_from=0&cost_to=0')->assertSee('ZeroCost')->assertDontSee('OneCost')->assertDontSee('NoCost');
         $this->get('/tickets?cost_from=1,000')->assertSee('BigCost')->assertDontSee('OneCost')->assertDontSee('NoCost');
-        $this->get('/tickets?cost_to=2,500,000')->assertSee('BigCost')->assertSee('NoCost');
-        // Empty = no filter.
-        $this->get('/tickets?cost_from=&cost_to=')->assertSee('NoCost')->assertSee('BigCost');
-        $this->assertSame(['cost_from' => '0'], TicketFilter::normalize(['cost_from' => '0', 'cost_to' => '']));
+        $this->get('/tickets?cost_to=1')->assertSee('ZeroCost')->assertSee('OneCost')->assertDontSee('BigCost')->assertDontSee('NoCost');
+        // Undefined: only tickets without a cost; a range sent with it is ignored.
+        $this->get('/tickets?cost=none')->assertSee('NoCost')->assertDontSee('ZeroCost')->assertDontSee('BigCost');
+        $this->get('/tickets?cost=none&cost_from=1')->assertSee('NoCost')->assertDontSee('BigCost');
+        // Defined: every ticket with a cost, 0 too.
+        $this->get('/tickets?cost=any')->assertSee('ZeroCost')->assertSee('BigCost')->assertDontSee('NoCost');
+        // All, or a range without numbers = no filter.
+        $this->get('/tickets?cost=&cost_from=&cost_to=')->assertSee('NoCost')->assertSee('BigCost');
+        $this->get('/tickets?cost=range')->assertSee('NoCost')->assertSee('BigCost');
+
+        $this->assertSame(['cost_from' => '0'], TicketFilter::normalize(['cost' => 'range', 'cost_from' => '0', 'cost_to' => '']));
+        $this->assertSame(['cost' => 'none'], TicketFilter::normalize(['cost' => 'none', 'cost_to' => '5']));
+        $this->assertSame([], TicketFilter::normalize(['cost' => 'range']));
+        $this->assertSame(['cost' => 'any'], TicketFilter::normalize(['cost' => 'any', 'cost_from' => '3']));
     }
 
     public function test_more_filters_button_says_fewer_when_open(): void
