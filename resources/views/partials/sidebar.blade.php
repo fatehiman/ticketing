@@ -46,7 +46,7 @@
             @if ($custom->isNotEmpty())
                 <div class="nav-section ps-4">{{ __('tickets.menu.my_menus') }}</div>
                 @foreach ($custom as $item)
-                    <a href="{{ $item['url'] }}" @class(['side-link', 'active' => $item['active']])>
+                    <a href="{{ $item['url'] }}" @class(['side-link', 'side-custom', 'active' => $item['active']])>
                         <i class="bi {{ $item['icon'] }}"></i>
                         <span class="text-truncate">{{ $item['name'] }}</span>
                         <button type="button" class="menu-edit" title="{{ __('tickets.menu.edit') }}"

@@ -164,6 +164,11 @@ a { text-decoration: none; }
     padding: 0 .15rem; font-size: .78rem; line-height: 1;
 }
 .side-link .menu-edit:hover { opacity: 1; }
+/* The pencil is small: the general ".side-link .bi" size (1.05rem, fixed width) made it big and cut the titles. */
+.side-link .menu-edit .bi { font-size: .7rem; width: auto; }
+.side-link .menu-edit { flex-shrink: 0; }
+/* Custom menus ("My folders"): a little smaller text and gap, so longer titles fit. */
+.side-sub .side-link.side-custom { font-size: .8rem; gap: .5rem; }
 .side-toggle { cursor: pointer; }
 .side-toggle .chev { margin-inline-start: auto; transition: transform .2s; font-size: .8rem; }
 .side-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
