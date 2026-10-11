@@ -44,7 +44,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   whose **dates include today** (both ends count). Overlapping sprints → tickets of all of them. The sprint status is not used.
   A current sprint is **green everywhere** (tickets grid and page, sprints page and project page rows, dashboard, sprint dropdowns).
 - **Bulk actions** (developers): check tickets on the current page (the top checkbox checks the whole page), then
-  change status, sprint, assignee, priority, type or **cost** (one fixed cost for many small tickets; 0 removes it),
+  change status, sprint, assignee, priority, type or **cost** (one fixed cost for many small tickets; an empty box
+  removes the cost, 0 is a real cost of 0),
   or delete them in one step. Every change goes into the history. Only **delete** asks for confirmation.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
   folder** (e.g. *Backlog* without cost, *Done* with cost). Some folders have **default columns**

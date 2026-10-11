@@ -221,8 +221,9 @@ class TicketController extends Controller
             'type' => ['exclude_unless:action,type', 'required', Rule::enum(TicketType::class)],
             'sprint_id' => ['exclude_unless:action,sprint', 'required', 'regex:/^(none|\d+)$/'],
             'assignee_id' => ['exclude_unless:action,assignee', 'required', 'regex:/^(none|\d+)$/'],
-            // The same cost for every ticket (many small tickets with one fixed price). 0 removes the cost.
-            'cost' => ['exclude_unless:action,cost', 'required', 'integer', 'min:0', 'max:999999999999999'],
+            // The same cost for every ticket (many small tickets with one fixed price).
+            // Empty removes the cost (null); 0 is a real cost of 0.
+            'cost' => ['exclude_unless:action,cost', 'nullable', 'integer', 'min:0', 'max:999999999999999'],
         ], [], [
             'cost' => __('tickets.fields.cost'),
             'ids' => __('tickets.bulk.selected_label'),
@@ -256,7 +257,7 @@ class TicketController extends Controller
                     'status' => $this->tickets->changeStatus($ticket, TicketStatus::from($data['status']), $user),
                     'priority' => $this->tickets->update($ticket, ['priority' => $data['priority']], $user),
                     'type' => $this->tickets->update($ticket, ['type' => $data['type']], $user),
-                    'cost' => $this->tickets->update($ticket, ['cost' => (int) $data['cost'] ?: null], $user),
+                    'cost' => $this->tickets->update($ticket, ['cost' => $data['cost'] === null ? null : (int) $data['cost']], $user),
                     'sprint' => $this->tickets->update($ticket, ['sprint_id' => $sprint?->id], $user),
                     'assignee' => $this->tickets->update($ticket, ['assignee_id' => $assignee?->id], $user),
                     'delete' => $this->tickets->delete($ticket, $user),
