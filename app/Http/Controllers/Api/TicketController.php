@@ -32,7 +32,7 @@ use Morilog\Jalali\Jalalian;
  */
 class TicketController extends Controller
 {
-    public function __construct(private TicketService $tickets) {}
+    public function __construct(protected TicketService $tickets) {}
 
     public function me(Request $request)
     {
@@ -200,7 +200,7 @@ class TicketController extends Controller
     // ---------------------------------------------------------------------
 
     /** The token's project, or the "project" input (id or code) when the token has no fixed project. */
-    private function project(Request $request): Project
+    protected function project(Request $request): Project
     {
         $user = $request->user();
         $token = $request->attributes->get('api_token');
@@ -228,7 +228,7 @@ class TicketController extends Controller
         return $project ?? throw new ApiError('project_not_found', "Project \"{$value}\" was not found or you have no access. GET /api/me lists your projects.", 404);
     }
 
-    private function findTicket(Request $request, string $number): Ticket
+    protected function findTicket(Request $request, string $number): Ticket
     {
         $user = $request->user();
         $token = $request->attributes->get('api_token');
@@ -243,7 +243,7 @@ class TicketController extends Controller
     }
 
     /** A backed enum value from its key or its fa/en label. */
-    private function enum(string $enum, string $group, mixed $value): string
+    protected function enum(string $enum, string $group, mixed $value): string
     {
         $norm = fn (string $s) => str_replace([' ', '-', "\u{200C}"], '_', mb_strtolower(trim($s)));
         $wanted = $norm(Dates::latinDigits((string) $value));
@@ -260,7 +260,7 @@ class TicketController extends Controller
     }
 
     /** Sprint by number, "active" (the current sprint) or name. */
-    private function sprint(Project $project, string $value): Sprint
+    protected function sprint(Project $project, string $value): Sprint
     {
         $value = trim(Dates::latinDigits($value));
         $sprints = $project->sprints();
@@ -275,7 +275,7 @@ class TicketController extends Controller
     }
 
     /** Assignee id: "me", a user id or part of a developer's name. */
-    private function assignee(Project $project, string $value, User $user): int
+    protected function assignee(Project $project, string $value, User $user): int
     {
         $developers = $this->developers($project);
         $value = Dates::latinDigits($value);
@@ -293,7 +293,7 @@ class TicketController extends Controller
      * Assignee of a new ticket. Not sent: the token's user when they are a developer of the project,
      * otherwise nobody. "none" means unassigned on purpose.
      */
-    private function newAssignee(Project $project, mixed $value, User $user): ?int
+    protected function newAssignee(Project $project, mixed $value, User $user): ?int
     {
         $value = mb_strtolower(trim((string) $value));
         if ($value === '') {
@@ -303,19 +303,19 @@ class TicketController extends Controller
         return in_array($value, ['none', 'no', 'بدون'], true) ? null : $this->assignee($project, $value, $user);
     }
 
-    private function developers(Project $project)
+    protected function developers(Project $project)
     {
         return $project->members()->where('role', Role::Developer->value)->orderBy('first_name')->get();
     }
 
-    private function date(mixed $value, string $field): Carbon
+    protected function date(mixed $value, string $field): Carbon
     {
         return Dates::parse((string) $value)
             ?? throw new ApiError('invalid_value', "{$field} must be a date like 2026-09-24 (Gregorian) or 1405/07/02 (Jalali).");
     }
 
     /** "a,b" / "a، b" / ["a","b"] → ["a","b"] */
-    private function list(mixed $value): array
+    protected function list(mixed $value): array
     {
         $items = is_array($value) ? $value : preg_split('/[,،]/u', (string) $value);
 
@@ -323,7 +323,7 @@ class TicketController extends Controller
     }
 
     /** Plain text becomes simple HTML; HTML is cleaned like editor content. */
-    private function descriptionHtml(?string $text): ?string
+    protected function descriptionHtml(?string $text): ?string
     {
         if ($text === null || trim($text) === '') {
             return null;
@@ -336,12 +336,12 @@ class TicketController extends Controller
         return implode('', array_map(fn ($p) => '<p>'.nl2br(e($p), false).'</p>', $paragraphs));
     }
 
-    private function projectData(Project $project): array
+    protected function projectData(Project $project): array
     {
         return ['id' => $project->id, 'code' => $project->code, 'name' => $project->name];
     }
 
-    private function summary(Ticket $t): array
+    protected function summary(Ticket $t): array
     {
         return [
             'number' => $t->number,
@@ -364,7 +364,7 @@ class TicketController extends Controller
         ];
     }
 
-    private function details(Ticket $t): array
+    protected function details(Ticket $t): array
     {
         $t->loadMissing(['project', 'sprint', 'assignee', 'reporter']);
         $t->loadCount(['followups', 'attachments']);
@@ -387,12 +387,12 @@ class TicketController extends Controller
         ]);
     }
 
-    private function when(?CarbonInterface $date): ?string
+    protected function when(?CarbonInterface $date): ?string
     {
         return $date?->copy()->setTimezone(config('app.timezone'))->format('Y-m-d H:i');
     }
 
-    private function jalali(?CarbonInterface $date): ?string
+    protected function jalali(?CarbonInterface $date): ?string
     {
         return $date ? Jalalian::fromCarbon(Carbon::instance($date)->setTimezone(config('app.timezone')))->format('Y/m/d H:i') : null;
     }

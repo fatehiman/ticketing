@@ -192,6 +192,53 @@
                     </div>
                 </div>
             @endif
+
+            @if ($user->isStaff())
+                <div class="card card-accent mt-3" id="full-api-key">
+                    <div class="card-header"><i class="bi bi-key-fill text-brand"></i> {{ __('api.full_title') }}</div>
+                    <div class="card-body">
+                        <div class="small text-muted mb-3">{{ __('api.full_note') }}</div>
+
+                        @if (session('full_api_key'))
+                            <div class="alert alert-warning">
+                                <div class="fw-bold mb-2"><i class="bi bi-exclamation-triangle"></i> {{ __('api.full_new') }}</div>
+                                <div class="input-group">
+                                    <input type="text" id="full-key-value" class="form-control ltr-input font-monospace" value="{{ session('full_api_key') }}" readonly onclick="this.select()">
+                                    <button type="button" class="btn btn-outline-dark" data-copied="{{ __('api.full_copied') }}"
+                                            onclick="navigator.clipboard.writeText(document.getElementById('full-key-value').value); this.textContent = this.dataset.copied">
+                                        <i class="bi bi-clipboard"></i> {{ __('api.full_copy') }}
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($fullKey)
+                            <div class="row g-2 small mb-3">
+                                <div class="col-md-4"><span class="text-muted">{{ __('api.full_current') }}:</span> <span class="ltr-input font-monospace">tkf_…{{ $fullKey->key_hint }}</span></div>
+                                <div class="col-md-4"><span class="text-muted">{{ __('api.full_created') }}:</span> {{ Dates::dateTime($fullKey->updated_at) }}</div>
+                                <div class="col-md-4"><span class="text-muted">{{ __('api.full_last_used') }}:</span> {{ $fullKey->last_used_at ? Dates::dateTime($fullKey->last_used_at) : '—' }}</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <form method="POST" action="{{ route('profile.full-key.rotate') }}" data-confirm="{{ __('api.full_rotate_confirm') }}">
+                                    @csrf
+                                    <button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat"></i> {{ __('api.full_rotate') }}</button>
+                                </form>
+                                <form method="POST" action="{{ route('profile.full-key.destroy') }}" data-confirm="{{ __('app.confirm_delete') }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> {{ __('api.full_revoke') }}</button>
+                                </form>
+                            </div>
+                        @else
+                            <div class="text-muted mb-2">{{ __('api.full_none') }}</div>
+                            <form method="POST" action="{{ route('profile.full-key.rotate') }}">
+                                @csrf
+                                <button class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> {{ __('api.full_create') }}</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 @endsection

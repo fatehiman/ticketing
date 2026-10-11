@@ -76,8 +76,11 @@ built with **Laravel 12**, Blade and Bootstrap 5.
 - Latin / numeric fields (email, mobile, password, URL, code, amounts, times, dates) are always **LTR**, also in the RTL theme.
 - **Bot API** (JSON) for AI bots: create, search / list and read tickets. A developer logs in the bot with a
   one-time link (no password in the chat) and links the bot to one project; tokens last 30 days. See [API.md](API.md).
+- **Full access API** (JSON, `/api/full`) for scripts and AI assistants of a person: **one key** (made and rotated in *Profile → Full access API key*)
+  reaches all the user's projects. Create / read / update / delete tickets, create / read / update projects.
+  Unlike a bot token, no project is locked: `project` (id, code or name) is sent in the payload. See [FULL-API.md](FULL-API.md).
 
-Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md) · Bot API: [API.md](API.md)
+Design and phases: [PLAN.md](PLAN.md) · [PHASES.md](PHASES.md) · Bot API: [API.md](API.md) · Full access API: [FULL-API.md](FULL-API.md)
 
 ## Requirements
 
@@ -136,6 +139,7 @@ php artisan test
 | Transactions (payments + ticket costs) | `app/Support/Transactions.php`, `app/Http/Controllers/TransactionController.php`, `PaymentController.php`, `app/Policies/PaymentPolicy.php` |
 | Themes | `resources/css/theme-rtl.css`, `resources/css/theme-ltr.css`, shared `app.css` |
 | Bot API (login link, tokens, tickets JSON) | `routes/api.php`, `app/Http/Controllers/Api/*`, `app/Http/Controllers/ApiAuthController.php` (web page of the link), `app/Http/Middleware/AuthenticateApiToken.php`, `app/Models/ApiToken.php`, `ApiAuthRequest.php` — docs in [API.md](API.md) |
+| Full access API (key, `/api/full`) | `routes/api.php` (`full` group), `app/Http/Controllers/Api/Full/*` (extends the bot `TicketController`), `app/Http/Middleware/AuthenticateFullApiKey.php`, `app/Models/FullApiKey.php`, `app/Support/ProjectLookup.php`, `ProfileController::rotateFullKey()` — docs in [FULL-API.md](FULL-API.md) |
 
 ## Deployment
 

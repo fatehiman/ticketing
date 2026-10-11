@@ -56,6 +56,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/avatar', [ProfileController::class, 'avatar'])->name('profile.avatar');
     Route::delete('/profile/avatar', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
     Route::delete('/profile/api-tokens/{apiToken}', [ProfileController::class, 'revokeToken'])->name('profile.api-tokens.destroy');
+    Route::post('/profile/full-api-key', [ProfileController::class, 'rotateFullKey'])->name('profile.full-key.rotate');
+    Route::delete('/profile/full-api-key', [ProfileController::class, 'revokeFullKey'])->name('profile.full-key.destroy');
     Route::post('/bot-login/{publicId}', [ApiAuthController::class, 'store'])->name('api-auth.store');
 
     Route::post('/switch-project', ProjectSwitchController::class)->name('project.switch');

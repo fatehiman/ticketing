@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
             'api.token' => \App\Http\Middleware\AuthenticateApiToken::class,
+            'api.full' => \App\Http\Middleware\AuthenticateFullApiKey::class,
         ]);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));

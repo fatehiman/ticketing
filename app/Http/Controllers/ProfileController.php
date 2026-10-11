@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Middleware\SetLocale;
 use App\Models\ApiToken;
+use App\Models\FullApiKey;
 use App\Support\Dates;
 use App\Support\PublicAvatar;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class ProfileController extends Controller
         return view('profile.edit', [
             'user' => $user,
             'apiTokens' => $user->isDeveloper() ? ApiToken::valid()->where('user_id', $user->id)->with('project')->latest('id')->get() : collect(),
+            'fullKey' => $user->isStaff() ? FullApiKey::where('user_id', $user->id)->first() : null,
         ]);
     }
 
@@ -101,6 +103,23 @@ class ProfileController extends Controller
         $apiToken->delete();
 
         return back()->with('success', __('api.revoked'));
+    }
+
+    /** Create or rotate the full access API key. The plain key is shown once (flash), only its hash is stored. */
+    public function rotateFullKey(Request $request)
+    {
+        abort_unless($request->user()->isStaff(), 403);
+        [, $plain] = FullApiKey::rotate($request->user());
+
+        return back()->with('full_api_key', $plain);
+    }
+
+    public function revokeFullKey(Request $request)
+    {
+        abort_unless($request->user()->isStaff(), 403);
+        FullApiKey::where('user_id', $request->user()->id)->delete();
+
+        return back()->with('success', __('api.full_revoked'));
     }
 
     public function removeAvatar(Request $request)
