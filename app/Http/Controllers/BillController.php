@@ -35,12 +35,14 @@ class BillController extends Controller
 {
     public function __construct(private TicketService $tickets) {}
 
-    public function index(Request $request)
+    public function index(Request $request, ProjectContext $context)
     {
         $user = $request->user();
+        $scope = $context->scopeIds();
         $f = [
             'status' => in_array($request->query('status'), Bills::STATUSES, true) ? $request->query('status') : null,
-            'project_id' => $request->integer('project_id') ?: null,
+            // The top-bar project wins: no bills of other projects while a project is picked.
+            'project_id' => $context->id() ?? ($request->integer('project_id') ?: null),
             'customer_id' => $user->isStaff() ? ($request->integer('customer_id') ?: null) : null,
         ];
 
@@ -69,8 +71,8 @@ class BillController extends Controller
             'rows' => $rows,
             'filters' => $f,
             'totals' => $totals,
-            'projects' => Project::query()->visibleTo($user)->orderBy('name')->get(),
-            'customers' => $user->isStaff() ? TransactionController::customerOptions($user) : collect(),
+            'projects' => $scope === null ? Project::query()->visibleTo($user)->orderBy('name')->get() : collect(),
+            'customers' => $user->isStaff() ? TransactionController::customerOptions($user, $scope) : collect(),
             'debt' => $user->isCustomer() ? Bills::debtOf($user) : null,
         ]);
     }

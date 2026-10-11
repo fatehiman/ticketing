@@ -7,6 +7,11 @@ use App\Models\Project;
 use App\Models\Sprint;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\TicketService;
+use App\Support\ProjectContext;
+use App\Support\RevisionPresenter;
+use App\Support\TicketFilter;
+use App\Support\TicketMenus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -176,14 +181,14 @@ class TicketingTest extends TestCase
     public function test_customer_does_not_see_history_of_price_time_and_story_points(): void
     {
         $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->customer->id, 'title' => 'Hist']));
-        $service = app(\App\Services\TicketService::class);
+        $service = app(TicketService::class);
         // Only staff-only fields → the whole entry is hidden from the customer.
         $service->update($ticket, ['cost' => 7000000, 'logged_minutes' => 90, 'story_points' => 8], $this->dev);
         // Mixed → the customer sees the status change only.
         $service->update($ticket->fresh(), ['status' => 'testing', 'estimated_cost' => 5000000], $this->dev);
 
         $fields = fn ($user) => collect($ticket->revisions()->get())
-            ->map(fn ($r) => \App\Support\RevisionPresenter::visibleChanges($r->changes, $user))
+            ->map(fn ($r) => RevisionPresenter::visibleChanges($r->changes, $user))
             ->filter(fn ($c) => $c !== null)->flatMap(fn ($c) => array_keys($c))->sort()->values()->all();
 
         $this->assertSame(['cost', 'estimated_cost', 'logged_minutes', 'status', 'story_points'], $fields($this->dev));
@@ -314,11 +319,11 @@ class TicketingTest extends TestCase
             Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => "T{$i}", 'status' => $status, 'sprint_id' => $s?->id]));
         }
 
-        $titles = \App\Support\TicketFilter::query(['sprint_id' => 'current'], $this->dev, app(\App\Support\ProjectContext::class))
+        $titles = TicketFilter::query(['sprint_id' => 'current'], $this->dev, app(ProjectContext::class))
             ->pluck('title')->sort()->values()->all();
         $this->assertSame(['T0', 'T1'], $titles);
 
-        $item = collect((new \App\Support\TicketMenus($this->dev, app(\App\Support\ProjectContext::class)))->items())->firstWhere('key', 'current_sprint');
+        $item = collect((new TicketMenus($this->dev, app(ProjectContext::class)))->items())->firstWhere('key', 'current_sprint');
         $this->assertSame(2, $item['count']);
         $this->actingAs($this->dev)->get($item['url'])->assertOk()->assertSee('T0')->assertDontSee('T2');
 
@@ -334,7 +339,7 @@ class TicketingTest extends TestCase
 
     public function test_builtin_folders_can_be_reordered_hidden_and_reset(): void
     {
-        $keys = fn (User $u) => collect((new \App\Support\TicketMenus($u, app(\App\Support\ProjectContext::class)))->items())
+        $keys = fn (User $u) => collect((new TicketMenus($u, app(ProjectContext::class)))->items())
             ->reject(fn ($i) => $i['hidden'])->pluck('key')->all();
         // Default (the owner's choice): "all" first; "open", cancelled, rejected, mine, unassigned, reported hidden.
         $default = $keys($this->customer);
@@ -373,6 +378,46 @@ class TicketingTest extends TestCase
         $this->actingAs($this->dev->fresh())->get('/tickets?status[]=testing')->assertSee('Alpha')->assertDontSee('Beta')->assertDontSee('Gamma');
         // An explicit project in the filter wins over the top-bar project.
         $this->actingAs($this->dev->fresh())->get('/tickets?project_id='.$this->otherProject->id)->assertSee('Gamma')->assertDontSee('Alpha');
+    }
+
+    public function test_filter_lists_follow_the_top_bar_project(): void
+    {
+        $this->otherProject->members()->attach($this->dev->id);
+        $mine = Sprint::create(['project_id' => $this->project->id, 'number' => 1, 'status' => 'active']);
+        $other = Sprint::create(['project_id' => $this->otherProject->id, 'number' => 1, 'status' => 'active']);
+
+        $this->actingAs($this->dev)->post('/switch-project', ['project_id' => $this->project->id]);
+        $this->get('/tickets')->assertOk()
+            ->assertViewHas('sprints', fn ($s) => $s->pluck('id')->all() === [$mine->id])
+            ->assertViewHas('projects', fn ($p) => $p->pluck('id')->all() === [$this->project->id])
+            ->assertViewHas('developers', fn ($d) => ! $d->contains('id', $this->otherDev->id));
+
+        // All projects: every sprint.
+        $this->post('/switch-project', ['project_id' => 'all']);
+        $this->get('/tickets')->assertViewHas('sprints', fn ($s) => $s->contains('id', $other->id) && $s->contains('id', $mine->id));
+    }
+
+    public function test_cost_range_filter_includes_both_ends_and_zero(): void
+    {
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'NoCost']));
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'ZeroCost', 'cost' => 0]));
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'OneCost', 'cost' => 1]));
+        Ticket::create($this->ticketData(['reporter_id' => $this->dev->id, 'title' => 'BigCost', 'cost' => 2500000]));
+
+        $this->actingAs($this->dev);
+        $this->get('/tickets?cost_from=0&cost_to=1')->assertSee('NoCost')->assertSee('ZeroCost')->assertSee('OneCost')->assertDontSee('BigCost');
+        $this->get('/tickets?cost_from=0&cost_to=0')->assertSee('NoCost')->assertSee('ZeroCost')->assertDontSee('OneCost');
+        $this->get('/tickets?cost_from=1,000')->assertSee('BigCost')->assertDontSee('OneCost')->assertDontSee('NoCost');
+        $this->get('/tickets?cost_to=2,500,000')->assertSee('BigCost')->assertSee('NoCost');
+        // Empty = no filter.
+        $this->get('/tickets?cost_from=&cost_to=')->assertSee('NoCost')->assertSee('BigCost');
+        $this->assertSame(['cost_from' => '0'], TicketFilter::normalize(['cost_from' => '0', 'cost_to' => '']));
+    }
+
+    public function test_more_filters_button_says_fewer_when_open(): void
+    {
+        $this->actingAs($this->dev)->get('/tickets')->assertSee(__('app.more_filters'))->assertSee('aria-expanded="false"', false);
+        $this->get('/tickets?cost_from=0')->assertSee('data-filter-toggle-label>'.__('app.less_filters'), false);
     }
 
     public function test_grid_preferences_are_saved_on_server(): void

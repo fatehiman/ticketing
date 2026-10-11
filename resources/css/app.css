@@ -298,6 +298,11 @@ a { text-decoration: none; }
 }
 .grid-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
 .col-chooser .dropdown-menu { max-height: 60vh; overflow-y: auto; min-width: 230px; }
+/* Listbox with check marks (<x-multi-select>) */
+.multi-select > .form-select { display: flex; align-items: center; gap: .4rem; }
+.multi-select .ms-list { max-height: 260px; overflow-y: auto; }
+.multi-select .form-check { cursor: pointer; padding-inline: .25rem; border-radius: .375rem; }
+.multi-select .form-check:hover { background: var(--bs-tertiary-bg, #f1f5f9); }
 .col-chooser .form-check { padding-inline-start: 2.2rem; }
 .bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); background: var(--row-hover); }
 .bulk-bar.d-none { display: none !important; }

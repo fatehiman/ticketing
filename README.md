@@ -26,7 +26,13 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   On **New sprint**, the number and the **start date** are filled for the chosen project: start = latest end date of
   its sprints **+ 1 day** (weekends included; empty when no sprint has an end date). Changing the project fills them
   again, but a value typed by hand stays.
+- **Top-bar project**: every page follows the project picked in the top bar — tickets, sprints, dashboard,
+  **transactions, bills and payment vouchers**. Filter lists show only that project's things (sprints, people,
+  customers). Payments **without a project** of the project's customers are shown too. *All projects* shows everything.
 - Ticket folders ("cartables") with **badges**, one search page with many filters, and **custom menus**.
+  *More filters* opens the rest of the filters; the button then says *Fewer filters*. A **cost range** filter
+  (from / to, both ends included): empty = no filter, `0` is a real value, a ticket without a cost counts as 0
+  (from 0 to 0 = tickets without a cost).
   A small ✎ next to *Tickets* opens a modal to **reorder** the built-in folders (drag or ↑ ↓) and **show / hide**
   each one, saved per user, with **Reset to default**. Default = the owner's choice (`TicketMenus::DEFAULT_ORDER` /
   `DEFAULT_HIDDEN`): *All* first; *Open*, *Cancelled*, *Rejected*, *Assigned to me*, *Unassigned*, *Reported by me* hidden.
@@ -43,6 +49,7 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   columns have a **totals row** (sums of all filtered records, not only the current page).
 - **Transactions**: accepted customer payments; each done ticket with a cost is shown as a
   cost next to them. Totals (payments, costs, remaining) and a per-project summary. Customers see theirs read-only.
+  Projects are picked in a **listbox with check marks** (`<x-multi-select>`, a search box when the list is long).
 - **Bills** (صورتحساب‌ها): a developer issues a bill to a customer of a project. Items are done tickets that are not
   on another bill — **with or without a cost** (a ticket without a cost is listed with amount 0, and a manual item
   such as "Cost of phase 1" carries the price of those tickets) — and/or **manual items** (title, amount, details —
@@ -119,7 +126,8 @@ php artisan test
 | Topic | Where |
 |---|---|
 | Roles and access rules | `app/Policies`, `app/Models/User.php` (`scopeCustomersOf`, `accessibleProjectIds`) |
-| Top-bar project switcher | `app/Support/ProjectContext.php` |
+| Top-bar project switcher | `app/Support/ProjectContext.php` (`scopeIds()`; payments: `Payment::scopeInProjects()`) |
+| Listbox with check marks | `resources/views/components/multi-select.blade.php`, `initMultiSelects()` in `resources/js/app.js` |
 | Ticket filters, folders, badges | `app/Support/TicketFilter.php`, `app/Support/TicketMenus.php` |
 | Current sprint (by dates), green marker | `Sprint::scopeCurrent()`, `Sprint::isCurrent()`, `resources/views/components/sprint.blade.php` (`<x-sprint>`) |
 | New sprint defaults (number, start date per project) | `SprintController::newSprintDefaults()`, `initSprintForm()` in `resources/js/app.js` |

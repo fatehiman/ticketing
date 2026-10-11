@@ -114,7 +114,7 @@ class TicketController extends Controller
             'sort' => $request->query('sort', 'updated_at'),
             'dir' => $request->query('dir', 'desc'),
             'advancedOpen' => (bool) array_diff(array_keys($filters), ['q', 'status', 'project_id']),
-        ] + $this->lookups($user, $context, false));
+        ] + $this->lookups($user, $context, false, filters: $filters));
     }
 
     public function create(Request $request, ProjectContext $context)
@@ -332,11 +332,21 @@ class TicketController extends Controller
         return $data;
     }
 
-    /** Lists for the filter box and the ticket form. */
-    private function lookups(User $user, ProjectContext $context, bool $forForm, ?Ticket $ticket = null): array
+    /**
+     * Lists for the filter box and the ticket form.
+     * Filter box: while a project is picked in the top bar, only that project and its sprints and people
+     * (plus the project of an explicit filter, e.g. a custom menu). The form keeps all projects:
+     * its sprint list already follows the chosen project.
+     */
+    private function lookups(User $user, ProjectContext $context, bool $forForm, ?Ticket $ticket = null, array $filters = []): array
     {
+        $scope = $forForm ? null : $context->scopeIds();
+        if ($scope !== null && isset($filters['project_id'])) {
+            $scope[] = (int) $filters['project_id'];
+        }
         $projects = Project::query()->visibleTo($user)
             ->when($forForm, fn ($q) => $q->where(fn ($w) => $w->active()->when($ticket, fn ($t) => $t->orWhere('id', $ticket->project_id))))
+            ->when($scope !== null, fn ($q) => $q->whereIn('id', $scope))
             ->orderBy('name')->get();
         $projectIds = $projects->pluck('id');
 

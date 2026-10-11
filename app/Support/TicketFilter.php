@@ -20,9 +20,13 @@ class TicketFilter
     public const KEYS = [
         'q', 'number', 'project_id', 'sprint_id', 'status', 'priority', 'type', 'assignee_id', 'reporter_id',
         'awaiting', 'created_from', 'created_to', 'updated_from', 'updated_to', 'due_from', 'due_to',
+        'cost_from', 'cost_to',
     ];
 
     public const ARRAY_KEYS = ['status', 'priority', 'type'];
+
+    /** Money range keys: whole numbers; "0" is a real value (empty = no filter). */
+    public const MONEY_KEYS = ['cost_from', 'cost_to'];
 
     public const SORTS = ['number', 'title', 'status', 'priority', 'created_at', 'updated_at', 'due_date', 'story_points'];
 
@@ -43,6 +47,14 @@ class TicketFilter
                 }
             } elseif (is_scalar($value) && trim((string) $value) !== '') {
                 $out[$key] = trim((string) $value);
+            }
+        }
+        foreach (self::MONEY_KEYS as $key) {
+            if (isset($out[$key])) {
+                $out[$key] = (string) Money::parse($out[$key]); // "1,000" → "1000"
+                if (! ctype_digit($out[$key])) {
+                    unset($out[$key]);
+                }
             }
         }
         ksort($out);
@@ -117,6 +129,14 @@ class TicketFilter
             if ($to = Dates::parse($f[$prefix.'_to'] ?? null)) {
                 $query->where($column, '<=', $prefix === 'due' ? $to->toDateString() : $to->endOfDay());
             }
+        }
+
+        // Cost range, both ends included. A ticket without a cost counts as 0.
+        if (isset($f['cost_from'])) {
+            $query->whereRaw('COALESCE(tickets.cost, 0) >= ?', [(int) $f['cost_from']]);
+        }
+        if (isset($f['cost_to'])) {
+            $query->whereRaw('COALESCE(tickets.cost, 0) <= ?', [(int) $f['cost_to']]);
         }
 
         return $query;

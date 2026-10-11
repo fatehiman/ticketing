@@ -143,6 +143,13 @@ class User extends Authenticatable
         return $query->where('is_active', true);
     }
 
+    /** Customers who are members of one of these projects. */
+    public function scopeCustomersInProjects(Builder $query, array $projectIds): Builder
+    {
+        return $query->where('role', Role::Customer->value)
+            ->whereHas('projects', fn (Builder $p) => $p->whereIn('projects.id', $projectIds));
+    }
+
     /** Customers a developer may see/manage: on one of their projects, or created by them. */
     public function scopeCustomersOf(Builder $query, User $developer): Builder
     {

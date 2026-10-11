@@ -87,4 +87,15 @@ class Payment extends Model
             ->where(fn (Builder $w) => $w->whereNull('payments.project_id')
                 ->orWhereIn('payments.project_id', $user->accessibleProjectIds()));
     }
+
+    /**
+     * Payments inside these projects (the top-bar project): payments of the projects, and payments
+     * without a project of the projects' customers (they most likely pay for this work too).
+     */
+    public function scopeInProjects(Builder $query, array $projectIds): Builder
+    {
+        return $query->where(fn (Builder $w) => $w->whereIn('payments.project_id', $projectIds)
+            ->orWhere(fn (Builder $n) => $n->whereNull('payments.project_id')
+                ->whereIn('payments.customer_id', User::query()->customersInProjects($projectIds)->select('users.id'))));
+    }
 }

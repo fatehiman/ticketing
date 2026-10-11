@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\DB;
  * amount from every total right away.
  *
  * Costs belong to customers by project: a customer's costs are the costs of their projects.
+ *
+ * $scope = the project picked in the top bar (ProjectContext::scopeIds()): only its costs, its
+ * payments and the payments without a project of its customers; null = every project.
  */
 class Transactions
 {
@@ -35,8 +38,8 @@ class Transactions
     /** Date of a cost row: due date, else the day the ticket was done (old rows: last update). */
     private const TX_DATE_COST = 'COALESCE(tickets.due_date, DATE(tickets.resolved_at), DATE(tickets.updated_at))';
 
-    /** Keep only known keys and drop empty values. */
-    public static function normalize(array $input, User $user): array
+    /** Keep only known keys and drop empty values (and projects outside the top-bar project). */
+    public static function normalize(array $input, User $user, ?array $scope = null): array
     {
         $out = [];
         foreach (self::KEYS as $key) {
@@ -62,6 +65,13 @@ class Transactions
         if (! $user->isStaff()) {
             unset($out['customer_id']); // a customer always sees only their own transactions
         }
+        if ($scope !== null && isset($out['project'])) {
+            $allowed = array_merge(array_map('strval', $scope), ['none']);
+            $out['project'] = array_values(array_intersect($out['project'], $allowed));
+            if (! $out['project']) {
+                unset($out['project']);
+            }
+        }
 
         return $out;
     }
@@ -70,7 +80,7 @@ class Transactions
      * The union of both row kinds as a plain query:
      * kind, id, customer_id, project_id, amount, tx_date, description, ticket_number.
      */
-    public static function query(array $f, User $user): Builder
+    public static function query(array $f, User $user, ?array $scope = null): Builder
     {
         $kinds = $f['kind'] ?? self::KINDS;
         $projectIds = collect($f['project'] ?? [])->reject(fn ($p) => $p === 'none')->map(fn ($p) => (int) $p)->values()->all();
@@ -91,6 +101,7 @@ class Transactions
         // --- payments ---------------------------------------------------------------
         $payments = Payment::query()->visibleTo($user)
             ->where('payments.status', Payment::ACCEPTED) // pending / declined vouchers are not money yet
+            ->when($scope !== null, fn ($q) => $q->inProjects($scope))
             ->when($customerId !== null, fn ($q) => $q->where('payments.customer_id', $customerId))
             ->when($projectFilter, fn ($q) => $q->where(function ($w) use ($projectIds, $withoutProject) {
                 $w->whereIn('payments.project_id', $projectIds ?: [0]);
@@ -110,6 +121,7 @@ class Transactions
         $costs = Ticket::query()->visibleTo($user)
             ->where('tickets.status', TicketStatus::Done->value)
             ->where('tickets.cost', '>', 0)
+            ->when($scope !== null, fn ($q) => $q->whereIn('tickets.project_id', $scope))
             ->when($customerProjectIds !== null, fn ($q) => $q->whereIn('tickets.project_id', $customerProjectIds ?: [0]))
             ->when($projectFilter, fn ($q) => $q->whereIn('tickets.project_id', $projectIds ?: [0]))
             ->when(isset($f['q']), function ($q) use ($f) {

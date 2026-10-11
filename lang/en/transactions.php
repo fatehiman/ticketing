@@ -28,6 +28,7 @@ return [
     'choose_customer' => '— Choose a customer —',
     'all_customers' => 'All customers',
     'no_project' => 'No project',
+    'project_and_none' => ':project and payments without a project',
     'amount_hint' => 'Whole number, no decimal point.',
     'cost_rule' => 'A ticket cost is shown when the ticket is Done and has a cost. Its date is the due date, or the day it was done.',
     'total_payments' => 'Total payments',

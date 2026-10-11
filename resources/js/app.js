@@ -329,6 +329,46 @@ function initGrids() {
     });
 }
 
+/* ---------- Listbox with check marks (<x-multi-select>) ---------- */
+function initMultiSelects() {
+    document.querySelectorAll('[data-multi-select]').forEach((box) => {
+        const label = box.querySelector('[data-ms-label]');
+        const items = [...box.querySelectorAll('[data-ms-item]')];
+        const update = () => {
+            const names = items.filter((i) => i.querySelector('input').checked).map((i) => i.textContent.trim());
+            label.textContent = names.length === 0 ? box.dataset.placeholder
+                : names.length <= 2 ? names.join(box.dataset.sep) : box.dataset.many.replace('#', names.length);
+            label.classList.toggle('text-muted', names.length === 0);
+        };
+        const tick = (on) => {
+            items.filter((i) => !i.classList.contains('d-none')).forEach((i) => { i.querySelector('input').checked = on; });
+            update();
+        };
+        box.addEventListener('change', update);
+        box.querySelector('[data-ms-all]')?.addEventListener('click', () => tick(true));
+        box.querySelector('[data-ms-none]')?.addEventListener('click', () => tick(false));
+        const search = box.querySelector('[data-ms-search]');
+        search?.addEventListener('input', () => {
+            const q = toLatin(search.value.trim()).toLowerCase();
+            items.forEach((i) => i.classList.toggle('d-none', q !== '' && !toLatin(i.textContent).toLowerCase().includes(q)));
+        });
+        // Enter in the search box filters the list; it must not submit the form.
+        search?.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+        box.addEventListener('shown.bs.dropdown', () => search?.focus());
+    });
+}
+
+/* ---------- "More filters" button: its caption says what a click does (more / fewer) ---------- */
+function initFilterToggles() {
+    document.querySelectorAll('[data-filter-toggle]').forEach((btn) => {
+        const target = document.querySelector(btn.dataset.bsTarget);
+        const label = btn.querySelector('[data-filter-toggle-label]');
+        const sync = () => { label.textContent = target.classList.contains('show') ? btn.dataset.less : btn.dataset.more; };
+        target?.addEventListener('shown.bs.collapse', sync);
+        target?.addEventListener('hidden.bs.collapse', sync);
+    });
+}
+
 /* ---------- Bulk actions on the checked tickets of one page ---------- */
 function initBulk() {
     const form = document.getElementById('bulk-form');
@@ -736,6 +776,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initPaymentForm();
     initBillForm();
     initGrids();
+    initMultiSelects();
+    initFilterToggles();
     initTicketFilter();
     initBulk();
     initFilterForms();

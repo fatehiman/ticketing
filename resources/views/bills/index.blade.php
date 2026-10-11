@@ -49,6 +49,8 @@
                         @endforeach
                     </select>
                 </div>
+                {{-- No project list while a project is picked in the top bar: the page shows only that project. --}}
+                @if ($projects->isNotEmpty())
                 <div class="col-md-4">
                     <label class="form-label">{{ __('bills.fields.project') }}</label>
                     <select name="project_id" class="form-select" data-autosubmit>
@@ -58,6 +60,7 @@
                         @endforeach
                     </select>
                 </div>
+                @endif
                 @if ($user->isStaff())
                     <div class="col-md-4">
                         <label class="form-label">{{ __('bills.fields.customer') }}</label>

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TicketStatus;
 use App\Models\GridPreference;
 use App\Models\Payment;
 use App\Models\Project;
@@ -127,15 +128,15 @@ class TransactionsTest extends TestCase
             ->assertViewHas('totals', ['payments' => 400.0, 'costs' => 1300.0, 'remaining' => 900.0]);
         $this->get('/transactions?kind[]=cost&amount_to=300')->assertDontSee('Counted ticket')->assertSee('No date ticket');
         $shown->forceFill(['cost' => 1000])->save(); // keep the rest of the test on one cost row
-        \App\Models\Ticket::where('title', 'No date ticket')->delete();
+        Ticket::where('title', 'No date ticket')->delete();
 
         // The developer moves the ticket back to testing: the cost disappears from the list and the totals.
-        app(TicketService::class)->changeStatus($shown, \App\Enums\TicketStatus::Testing, $this->dev);
+        app(TicketService::class)->changeStatus($shown, TicketStatus::Testing, $this->dev);
         $this->get('/transactions')->assertDontSee('Counted ticket')
             ->assertViewHas('totals', ['payments' => 400.0, 'costs' => 0.0, 'remaining' => -400.0]);
 
         // Back to done, then the cost is removed.
-        app(TicketService::class)->changeStatus($shown, \App\Enums\TicketStatus::Done, $this->dev);
+        app(TicketService::class)->changeStatus($shown, TicketStatus::Done, $this->dev);
         $this->get('/transactions')->assertSee('Counted ticket');
         app(TicketService::class)->update($shown->fresh(), ['cost' => null], $this->dev);
         $this->get('/transactions')->assertDontSee('Counted ticket');
@@ -267,7 +268,9 @@ class TransactionsTest extends TestCase
         $this->get("/payments/{$foreign->id}/edit")->assertForbidden();
 
         $this->actingAs($this->otherDev)->get('/transactions')->assertSee('Foreign project payment');
-        $this->actingAs($this->customer)->get('/transactions')->assertSee('Foreign project payment');
+        // A customer works inside the project picked in the top bar.
+        $this->actingAs($this->customer)->post('/switch-project', ['project_id' => $this->otherProject->id]);
+        $this->get('/transactions')->assertSee('Foreign project payment')->assertSee('Payment without project');
     }
 
     public function test_admin_sees_all_transactions_read_only(): void
@@ -298,5 +301,52 @@ class TransactionsTest extends TestCase
         $this->actingAs($this->admin)->get('/transactions?customer_id='.$this->customer->id)
             ->assertSee('Cost in P1')->assertDontSee('Cost in P2');
         $this->get('/transactions')->assertSee('Cost in P1')->assertSee('Cost in P2');
+    }
+
+    // ---- Top-bar project ------------------------------------------------------------
+
+    public function test_transactions_follow_the_top_bar_project(): void
+    {
+        $this->ticket(['title' => 'Cost in P1']);
+        $this->ticket(['title' => 'Cost in P3', 'project_id' => $this->project2->id]);
+        $this->payment(['description' => 'Paid for P1']);
+        $this->payment(['description' => 'Paid for P3', 'project_id' => $this->project2->id]);
+        $this->payment(['description' => 'Paid without project', 'project_id' => null]);
+        $stranger = User::factory()->customer()->create();
+        $this->project2->members()->attach($stranger->id);
+        $this->payment(['description' => 'Stranger without project', 'project_id' => null, 'customer_id' => $stranger->id]);
+
+        $this->actingAs($this->dev)->post('/switch-project', ['project_id' => $this->project->id]);
+        $response = $this->get('/transactions')
+            ->assertSee('Cost in P1')->assertSee('Paid for P1')->assertSee('Paid without project')
+            ->assertDontSee('Cost in P3')->assertDontSee('Paid for P3')->assertDontSee('Stranger without project')
+            ->assertViewHas('totals', ['payments' => 800.0, 'costs' => 1000.0, 'remaining' => 200.0]);
+        $this->assertSame([$this->project->id], $response->viewData('projectOptions')->pluck('id')->all());
+        $this->assertNotContains($stranger->id, $response->viewData('customerOptions')->pluck('id')->all());
+
+        // A project of another project in the URL is ignored; "none" still works.
+        $this->get('/transactions?project[]='.$this->project2->id)->assertDontSee('Cost in P3')->assertSee('Cost in P1');
+        $this->get('/transactions?project[]=none')->assertSee('Paid without project')->assertDontSee('Paid for P1');
+
+        // All projects: everything again.
+        $this->post('/switch-project', ['project_id' => 'all']);
+        $this->get('/transactions')->assertSee('Cost in P3')->assertSee('Stranger without project');
+    }
+
+    public function test_payments_and_bills_pages_follow_the_top_bar_project(): void
+    {
+        $this->payment(['description' => 'Paid for P1', 'reference_no' => 'REF-P1']);
+        $this->payment(['description' => 'Paid for P3', 'reference_no' => 'REF-P3', 'project_id' => $this->project2->id]);
+
+        $this->actingAs($this->dev)->post('/switch-project', ['project_id' => $this->project->id]);
+        $this->get('/payments')->assertSee('REF-P1')->assertDontSee('REF-P3');
+        $this->get('/bills')->assertOk()->assertViewHas('filters', fn ($f) => $f['project_id'] === $this->project->id);
+    }
+
+    public function test_project_listbox_has_check_marks(): void
+    {
+        $this->actingAs($this->dev)->get('/transactions?project[]='.$this->project->id)
+            ->assertSee('data-multi-select', false)
+            ->assertSee('name="project[]" value="'.$this->project->id.'" checked', false);
     }
 }

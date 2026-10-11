@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\Bills;
 use App\Support\Dates;
 use App\Support\Money;
+use App\Support\ProjectContext;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,15 +21,17 @@ use Illuminate\Validation\Rule;
  */
 class PaymentController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ProjectContext $context)
     {
         $user = $request->user();
+        $scope = $context->scopeIds();
         $status = in_array($request->query('status'), Payment::STATUSES, true) ? $request->query('status') : null;
         $customerId = $user->isStaff() ? ($request->integer('customer_id') ?: null) : null;
 
         $payments = Payment::query()->visibleTo($user)->with(['customer', 'project', 'bill', 'creator'])
             ->when($status, fn ($q, $s) => $q->where('status', $s))
             ->when($customerId, fn ($q, $id) => $q->where('customer_id', $id))
+            ->when($scope !== null, fn ($q) => $q->inProjects($scope)) // the top-bar project
             ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
             ->orderByDesc('paid_on')->orderByDesc('id')
             ->paginate(25)->withQueryString();
@@ -37,7 +40,7 @@ class PaymentController extends Controller
             'payments' => $payments,
             'status' => $status,
             'customerId' => $customerId,
-            'customers' => $user->isStaff() ? TransactionController::customerOptions($user) : collect(),
+            'customers' => $user->isStaff() ? TransactionController::customerOptions($user, $scope) : collect(),
         ]);
     }
 

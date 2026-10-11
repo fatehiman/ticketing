@@ -74,18 +74,12 @@
                     </div>
                 </div>
 
-                <div class="col-12">
-                    <label class="form-label d-block">{{ __('transactions.fields.project') }}</label>
-                    @foreach ($projectOptions as $project)
-                        <label class="chip-check">
-                            <input type="checkbox" name="project[]" value="{{ $project->id }}" @checked($checked('project', $project->id))>
-                            <span><i class="bi bi-kanban"></i>{{ $project->name }}</span>
-                        </label>
-                    @endforeach
-                    <label class="chip-check" style="--c: #64748b">
-                        <input type="checkbox" name="project[]" value="none" @checked($checked('project', 'none'))>
-                        <span><i class="bi bi-dash-circle"></i>{{ __('transactions.no_project') }}</span>
-                    </label>
+                {{-- A listbox with check marks: works for any number of projects (search box when the list is long). --}}
+                <div class="col-md-6">
+                    <label class="form-label">{{ __('transactions.fields.project') }}</label>
+                    <x-multi-select name="project[]" :selected="$f('project', [])" icon="bi-kanban"
+                                    :placeholder="$currentProject ? __('transactions.project_and_none', ['project' => $currentProject->name]) : __('app.all_projects')"
+                                    :options="$projectOptions->pluck('name', 'id')->put('none', __('transactions.no_project'))->all()" />
                 </div>
             </div>
         </div>

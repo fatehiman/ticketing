@@ -125,6 +125,7 @@ return [
         'created' => 'Created date',
         'updated' => 'Last update date',
         'due' => 'Due date',
+        'cost' => 'Cost',
         'create_menu' => 'Create menu',
         'create_menu_hint' => 'Save these filters as a new menu item under Tickets',
         'menu_name_prompt' => 'Name of the new menu:',

@@ -138,6 +138,16 @@
                             </div>
                         </div>
                     @endforeach
+                    {{-- Cost range: empty = no filter; 0 is a real value (from 0 to 0 = tickets without a cost). --}}
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('tickets.filter.cost') }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text small">{{ __('app.from') }}</span>
+                            <input type="text" name="cost_from" value="{{ $f('cost_from') }}" class="form-control ltr-input" inputmode="numeric" data-money="int">
+                            <span class="input-group-text small">{{ __('app.to') }}</span>
+                            <input type="text" name="cost_to" value="{{ $f('cost_to') }}" class="form-control ltr-input" inputmode="numeric" data-money="int">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -148,8 +158,9 @@
                 <label class="form-check-label small fw-semibold" for="create_menu"><i class="bi bi-folder-plus"></i> {{ __('tickets.filter.create_menu') }}</label>
             </div>
             <a href="{{ route('tickets.index') }}" class="btn btn-light"><i class="bi bi-x-circle"></i> {{ __('app.reset') }}</a>
-            <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#more-filters">
-                <i class="bi bi-sliders"></i> {{ __('app.more_filters') }}
+            <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#more-filters"
+                    aria-expanded="{{ $advancedOpen ? 'true' : 'false' }}" data-filter-toggle data-more="{{ __('app.more_filters') }}" data-less="{{ __('app.less_filters') }}">
+                <i class="bi bi-sliders"></i> <span data-filter-toggle-label>{{ $advancedOpen ? __('app.less_filters') : __('app.more_filters') }}</span>
             </button>
             <input type="hidden" name="sort" value="{{ request('sort') }}">
             <input type="hidden" name="dir" value="{{ request('dir') }}">
