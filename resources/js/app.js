@@ -430,6 +430,14 @@ function initRowActions() {
                     row.dataset.sprint = tk.sprint_id ?? '';
                     row.querySelector('[data-col="sprint"]').innerHTML = tk.sprint_html;
                 } else if (action === 'status') {
+                    // The page shows only some statuses (status[]= or status[0]= in the URL) and the new one is not
+                    // among them: the ticket leaves this list, so reload (rows, totals, paging and badges stay right).
+                    const shown = [...new URLSearchParams(location.search)]
+                        .filter(([key]) => /^status\[\d*\]$/.test(key)).map(([, value]) => value);
+                    if (shown.length && !shown.includes(tk.status)) {
+                        location.reload();
+                        return;
+                    }
                     row.dataset.status = tk.status;
                     row.querySelector('[data-col="status"]').innerHTML = tk.status_html;
                 }

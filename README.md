@@ -54,7 +54,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   or delete them in one step. Every change goes into the history. Only **delete** asks for confirmation.
 - **Row actions** (developers): an *Actions* column (last, hidden by default — tick it in the column chooser) with a
   small coloured icon per action, close together (name in the tooltip): **set cost** (empty = no cost, 0 = 0), **set sprint**
-  (sprints of the ticket's project) and **change status** (same as the bulk status change: history, Done SMS). Each opens a small modal and saves by **AJAX** (same `tickets.bulk` route, JSON answer): the row's
+  (sprints of the ticket's project) and **change status** (same as the bulk status change: history, Done SMS; when the page shows only some statuses — e.g. the *Done*
+  folder — and the new status is not one of them, the page **reloads**, so the ticket leaves the list). Each opens a small modal and saves by **AJAX** (same `tickets.bulk` route, JSON answer): the row's
   cost / sprint / status and the totals row change without a reload. New actions = a button, a field in the modal, a key in `ROW_ACTIONS`.
 - Every grid has a **column chooser**; the choice is saved on the server. The tickets grid keeps **one choice per
   folder** (e.g. *Backlog* without cost, *Done* with cost). Some folders have **default columns**
