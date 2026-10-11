@@ -482,7 +482,7 @@ class TicketingTest extends TestCase
         $this->get('/tickets?status[]=backlog')->assertViewHas('grid', fn ($g) => ! $g->visible('actions'));
         $this->postJson('/grid-preferences', ['grid' => 'tickets', 'columns' => ['number', 'title', 'cost', 'actions']])->assertOk();
         $this->get('/tickets?q=Login')->assertViewHas('grid', fn ($g) => $g->visible('actions'))
-            ->assertSee('data-row-action="cost"', false)->assertSee('data-row-action="sprint"', false)->assertSee('id="row-action-modal"', false);
+            ->assertSee('data-row-action="cost"', false)->assertSee('data-row-action="sprint"', false)->assertSee('data-row-action="status"', false)->assertSee('id="row-action-modal"', false);
         $this->actingAs($this->customer)->get('/tickets')->assertViewHas('grid', fn ($g) => ! isset($g->columns['actions']));
 
         // Set cost: empty = null, 0 = 0, a number; JSON answer with the new values.
@@ -500,6 +500,13 @@ class TicketingTest extends TestCase
         $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'sprint', 'sprint_id' => $other->id])->assertStatus(422);
         $this->assertSame($sprint->id, $ticket->fresh()->sprint_id);
         $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'sprint', 'sprint_id' => 'none'])->assertJsonPath('ticket.sprint_id', null);
+
+        // Change status: saved in the history, the new badge in the answer.
+        $answer = $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'status', 'status' => 'delivered'])
+            ->assertOk()->assertJsonPath('ticket.status', 'delivered');
+        $this->assertStringContainsString(TicketStatus::Delivered->label(), $answer->json('ticket.status_html'));
+        $this->assertSame(TicketStatus::Delivered, $ticket->fresh()->status);
+        $this->postJson('/tickets/bulk', ['ids' => [$ticket->id], 'action' => 'status', 'status' => 'bogus'])->assertStatus(422);
     }
 
     public function test_more_filters_button_says_fewer_when_open(): void

@@ -41,7 +41,7 @@ class TicketController extends Controller
     ];
 
     /** Row actions in the "actions" column (developers): each one opens a small modal and saves by AJAX. */
-    public const ROW_ACTIONS = ['cost', 'sprint'];
+    public const ROW_ACTIONS = ['cost', 'sprint', 'status'];
 
     /**
      * Default visible columns of some folders (key = folder). Copied from the owner's choice (2026-10-04).
@@ -290,6 +290,8 @@ class TicketController extends Controller
                     'cost_text' => Money::format($ticket->cost),
                     'sprint_id' => $ticket->sprint_id,
                     'sprint_html' => Blade::render('<x-sprint :sprint="$sprint" />', ['sprint' => $ticket->sprint]),
+                    'status' => $ticket->status->value,
+                    'status_html' => Blade::render('<x-status :status="$status" />', ['status' => $ticket->status]),
                 ] : null,
             ], $done ? 200 : 422);
         }

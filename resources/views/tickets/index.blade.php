@@ -247,7 +247,7 @@
                 <tbody>
                 @forelse ($tickets as $ticket)
                     @php($overdue = $ticket->due_date && $ticket->due_date->isPast() && ! $ticket->status->isClosed())
-                    <tr data-ticket="{{ $ticket->id }}" data-project="{{ $ticket->project_id }}" data-cost="{{ $ticket->cost }}" data-sprint="{{ $ticket->sprint_id }}">
+                    <tr data-ticket="{{ $ticket->id }}" data-project="{{ $ticket->project_id }}" data-cost="{{ $ticket->cost }}" data-sprint="{{ $ticket->sprint_id }}" data-status="{{ $ticket->status->value }}">
                         @if ($bulk)
                             <td class="bulk-col"><input type="checkbox" class="form-check-input" name="ids[]" value="{{ $ticket->id }}" form="bulk-form" data-bulk-row aria-label="{{ __('tickets.bulk.select') }} #{{ $ticket->number }}"></td>
                         @endif
@@ -288,6 +288,7 @@
                             <td data-col="actions" class="{{ $grid->cls('actions') }} text-nowrap">
                                 <button type="button" class="row-action" style="--c: #16a34a" data-row-action="cost" data-bs-toggle="tooltip" title="{{ __('tickets.row_actions.cost') }}" aria-label="{{ __('tickets.row_actions.cost') }}"><i class="bi bi-cash-coin"></i></button>
                                 <button type="button" class="row-action" style="--c: #7c3aed" data-row-action="sprint" data-bs-toggle="tooltip" title="{{ __('tickets.row_actions.sprint') }}" aria-label="{{ __('tickets.row_actions.sprint') }}"><i class="bi bi-flag"></i></button>
+                                <button type="button" class="row-action" style="--c: #0ea5e9" data-row-action="status" data-bs-toggle="tooltip" title="{{ __('tickets.row_actions.status') }}" aria-label="{{ __('tickets.row_actions.status') }}"><i class="bi bi-arrow-repeat"></i></button>
                             </td>
                         @endisset
                     </tr>
@@ -325,6 +326,12 @@
                                 @foreach ($sprints as $sprint)
                                     <option value="{{ $sprint->id }}" data-project="{{ $sprint->project_id }}" @class(['text-success' => $sprint->isCurrent()])>{{ $sprint->project->code }} · {{ $sprint->label() }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div data-row-action-field="status" data-title="{{ __('tickets.row_actions.status') }}">
+                            <label class="form-label" for="row-status">{{ __('tickets.fields.status') }}</label>
+                            <select id="row-status" name="status" class="form-select">
+                                @foreach ($statuses as $status)<option value="{{ $status->value }}">{{ $status->label() }}</option>@endforeach
                             </select>
                         </div>
                         <div class="text-danger small mt-2 d-none" data-row-action-error></div>

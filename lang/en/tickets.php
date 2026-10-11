@@ -63,6 +63,7 @@ return [
     'row_actions' => [
         'cost' => 'Set cost',
         'sprint' => 'Set sprint',
+        'status' => 'Change status',
         'cost_hint' => 'Empty = no cost; 0 is a cost of 0.',
     ],
     'bulk' => [

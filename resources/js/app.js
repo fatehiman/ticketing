@@ -367,6 +367,7 @@ function initRowActions() {
     const error = form.querySelector('[data-row-action-error]');
     const costInput = form.querySelector('[name="cost"]');
     const sprintSel = form.querySelector('[name="sprint_id"]');
+    const statusSel = form.querySelector('[name="status"]');
     let row = null;
     let action = null;
 
@@ -389,16 +390,19 @@ function initRowActions() {
             // Only the sprints of the ticket's project.
             [...sprintSel.options].forEach((o) => { o.hidden = !!o.dataset.project && o.dataset.project !== row.dataset.project; });
             sprintSel.value = row.dataset.sprint || 'none';
+        } else if (action === 'status') {
+            statusSel.value = row.dataset.status;
         }
         modal.show();
     });
-    modalEl.addEventListener('shown.bs.modal', () => (action === 'cost' ? costInput : sprintSel).focus());
+    modalEl.addEventListener('shown.bs.modal', () => ({ cost: costInput, sprint: sprintSel, status: statusSel })[action].focus());
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = { ids: [row.dataset.ticket], action };
         if (action === 'cost') data.cost = costInput.value.trim();
         if (action === 'sprint') data.sprint_id = sprintSel.value;
+        if (action === 'status') data.status = statusSel.value;
         const submit = form.querySelector('[type="submit"]');
         submit.disabled = true;
         fetch(form.dataset.url, {
@@ -425,6 +429,9 @@ function initRowActions() {
                 } else if (action === 'sprint') {
                     row.dataset.sprint = tk.sprint_id ?? '';
                     row.querySelector('[data-col="sprint"]').innerHTML = tk.sprint_html;
+                } else if (action === 'status') {
+                    row.dataset.status = tk.status;
+                    row.querySelector('[data-col="status"]').innerHTML = tk.status_html;
                 }
                 modal.hide();
                 row.classList.add('row-saved');
