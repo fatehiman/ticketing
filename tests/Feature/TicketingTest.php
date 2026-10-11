@@ -425,6 +425,18 @@ class TicketingTest extends TestCase
         $this->assertSame(['cost' => 'any'], TicketFilter::normalize(['cost' => 'any', 'cost_from' => '3']));
     }
 
+    public function test_ticket_form_has_a_second_save_button_on_desktop_only(): void
+    {
+        $ticket = Ticket::create($this->ticketData(['reporter_id' => $this->dev->id]));
+
+        $html = $this->actingAs($this->dev)->get("/tickets/{$ticket->number}/edit")->assertOk()->getContent();
+        $this->assertSame(2, substr_count($html, '<i class="bi bi-check2"></i> '.__('app.save').'</button>'));
+        $this->assertStringContainsString('<div class="d-none d-lg-flex mt-3">', $html);
+
+        $html = $this->get('/tickets/create')->assertOk()->getContent();
+        $this->assertSame(2, substr_count($html, '<i class="bi bi-send"></i> '.__('app.create').'</button>'));
+    }
+
     public function test_more_filters_button_says_fewer_when_open(): void
     {
         $this->actingAs($this->dev)->get('/tickets')->assertSee(__('app.more_filters'))->assertSee('aria-expanded="false"', false);

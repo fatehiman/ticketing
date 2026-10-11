@@ -157,5 +157,15 @@
                 </div>
             </div>
         @endif
+
+        {{-- Desktop only: a second Save button at the end of the side column, so editing the cost needs no long scroll.
+             Below lg the columns stack and the main Save button is right after this column anyway. --}}
+        <div class="d-none d-lg-flex mt-3">
+            @if ($ticket->exists)
+                <button class="btn btn-primary px-4"><i class="bi bi-check2"></i> {{ __('app.save') }}</button>
+            @else
+                <button class="btn btn-primary px-4"><i class="bi bi-send"></i> {{ __('app.create') }}</button>
+            @endif
+        </div>
     </div>
 </div>

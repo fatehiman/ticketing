@@ -11,6 +11,8 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   followups, sprints or payments (no *New ticket* button, no bot login).
 - Tickets with status, priority (Jira colours), type, sprint, story points, estimates, time logged, costs,
   due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
+  On desktop the ticket form has a **second Save button** under *Planning and estimates* (no long scroll to save a cost);
+  on mobile the columns stack, so there is only the one at the bottom.
 - Full ticket **history** (every edit is saved as a revision) and **soft delete**. Customers do not see the history of
   price, time and story points (cost, estimated cost, estimated / logged time, story points, done story points);
   an edit with only those changes is hidden from them. Status, sprint, assignee and the rest stay visible.
