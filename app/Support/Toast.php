@@ -9,7 +9,7 @@ use App\Models\UserToast;
  * Toast messages (like Filament notifications): a small card at the top corner that closes by itself.
  *
  * - Toast::to($user, 'Saved')        — for any user: shown on their next page or by polling (GET /toasts,
- *   every 15 seconds while a page is open). Not shown within TTL seconds = the user was not online: dropped.
+ *   every 5 seconds while a page is open). Not shown within TTL seconds = the user was not online: dropped.
  * - window.toast({...}) in app.js     — the same card from JavaScript.
  *
  * Types: success, info, warning, danger. Options: title, icon (bootstrap-icons name), url + link, duration (ms).
@@ -30,20 +30,29 @@ class Toast
         ]);
     }
 
-    /** Toasts of the page being shown: the login toast (tickets waiting for a reply) + the user's waiting toasts. */
+    /**
+     * Toasts of the page being shown: the flash messages of the last action (session success / warning),
+     * the login toast (tickets waiting for a reply), then the user's waiting toasts.
+     */
     public static function forPage(): array
     {
-        $user = auth()->user();
-        $toasts = $user ? self::pull($user) : [];
+        $toasts = [];
+        if ($success = session('success')) {
+            $toasts[] = ['type' => 'success', 'body' => $success];
+        }
+        if ($warning = session('warning')) {
+            $toasts[] = ['type' => 'warning', 'body' => $warning, 'duration' => 10000];
+        }
         if ($count = session('awaiting_toast')) {
-            array_unshift($toasts, [
+            $toasts[] = [
                 'type' => 'danger', 'icon' => 'reply-fill', 'duration' => 10000,
                 'body' => trans_choice('tickets.followup.toast', $count, ['count' => $count]),
                 'url' => route('tickets.index', ['awaiting' => 'me']), 'link' => __('tickets.followup.toast_link'),
-            ]);
+            ];
         }
+        $user = auth()->user();
 
-        return $toasts;
+        return $user ? [...$toasts, ...self::pull($user)] : $toasts;
     }
 
     /** The user's waiting toasts (oldest first). They are deleted: each toast is shown once. */

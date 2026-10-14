@@ -118,7 +118,8 @@ Design details: [PLAN.md](PLAN.md).
 
 ## Phase 1.10 — Toasts
 
-- [x] Toast messages like Filament notifications (`App\Support\Toast`, `window.toast()`), waiting toasts by polling every 15 s
+- [x] Toast messages like Filament notifications (`App\Support\Toast`, `window.toast()`), waiting toasts by polling every 5 s
+- [x] Flash messages after an action (success / warning) are toasts; form errors stay above the form
 - [x] SMS template texts from msgway (`template/get`) in `message_templates` (`php artisan sms:templates`)
 - [x] SMS to a customer: the customer sees the text as a toast (if online); the developer who sent it sees **SMS to <name>** + the text
 

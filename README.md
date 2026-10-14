@@ -92,8 +92,9 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   - An SMS to a **customer** is also a **toast**: the developer whose action sends it sees *SMS to <name>* + the text,
     and the customer (when online at that moment) sees the text. SMS to staff and OTP codes make no toast.
 - **Toasts** (like Filament notifications): a card at the top corner with an icon, a title, a text, an optional link and a bar
-  for the time left (it stops on hover). The server saves them per user (`Toast::to()`); a page shows them on load and
-  asks for new ones every **15 seconds**. A toast not shown in **2 minutes** is dropped. JavaScript: `window.toast({...})`.
+  for the time left (it stops on hover). The messages after an action (*Saved*, warnings) are toasts too; form errors stay
+  above the form. The server saves them per user (`Toast::to()`); a page shows them on load and
+  asks for new ones every **5 seconds**. A toast not shown in **2 minutes** is dropped. JavaScript: `window.toast({...})`.
 - **Forgot password**: one box takes the email **or** the mobile number (an unknown one shows "not found").
   Email → a reset link (60 minutes) from `no-reply@peppasoft.com`. Mobile → a 6-digit code by SMS (template 3),
   valid 2 minutes; after a **1:50 countdown** the user can ask again: the 2nd request sends the **same code**

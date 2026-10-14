@@ -208,6 +208,15 @@ class SmsTest extends TestCase
         $this->actingAs($customer)->getJson(route('toasts'))->assertExactJson(['toasts' => []]);
     }
 
+    public function test_flash_messages_are_toasts(): void
+    {
+        $user = User::factory()->developer()->create();
+
+        $this->actingAs($user)->withSession(['success' => 'Saved!', 'warning' => 'Careful'])->get(route('dashboard'))->assertOk()
+            ->assertSee('[{"type":"success","body":"Saved!"},{"type":"warning","body":"Careful","duration":10000}]', false)
+            ->assertDontSee('alert-success', false);
+    }
+
     public function test_old_toasts_are_dropped(): void
     {
         $user = User::factory()->customer()->create();

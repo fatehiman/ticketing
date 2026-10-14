@@ -874,7 +874,7 @@ function initTooltips() {
    window.toast({ type: 'success' | 'info' | 'warning' | 'danger', title, body, icon, url, link, duration })
    A card at the top corner; it closes by itself after `duration` ms (0 = never), the timer stops on hover. */
 const TOAST_ICONS = { success: 'check-circle-fill', info: 'info-circle-fill', warning: 'exclamation-circle-fill', danger: 'exclamation-triangle-fill' };
-const TOAST_POLL_MS = 15000;
+const TOAST_POLL_MS = 5000;
 
 function toastStack() {
     let stack = document.querySelector('.app-toasts');
