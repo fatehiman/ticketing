@@ -376,7 +376,6 @@ a { text-decoration: none; }
 .followup-body img { max-width: 100%; height: auto; }
 .followup-staff { border-inline-start: 4px solid var(--brand); }
 .followup-customer { border-inline-start: 4px solid #16a34a; }
-.toast-awaiting { background: #dc2626; color: #fff; }
 
 /* Star rating (like app stores): radios in reverse order, so :hover ~ label fills the lower stars. */
 .star-input { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: .15rem; }
@@ -445,3 +444,32 @@ input[type="number"], input[type="date"] { text-align: left; }
 .row-action:hover { background: var(--c); color: #fff; }
 .row-action + .row-action { margin-inline-start: .1rem; }
 tr.row-saved > td { background-color: color-mix(in srgb, var(--bs-success) 15%, transparent) !important; transition: background-color .3s; }
+
+/* Toasts (like Filament notifications): window.toast() in app.js, App\Support\Toast on the server.
+   White card at the top corner (top-left in RTL), coloured icon and a bar that shows the time left. */
+.app-toasts { position: fixed; top: 1rem; inset-inline-end: 1rem; z-index: 1090; display: flex; flex-direction: column; gap: .6rem;
+    width: 360px; max-width: calc(100vw - 2rem); pointer-events: none; }
+.app-toast { --toast-color: #2563eb; position: relative; overflow: hidden; display: flex; align-items: flex-start; gap: .7rem;
+    padding: .85rem .9rem .95rem; background: #fff; border: 1px solid var(--line); border-radius: .75rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .14); pointer-events: auto;
+    opacity: 0; transform: translateX(var(--toast-from, 24px)); transition: opacity .25s, transform .25s; }
+[dir="rtl"] .app-toast { --toast-from: -24px; }
+.app-toast.app-toast-in { opacity: 1; transform: none; }
+.app-toast.app-toast-out { opacity: 0; transform: translateX(var(--toast-from, 24px)); }
+.app-toast-success { --toast-color: #16a34a; }
+.app-toast-info { --toast-color: #2563eb; }
+.app-toast-warning { --toast-color: #d97706; }
+.app-toast-danger { --toast-color: #dc2626; }
+.app-toast-icon { color: var(--toast-color); font-size: 1.35rem; line-height: 1.2; flex-shrink: 0; }
+.app-toast-text { flex: 1; min-width: 0; font-size: .9rem; }
+.app-toast-title { font-weight: 700; margin-bottom: .15rem; }
+.app-toast-body { color: #475569; white-space: pre-line; overflow-wrap: anywhere; }
+.app-toast-link { display: inline-block; margin-top: .3rem; font-weight: 600; color: var(--toast-color); }
+.app-toast-close { font-size: .65rem; flex-shrink: 0; margin-top: .2rem; }
+.app-toast-bar { position: absolute; bottom: 0; inset-inline-start: 0; height: 3px; width: 100%; background: var(--toast-color);
+    opacity: .7; animation: app-toast-time linear forwards; }
+.app-toast-bar { transform-origin: left; }
+[dir="rtl"] .app-toast-bar { transform-origin: right; }
+.app-toast:hover .app-toast-bar { animation-play-state: paused; }
+@keyframes app-toast-time { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .app-toast { transition: none; } }

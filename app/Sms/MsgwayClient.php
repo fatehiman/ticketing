@@ -66,4 +66,29 @@ class MsgwayClient
             'retryable' => $errCode !== self::BAD_REQUEST && ! $clientError,
         ];
     }
+
+    /** Text of a template ("کد تایید شما: [code]"), or null when msgway does not answer with one. */
+    public function template(int $templateId): ?string
+    {
+        $config = config('services.msgway');
+        if (empty($config['key'])) {
+            return null;
+        }
+
+        try {
+            $response = Http::withHeaders(['apiKey' => $config['key'], 'accept-language' => 'fa'])
+                ->asJson()
+                ->timeout((int) $config['timeout'])
+                ->post(rtrim($config['url'], '/').'/template/get', ['templateID' => $templateId]);
+        } catch (\Throwable $e) {
+            Log::warning('sms.msgway.template_error', ['template' => $templateId, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        $body = $response->json() ?? [];
+        $text = $body['data']['template'] ?? null;
+
+        return ($body['status'] ?? null) === 'success' && is_string($text) && $text !== '' ? $text : null;
+    }
 }

@@ -176,7 +176,7 @@ class BillController extends Controller
     {
         $customer = $bill->customer;
         $sent = [];
-        if ($sms && $customer->mobile && Sms::send($customer->mobile, 'bill_issued', [$bill->number])) {
+        if ($sms && $customer->mobile && Sms::send($customer->mobile, 'bill_issued', [$bill->number], to: $customer)) {
             $sent[] = __('bills.by_sms');
         }
         if ($email && $customer->email) {

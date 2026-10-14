@@ -93,4 +93,8 @@ return [
         '500' => 'Something went wrong on the server.',
         'home' => 'Go to dashboard',
     ],
+    'sms_toast' => [
+        'to' => 'SMS to :name',
+        'unknown' => 'Template :id (:params)',
+    ],
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\MessageTemplate;
 use App\Models\SmsMessage;
 use App\Sms\MsgwayClient;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -41,6 +42,7 @@ class SendSms implements ShouldQueue
 
         if ($result['ok']) {
             $sms->update(['status' => SmsMessage::SENT, 'reference_id' => $result['reference_id'] ?? null, 'sent_at' => now(), 'last_error' => null]);
+            $this->saveTemplate($client, $sms->template_id);
 
             return;
         }
@@ -54,6 +56,17 @@ class SendSms implements ShouldQueue
         }
 
         throw $error; // the queue tries again after the next backoff
+    }
+
+    /** A template that is not in message_templates yet (a new one in config/sms.php): read its text for the toasts. */
+    private function saveTemplate(MsgwayClient $client, int $templateId): void
+    {
+        if (MessageTemplate::where('provider', MessageTemplate::MSGWAY)->where('template_id', $templateId)->exists()) {
+            return;
+        }
+        if (($body = $client->template($templateId)) !== null) {
+            MessageTemplate::create(['provider' => MessageTemplate::MSGWAY, 'template_id' => $templateId, 'body' => $body, 'synced_at' => now()]);
+        }
     }
 
     public function failed(?Throwable $e): void

@@ -36,6 +36,8 @@ Phases and progress are tracked in [PHASES.md](PHASES.md).
 | Avatars | Uploaded in the user form / profile, or found by email right after saving (`PublicAvatar::fill()`, no queue): Gravatar → Libravatar → unavatar.io with `d=404` / `fallback=false`, first image wins, 10 s in total, max 2 MB, saved on the public disk like an upload. Only when the user has an email and no picture; skipped after "remove photo" and for customers saving their own profile. |
 | Name | Main title **تیکتینگ**, tagline **سامانه پشتیبانی کیمیا** (en: *Kimia Support System*). |
 | SMS | msgway.com, template based (`config/sms.php` maps a meaning to a template ID). `[paramN]` values go as a positional array, `[code]` as a top-level field. `Sms::send()` writes a row to `sms_messages` (outbox + log) and dispatches `SendSms` **after commit**; the database queue worker sends it. Retries: 1, 5, 10, 30 min, then *failed*; OTP: one retry after 1 min. A `badRequest` (2001010102) or another 4xx is never retried. Voice call = `method: ivr`, IVR template 2, provider 1 (`MSGWAY_IVR_*`). |
+| Toasts | Like Filament notifications: a white card at the top corner (top-left in RTL), coloured icon, title, text, optional link, a bar for the time left (stops on hover). `Toast::to($user, $text, $type, $options)` saves a row in `user_toasts`; the layout shows the waiting ones (`Toast::forPage()`) and an open page polls `GET /toasts` every 15 s (not while the tab is hidden). A toast not shown in 2 minutes is dropped: only users online at that moment see it. `window.toast({...})` shows one from JavaScript. |
+| SMS toasts | `Sms::send(..., to: $user)`: when the receiver is a **customer**, the SMS text (template body from `message_templates` + params) is a toast for the customer, and the developer whose action sends it sees **SMS to <name>** + the text. SMS to staff and OTP codes make no toast. A template that is not in the table is read from msgway after its first send (`SendSms`). |
 | Mail | Queued mailables (same retries as SMS), sent through ger1 Postfix as `no-reply@peppasoft.com` (DKIM `peppasoft.com`). Colourful HTML layout with inline styles, in the receiver's language; dates in the receiver's calendar (`Dates::formatIn()`). |
 | Password recovery | One box: email or mobile. Unknown → "not found" (the owner's choice). Email → Laravel password broker token (60 min) in a queued mail. Mobile → `password_otps` row: 6-digit code (encrypted, because a resend sends the **same** code), valid 2 min after **each** send; resend after 110 s (1:50 countdown); 3 sends max: SMS, SMS, **voice call**; 5 wrong codes → start over; after a correct code 10 min to save the new password. Limits (`RateLimiter`): 5 per email / mobile per 12 h, 10 per IP per 24 h (separately for email and SMS; every try counts for the IP). |
 | Bills | `bills` + `bill_items`. Items are always tickets: picked done tickets not on another bill (with or without a cost; no cost = amount 0, shown as "—", so the price can be one manual item like "Cost of phase 1"; the sprint picker on the page ticks every billable ticket of a sprint; the list is paged in the browser, 25 per page, with a search box, and the ticks are kept as hidden inputs across pages), or manual items saved as done tickets (cost = amount, due date = bill date, assignee = the developer). Title / amount copied into `bill_items`. Number = id + 1000. Deleting a bill soft-deletes it and the tickets of its manual items (picked tickets become billable again). |
@@ -117,6 +119,10 @@ sms_messages     id, mobile(E.164), method(sms|ivr), template_id, params(json), 
                  status(queued|sent|failed), attempts, reference_id, last_error, sent_at
 password_otps    id, user_id, mobile, code(encrypted), sends, attempts, last_sent_at, expires_at,
                  verified_at, used_at
+message_templates id, provider(msgway), template_id, body("[param1]" / "[code]" placeholders), synced_at
+                 (unique provider + template_id; filled by the migration, `php artisan sms:templates` reads them again)
+user_toasts      id, user_id, data(json: type, title, body, icon, url, link, duration), created_at
+                 (shown once, then deleted; older than 2 minutes = dropped)
 ```
 
 ## 5. Project switcher (top bar)
@@ -167,7 +173,7 @@ unassigned, created date range, updated date range, due date range, sort, per pa
 * Replying always removes the ticket from the writer's own red badge (their side has answered).
 * Sidebar: every folder shows its count and, in red, how many of its tickets wait for **my side**.
   Built-in folder **Waiting for my reply** = filter `awaiting=me`. Grid rows show a red dot.
-* After login a toast shows how many tickets (in all the user's projects) wait for the user's reply.
+* After login a toast (`Toast::forPage()`) shows how many tickets (in all the user's projects) wait for the user's reply.
 * `App\Events\FollowupPosted` is fired after each followup, `App\Events\TicketCreated` after each new ticket.
   `App\Listeners\SendTicketSms` sends SMS: customer ticket / followup → the developers of the project;
   developer followup that waits for the customer → the reporter (a customer), or every customer of the project

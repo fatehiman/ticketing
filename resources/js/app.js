@@ -444,6 +444,7 @@ function initRowActions() {
                 modal.hide();
                 row.classList.add('row-saved');
                 setTimeout(() => row.classList.remove('row-saved'), 1500);
+                pollToasts(); // e.g. "SMS to <customer>" after a change to Done
             })
             .catch(() => showError('Error'))
             .finally(() => { submit.disabled = false; });
@@ -867,7 +868,103 @@ function initCopy() {
 /* ---------- Tooltips ---------- */
 function initTooltips() {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => new bootstrap.Tooltip(el));
-    document.querySelectorAll('.toast').forEach((el) => bootstrap.Toast.getOrCreateInstance(el).show());
+}
+
+/* ---------- Toasts (like Filament notifications), see App\Support\Toast ----------
+   window.toast({ type: 'success' | 'info' | 'warning' | 'danger', title, body, icon, url, link, duration })
+   A card at the top corner; it closes by itself after `duration` ms (0 = never), the timer stops on hover. */
+const TOAST_ICONS = { success: 'check-circle-fill', info: 'info-circle-fill', warning: 'exclamation-circle-fill', danger: 'exclamation-triangle-fill' };
+const TOAST_POLL_MS = 15000;
+
+function toastStack() {
+    let stack = document.querySelector('.app-toasts');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.className = 'app-toasts';
+        stack.setAttribute('aria-live', 'polite');
+        document.body.appendChild(stack);
+    }
+    return stack;
+}
+
+function showToast(options) {
+    const o = typeof options === 'string' ? { body: options } : options || {};
+    const type = TOAST_ICONS[o.type] ? o.type : 'info';
+    const duration = o.duration ?? 6000;
+
+    const el = document.createElement('div');
+    el.className = `app-toast app-toast-${type}`;
+    el.setAttribute('role', type === 'danger' || type === 'warning' ? 'alert' : 'status');
+
+    const icon = document.createElement('i');
+    icon.className = `app-toast-icon bi bi-${o.icon || TOAST_ICONS[type]}`;
+    const text = document.createElement('div');
+    text.className = 'app-toast-text';
+    if (o.title) {
+        const title = document.createElement('div');
+        title.className = 'app-toast-title';
+        title.textContent = o.title;
+        text.appendChild(title);
+    }
+    if (o.body) {
+        const body = document.createElement('div');
+        body.className = 'app-toast-body';
+        body.textContent = o.body; // text only: an SMS or a message is never HTML
+        text.appendChild(body);
+    }
+    if (o.url) {
+        const link = document.createElement('a');
+        link.className = 'app-toast-link';
+        link.href = o.url;
+        link.textContent = o.link || o.url;
+        text.appendChild(link);
+    }
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'btn-close app-toast-close';
+    close.setAttribute('aria-label', t('close'));
+    el.append(icon, text, close);
+
+    let bar = null;
+    if (duration > 0) {
+        bar = document.createElement('div');
+        bar.className = 'app-toast-bar';
+        bar.style.animationDuration = `${duration}ms`;
+        bar.addEventListener('animationend', () => remove());
+        el.appendChild(bar);
+    }
+
+    const remove = () => {
+        if (el.classList.contains('app-toast-out')) return;
+        el.classList.add('app-toast-out');
+        setTimeout(() => el.remove(), 250);
+    };
+    close.addEventListener('click', remove);
+
+    toastStack().appendChild(el);
+    requestAnimationFrame(() => el.classList.add('app-toast-in'));
+    return el;
+}
+window.toast = showToast;
+
+let toastPolling = false;
+function pollToasts() {
+    const url = document.body.dataset.toastsUrl;
+    if (!url || toastPolling) return;
+    toastPolling = true;
+    fetch(url, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        .then((r) => (r.ok ? r.json() : { toasts: [] }))
+        .then((data) => (data.toasts || []).forEach(showToast))
+        .catch(() => {})
+        .finally(() => { toastPolling = false; });
+}
+
+function initToasts() {
+    (window.APP_TOASTS || []).forEach(showToast);
+    if (!document.body.dataset.toastsUrl) return;
+    // New toasts (e.g. an SMS that a developer just sent to this customer); not while the tab is hidden.
+    setInterval(() => { if (!document.hidden) pollToasts(); }, TOAST_POLL_MS);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollToasts(); });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -894,4 +991,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initCopy();
     initPasswordEye();
     initTooltips();
+    initToasts();
 });

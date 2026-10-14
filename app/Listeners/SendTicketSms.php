@@ -37,7 +37,7 @@ class SendTicketSms
             $this->toDevelopers($ticket);
         } elseif ($author?->isDeveloper() && $followup->awaits_reply) {
             foreach ($this->customersOf($ticket) as $customer) {
-                Sms::send($customer->mobile, 'reply_to_customer', [$ticket->number]);
+                Sms::send($customer->mobile, 'reply_to_customer', [$ticket->number], to: $customer);
             }
         }
     }
@@ -54,7 +54,7 @@ class SendTicketSms
             }
         }
         foreach ($customers as $id => $customer) {
-            Sms::send($customer->mobile, 'ticket_done', [implode(',', $numbers[$id])]);
+            Sms::send($customer->mobile, 'ticket_done', [implode(',', $numbers[$id])], to: $customer);
         }
     }
 

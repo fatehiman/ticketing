@@ -87,6 +87,13 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   - a ticket's status changes to **Done** (any way: edit, status button, bulk) → the customer (template 24610: `[param1]` = ticket number;
     not again for **Delivered**).
     A **bulk** change to Done sends **one** SMS per customer with all ticket numbers separated by commas (`1001,1002`).
+  - The **text** of each template is in the `message_templates` table (read from msgway's `template/get`;
+    `php artisan sms:templates` reads them again, a new template is read after its first send).
+  - An SMS to a **customer** is also a **toast**: the developer whose action sends it sees *SMS to <name>* + the text,
+    and the customer (when online at that moment) sees the text. SMS to staff and OTP codes make no toast.
+- **Toasts** (like Filament notifications): a card at the top corner with an icon, a title, a text, an optional link and a bar
+  for the time left (it stops on hover). The server saves them per user (`Toast::to()`); a page shows them on load and
+  asks for new ones every **15 seconds**. A toast not shown in **2 minutes** is dropped. JavaScript: `window.toast({...})`.
 - **Forgot password**: one box takes the email **or** the mobile number (an unknown one shows "not found").
   Email → a reset link (60 minutes) from `no-reply@peppasoft.com`. Mobile → a 6-digit code by SMS (template 3),
   valid 2 minutes; after a **1:50 countdown** the user can ask again: the 2nd request sends the **same code**
@@ -152,6 +159,8 @@ php artisan test
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |
 | Rating (stars) of closed tickets | `app/Http/Controllers/CommentController.php`, `ticket_comments` table, `TicketPolicy::comment()` |
 | SMS (msgway client, outbox, queue job, retries) | `app/Sms/MsgwayClient.php`, `app/Sms/Sms.php` (`Sms::send()`), `app/Jobs/SendSms.php`, `sms_messages` table, template IDs in `config/sms.php` |
+| Toasts (server + JS, polling) | `app/Support/Toast.php` (`to()`, `forPage()`, `pull()`), `user_toasts` table, `ToastController` (`GET /toasts`), `initToasts()` / `window.toast()` in `app.js`, `.app-toast` in `app.css` |
+| SMS template texts, SMS toasts | `message_templates` table, `MessageTemplate::render()`, `MsgwayClient::template()`, `sms:templates` command in `routes/console.php`, `Sms::send(..., to:)` |
 | SMS about tickets | `app/Listeners/SendTicketSms.php` (on `TicketCreated`, `FollowupPosted` and `TicketDone`; `TicketService::batch()` groups the Done tickets of a bulk action) |
 | Forgot password (email link + SMS code / call) | `app/Http/Controllers/PasswordResetController.php`, `password_otps` table, `app/Mail/PasswordResetLink.php`, `resources/views/auth/{forgot,otp,new-password}.blade.php`, `initCountdown()` in `app.js` |
 | Bills, paid status | `app/Http/Controllers/BillController.php`, `app/Models/Bill.php`, `BillItem.php`, `app/Support/Bills.php` (`allocate()`, `debtOf()`), `app/Mail/BillIssued.php`, `initBillForm()` in `app.js` |

@@ -9,10 +9,12 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🎫</text></svg>">
     @stack('head')
     @vite(["resources/css/theme-{$dir}.css", 'resources/js/app.js'])
-    <script>window.APP_I18N = @json(['menu_name_prompt' => __('tickets.filter.menu_name_prompt')]);</script>
+    <script>window.APP_I18N = @json(['menu_name_prompt' => __('tickets.filter.menu_name_prompt'), 'close' => __('app.close')]);</script>
+    {{-- Toasts (App\Support\Toast): the waiting ones now, new ones by polling (initToasts() in app.js) --}}
+    <script>window.APP_TOASTS = @json(\App\Support\Toast::forPage());</script>
 </head>
 {{-- data-page / data-list-referrer: see App\Support\ReturnTo (back to the list page after saving a form) --}}
-<body data-page="{{ \App\Support\ReturnTo::kind(Route::currentRouteName()) }}" data-list-referrer="{{ \App\Support\ReturnTo::listReferrer(request()) }}">
+<body data-page="{{ \App\Support\ReturnTo::kind(Route::currentRouteName()) }}" data-list-referrer="{{ \App\Support\ReturnTo::listReferrer(request()) }}" data-toasts-url="{{ route('toasts') }}">
     @include('partials.sidebar')
     <div class="sidebar-backdrop"></div>
 

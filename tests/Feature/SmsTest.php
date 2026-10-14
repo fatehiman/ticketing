@@ -4,12 +4,15 @@ namespace Tests\Feature;
 
 use App\Enums\TicketStatus;
 use App\Jobs\SendSms;
+use App\Models\MessageTemplate;
 use App\Models\Project;
 use App\Models\SmsMessage;
 use App\Models\User;
+use App\Models\UserToast;
 use App\Services\TicketService;
 use App\Sms\MsgwayClient;
 use App\Sms\Sms;
+use App\Support\Toast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -170,5 +173,60 @@ class SmsTest extends TestCase
 
         $this->assertSame(1, SmsMessage::count());
         $this->assertSame([$a->number.','.$b->number], SmsMessage::first()->params);
+    }
+
+    public function test_sms_to_a_customer_is_a_toast_for_the_customer_and_the_developer(): void
+    {
+        Queue::fake();
+        $dev = User::factory()->developer()->create(['mobile' => '09120000001']);
+        $customer = User::factory()->customer()->create(['mobile' => '09120000002', 'first_name' => 'Sara', 'last_name' => 'Ahmadi']);
+        $project = Project::create(['code' => 'SH', 'name' => 'Shop']);
+        $project->members()->attach([$dev->id, $customer->id]);
+        $service = app(TicketService::class);
+        $make = fn ($title) => $service->create(['project_id' => $project->id, 'type' => 'task', 'priority' => 'medium', 'status' => 'backlog', 'title' => $title], $customer);
+        $a = $make('A');
+        $b = $make('B');
+        // The customer's new tickets texted the developer: no toast for an SMS to staff.
+        $this->assertSame(0, UserToast::count());
+
+        $this->actingAs($dev)->post(route('tickets.bulk'), ['action' => 'status', 'status' => 'done', 'ids' => [$a->id, $b->id]])->assertRedirect();
+
+        $text = "کاربر عزیز،\nتیکت شماره {$a->number},{$b->number} انجام شد.\nticketing.kimiasoft.ir\nلغو۱۱";
+        $devToast = UserToast::where('user_id', $dev->id)->sole()->data;
+        $this->assertSame('پیامک به Sara Ahmadi', $devToast['title']);
+        $this->assertSame($text, $devToast['body']);
+        $customerToast = UserToast::where('user_id', $customer->id)->sole()->data;
+        $this->assertArrayNotHasKey('title', $customerToast);
+        $this->assertSame($text, $customerToast['body']);
+
+        // The developer sees it on the next page; it is shown once.
+        $this->actingAs($dev)->get(route('dashboard'))->assertOk()->assertSee(trim(json_encode('پیامک به Sara Ahmadi'), '"'), false);
+        $this->assertSame(0, UserToast::where('user_id', $dev->id)->count());
+
+        // The customer's open page gets it by polling.
+        $this->actingAs($customer)->getJson(route('toasts'))->assertOk()->assertJsonPath('toasts.0.body', $text);
+        $this->actingAs($customer)->getJson(route('toasts'))->assertExactJson(['toasts' => []]);
+    }
+
+    public function test_old_toasts_are_dropped(): void
+    {
+        $user = User::factory()->customer()->create();
+        Toast::to($user, 'old');
+        $this->travel(Toast::TTL + 1)->seconds();
+        Toast::to($user, 'new');
+
+        $this->actingAs($user)->getJson(route('toasts'))->assertJsonCount(1, 'toasts')->assertJsonPath('toasts.0.body', 'new');
+        $this->assertSame(0, UserToast::count());
+    }
+
+    public function test_templates_are_read_from_msgway(): void
+    {
+        Http::fake(['api.msgway.com/template/get' => Http::response(['status' => 'success', 'data' => ['template' => 'Ticket [param1] is done.']])]);
+
+        $this->artisan('sms:templates')->assertSuccessful();
+
+        Http::assertSent(fn (Request $r) => $r->url() === 'https://api.msgway.com/template/get' && $r['templateID'] === 24610 && $r->hasHeader('apiKey', 'test-key'));
+        $this->assertSame('Ticket 1047 is done.', MessageTemplate::render(24610, [1047]));
+        $this->assertSame('Ticket [param1] is done.', MessageTemplate::where('template_id', 3)->value('body'));
     }
 }

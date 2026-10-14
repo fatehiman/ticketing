@@ -3,8 +3,11 @@
 namespace App\Sms;
 
 use App\Jobs\SendSms;
+use App\Models\MessageTemplate;
 use App\Models\SmsMessage;
+use App\Models\User;
 use App\Support\Dates;
+use App\Support\Toast;
 
 /**
  * Put an SMS in the outbox. The queue worker sends it (App\Jobs\SendSms), so pages never wait
@@ -17,8 +20,10 @@ class Sms
      * @param  string  $template  key of config('sms.templates'), also saved as the purpose
      * @param  array  $params  values for [param1], [param2], … in order
      * @param  string  $method  sms, or ivr for a voice call (uses the IVR template)
+     * @param  User|null  $to  the user who gets it: a customer sees the text as a toast (when online), and the
+     *                         developer whose action sends it sees "SMS to <name>" + the text
      */
-    public static function send(?string $mobile, string $template, array $params = [], ?string $code = null, string $method = 'sms'): ?SmsMessage
+    public static function send(?string $mobile, string $template, array $params = [], ?string $code = null, string $method = 'sms', ?User $to = null): ?SmsMessage
     {
         $mobile = self::normalize($mobile);
         if ($mobile === null) {
@@ -37,7 +42,32 @@ class Sms
 
         SendSms::dispatch($sms->id, $template === 'otp')->afterCommit();
 
+        if ($to) {
+            self::toasts($sms, $to);
+        }
+
         return $sms;
+    }
+
+    /** Only SMS to customers: the text to the customer, "SMS to <name>" + the text to the developer who sends it. */
+    private static function toasts(SmsMessage $sms, User $to): void
+    {
+        if (! $to->isCustomer()) {
+            return;
+        }
+        $text = MessageTemplate::render($sms->template_id, $sms->params ?? [])
+            ?? __('app.sms_toast.unknown', ['id' => $sms->template_id, 'params' => implode(', ', $sms->params ?? [])]);
+
+        Toast::to($to, $text, 'info', ['icon' => 'chat-dots-fill', 'duration' => 10000]);
+
+        $actor = auth()->user();
+        if ($actor instanceof User && $actor->isDeveloper() && $actor->id !== $to->id && ! request()->is('api/*')) {
+            Toast::to($actor, $text, 'success', [
+                'title' => __('app.sms_toast.to', ['name' => $to->name]),
+                'icon' => 'send-fill',
+                'duration' => 10000,
+            ]);
+        }
     }
 
     /** "09121234567", "۰۹۱۲…", "9121234567", "989121234567" → "+989121234567". Null when it is not a mobile number. */

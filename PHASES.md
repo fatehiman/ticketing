@@ -116,6 +116,12 @@ Design details: [PLAN.md](PLAN.md).
 - [x] New-bill page: ticket list in pages of 25 with search; ticks kept across pages, "Select all" / "Clear selection"
 - [x] Public profile pictures by email (Gravatar, Libravatar, unavatar.io) when a user is saved without one
 
+## Phase 1.10 — Toasts
+
+- [x] Toast messages like Filament notifications (`App\Support\Toast`, `window.toast()`), waiting toasts by polling every 15 s
+- [x] SMS template texts from msgway (`template/get`) in `message_templates` (`php artisan sms:templates`)
+- [x] SMS to a customer: the customer sees the text as a toast (if online); the developer who sent it sees **SMS to <name>** + the text
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups

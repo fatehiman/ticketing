@@ -20,6 +20,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectSwitchController;
 use App\Http\Controllers\SprintController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\ToastController;
 use App\Http\Controllers\TicketMenuController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/switch-project', ProjectSwitchController::class)->name('project.switch');
     Route::post('/grid-preferences', GridPreferenceController::class)->name('grid.save');
     Route::post('/editor/upload', EditorUploadController::class)->name('editor.upload');
+
+    Route::get('/toasts', ToastController::class)->name('toasts');
 
     // Tickets
     Route::post('/tickets/bulk', [TicketController::class, 'bulk'])->name('tickets.bulk');
