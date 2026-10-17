@@ -10,6 +10,8 @@ use App\Enums\TicketStatus;
 use App\Enums\TicketType;
 use App\Exceptions\ApiError;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\TicketController as WebTicketController;
+use App\Models\Attachment;
 use App\Models\Project;
 use App\Models\Sprint;
 use App\Models\Ticket;
@@ -26,7 +28,8 @@ use Illuminate\Support\Carbon;
 use Morilog\Jalali\Jalalian;
 
 /**
- * Simple JSON API for bots: who am I, allowed values, list/search tickets, read one ticket, create a ticket.
+ * Simple JSON API for bots: who am I, allowed values, list/search tickets, read one ticket, create a ticket
+ * (optionally with files: multipart/form-data, attachments[]).
  * Values like type/status/priority accept the key ("in_progress") or the Persian/English label.
  * Dates accept Gregorian (2026-09-24) or Jalali (1405/07/02). See API.md.
  */
@@ -156,7 +159,7 @@ class TicketController extends Controller
         return response()->json(['ok' => true, 'ticket' => $this->details($ticket)]);
     }
 
-    /** Only the title is required. */
+    /** Only the title is required. Files: send multipart/form-data with attachments[] (same limits as the web form). */
     public function store(Request $request)
     {
         $user = $request->user();
@@ -175,6 +178,8 @@ class TicketController extends Controller
             'due_date' => ['nullable', 'string', 'max:20'],
             'estimated_time' => ['nullable', 'regex:'.Duration::PATTERN],
             'estimated_cost' => ['nullable', 'integer', 'min:0', 'max:9999999999999999'],
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => ['file', 'max:10240', 'extensions:'.implode(',', WebTicketController::FILE_TYPES)],
         ]);
 
         $data = [
@@ -192,7 +197,7 @@ class TicketController extends Controller
             'estimated_cost' => $input['estimated_cost'] ?? null,
         ];
 
-        $ticket = $this->tickets->create($data, $user);
+        $ticket = $this->tickets->create($data, $user, $request->file('attachments', []));
 
         return response()->json(['ok' => true, 'message' => 'Ticket #'.$ticket->number.' created.', 'ticket' => $this->details($ticket->fresh())], 201);
     }
@@ -366,7 +371,7 @@ class TicketController extends Controller
 
     protected function details(Ticket $t): array
     {
-        $t->loadMissing(['project', 'sprint', 'assignee', 'reporter']);
+        $t->loadMissing(['project', 'sprint', 'assignee', 'reporter', 'attachments']);
         $t->loadCount(['followups', 'attachments']);
 
         return array_merge($this->summary($t), [
@@ -384,6 +389,9 @@ class TicketController extends Controller
             'awaiting_reply_from' => $t->awaiting_reply,
             'followups_count' => $t->followups_count,
             'attachments_count' => $t->attachments_count,
+            'attachments' => $t->attachments->map(fn (Attachment $a) => [
+                'name' => $a->original_name, 'size' => $a->size, 'mime' => $a->mime,
+            ])->values(),
         ]);
     }
 

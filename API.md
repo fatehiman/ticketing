@@ -1,8 +1,8 @@
 # Ticketing — Bot API
 
 A small JSON API for bots (for example an AI Telegram bot in a customer group).
-The bot can **create tickets**, **search / list tickets** and **read one ticket**.
-No attachments, followups or history.
+The bot can **create tickets** (with files), **search / list tickets** and **read one ticket**.
+No followups or history, and files can be added only when the ticket is created.
 
 - Base URL: `https://ticketing.kimiasoft.ir/api` (LAN: `http://ticketing.localkimia.com/api`)
 - Send and receive JSON. Every answer has `"ok": true` or `"ok": false`.
@@ -173,7 +173,8 @@ All parameters are optional (query string).
 
 Same fields as the list, plus: `project`, `description` (plain text), `story_points`, `done_story_points`,
 `estimated_time` / `logged_time` (`HH:MM`), `estimated_cost`, `cost`, `currency`, `due_date_jalali`,
-`resolved_at`, `awaiting_reply_from` (`staff` / `customer` / null), `followups_count`, `attachments_count`.
+`resolved_at`, `awaiting_reply_from` (`staff` / `customer` / null), `followups_count`, `attachments_count`,
+`attachments` (the ticket's own files: `name`, `size` in bytes, `mime`; files of followups are not listed).
 
 ### `POST /api/tickets` — create a ticket
 
@@ -193,6 +194,7 @@ Only `title` is required.
 | `estimated_time` | none | `HH:MM` |
 | `estimated_cost` | none | whole number (no decimals) |
 | `project` | token project | only for tokens without a fixed project |
+| `attachments[]` | none | files — only with `multipart/form-data` (see below) |
 
 ```json
 POST /api/tickets
@@ -203,6 +205,17 @@ HTTP 201
 ```
 
 The ticket reporter is the developer who logged in the bot. It is saved in the ticket history like a web edit.
+
+**With files.** Send the same fields as `multipart/form-data` (not JSON) and add each file as `attachments[]`.
+At most 10 files, 10 MB each. Allowed types (by file name extension), the same as the web form:
+pdf, doc(x), odt, rtf, txt, log, md, csv, json, xml, xls(x/m/b), ods, ppt(x), odp, zip, rar, 7z, tar, gz,
+jpg, jpeg, png, gif, webp, bmp, heic, mp4, mov, avi, mkv, webm, mp3, wav, ogg, m4a.
+Another type or a bigger file → `422 validation` (the whole ticket is not created).
+
+```bash
+curl -s -X POST https://ticketing.kimiasoft.ir/api/tickets -H 'Authorization: Bearer tkt_…' -H 'Accept: application/json' \
+     -F 'title=Payment page is broken' -F 'type=bug' -F 'attachments[]=@screen.png' -F 'attachments[]=@error.log'
+```
 
 ## 4. Errors
 

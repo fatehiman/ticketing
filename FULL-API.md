@@ -45,7 +45,7 @@ If two projects have the same name, use the id or code (`project_ambiguous`).
 
 | Call | `project` |
 |---|---|
-| `GET /options`, `GET /tickets`, `POST /tickets` | **mandatory** (query string for GET, JSON body for POST) → else `project_required` |
+| `GET /options`, `GET /tickets`, `POST /tickets` | **mandatory** (query string for GET, JSON body for POST — or a form field when POST sends files) → else `project_required` |
 | `GET/PATCH/DELETE /tickets/{number}` | not needed (a ticket number is unique). If you send it, it must match → else `wrong_project` |
 | `/projects/...` | the project is in the URL: `/projects/{id or code or name}` |
 
@@ -108,6 +108,7 @@ HTTP 201
 
 **List / search** and **create** work exactly like the bot API (same filters, same fields, same answer) — see
 [API.md](API.md) sections 3 (`GET /api/tickets`, `POST /api/tickets`). The only difference is `project`.
+Create takes files the same way too (`multipart/form-data`, `attachments[]`). Update does not take files.
 
 **Update** fields (all optional, send at least one): `title`, `description`, `type`, `status`, `priority`,
 `sprint` (number, `active`, part of the name, or `none` to clear), `assignee` / `assignee_id` (`me`, id, part of the name,

@@ -123,6 +123,11 @@ Design details: [PLAN.md](PLAN.md).
 - [x] SMS template texts from msgway (`template/get`) in `message_templates` (`php artisan sms:templates`)
 - [x] SMS to a customer: the customer sees the text as a toast (if online); the developer who sent it sees **SMS to <name>** + the text
 
+## Phase 1.11 — Files on new tickets from the API
+
+- [x] `POST /api/tickets` (and `POST /api/full/tickets`) take files: multipart/form-data with `attachments[]`
+      (max 10, 10 MB each, same file types as the web form); a ticket's answer lists its `attachments`
+
 ## Phase 2 — Collaboration
 
 - [ ] Mentions (@user) in followups

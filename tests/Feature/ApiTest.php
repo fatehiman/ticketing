@@ -9,6 +9,8 @@ use App\Models\Sprint;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ApiTest extends TestCase
@@ -165,6 +167,29 @@ class ApiTest extends TestCase
         $this->assertCount(1, $ticket->revisions);
 
         $this->api($token)->postJson('/api/tickets', [])->assertStatus(422)->assertJsonPath('error', 'validation');
+    }
+
+    public function test_create_ticket_with_attachments(): void
+    {
+        Storage::fake('local');
+        $token = $this->login();
+        $res = $this->api($token)->post('/api/tickets', [
+            'title' => 'Screen is broken',
+            'story_points' => '3',
+            'attachments' => [UploadedFile::fake()->image('screen.png'), UploadedFile::fake()->create('log.txt', 5, 'text/plain')],
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $res->assertJsonPath('ticket.attachments_count', 2)
+            ->assertJsonPath('ticket.attachments.0.name', 'screen.png')
+            ->assertJsonPath('ticket.story_points', 3);
+        $ticket = Ticket::firstWhere('number', $res->json('ticket.number'));
+        $this->assertCount(2, $ticket->attachments);
+        Storage::disk('local')->assertExists($ticket->attachments->first()->path);
+
+        $this->api($token)->post('/api/tickets', [
+            'title' => 'Bad file',
+            'attachments' => [UploadedFile::fake()->create('virus.exe', 5)],
+        ], ['Accept' => 'application/json'])->assertStatus(422)->assertJsonPath('error', 'validation');
     }
 
     public function test_create_ticket_with_labels_sprint_and_assignee(): void
