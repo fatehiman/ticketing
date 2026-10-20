@@ -32,7 +32,7 @@
                     <label class="form-label" for="attachments"><i class="bi bi-paperclip"></i> {{ __('tickets.fields.attachments') }}</label>
                     <input type="file" id="attachments" name="attachments[]" multiple class="form-control{{ $err('attachments') }}{{ $err('attachments.*') }}"
                            accept=".{{ implode(',.', \App\Http\Controllers\TicketController::FILE_TYPES) }}">
-                    <div class="form-text">{{ __('tickets.attachments_hint') }}</div>
+                    <div class="form-text">{{ __('tickets.attachments_hint', ['mb' => \App\Support\Uploads::maxMb()]) }}</div>
                     @if ($ticket->exists && $ticket->attachments->isNotEmpty())
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             @foreach ($ticket->attachments as $file)

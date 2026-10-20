@@ -17,7 +17,7 @@ Design details: [PLAN.md](PLAN.md).
 - [x] Top project switcher (active projects only, "All projects" for developers/admins)
 - [x] Tickets: number (id×100 + 2 random digits), status, priority (Jira colours), type, sprint,
       story points (Fibonacci labels), done points, estimated time / time logged (HH:MM),
-      estimated cost / cost, due date, rich HTML content with inline images, attachments (10 MB)
+      estimated cost / cost, due date, rich HTML content with inline images, attachments (size limit set by the admin, 30 MB)
 - [x] Ticket revisions (full history) + soft delete; customer edit/delete only in *Pending review*
 - [x] Ticket folders (cartables) with badges, filter page, custom menus (create / rename / reorder / delete)
 - [x] Grid column chooser saved on the server
@@ -126,7 +126,14 @@ Design details: [PLAN.md](PLAN.md).
 ## Phase 1.11 — Files on new tickets from the API
 
 - [x] `POST /api/tickets` (and `POST /api/full/tickets`) take files: multipart/form-data with `attachments[]`
-      (max 10, 10 MB each, same file types as the web form); a ticket's answer lists its `attachments`
+      (max 10, same size limit and file types as the web form); a ticket's answer lists its `attachments`
+
+## Phase 1.12 — Attachment size setting
+
+- [x] Admin > Settings page (`settings` table, `App\Models\Setting`, cached); first setting: max size of one attached file (ED-10141)
+- [x] The limit is used on new / edited tickets, replies and the bot / full API; it can not be above the PHP limit
+      (`upload_max_filesize` / `post_max_size`, `App\Support\Uploads::serverMaxMb()`)
+- [x] Default raised from 10 MB to 30 MB; web servers now accept 100 MB per file, 320 MB per request
 
 ## Phase 2 — Collaboration
 

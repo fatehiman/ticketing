@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Services\TicketService;
+use App\Support\Uploads;
 use Illuminate\Http\Request;
 
 /** Replies in the ticket conversation, and "I read it". */
@@ -17,7 +18,7 @@ class FollowupController extends Controller
         $request->validate([
             'body' => ['nullable', 'string', 'max:2000000', 'required_without:attachments'],
             'attachments' => ['nullable', 'array', 'max:10'],
-            'attachments.*' => ['file', 'max:10240', 'extensions:'.implode(',', TicketController::FILE_TYPES)],
+            'attachments.*' => ['file', Uploads::maxRule(), 'extensions:'.implode(',', TicketController::FILE_TYPES)],
         ], [], [
             'body' => __('tickets.followup.body'),
             'attachments.*' => __('tickets.fields.attachments'),

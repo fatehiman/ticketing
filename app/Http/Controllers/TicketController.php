@@ -19,13 +19,14 @@ use App\Support\Money;
 use App\Support\ProjectContext;
 use App\Support\TicketFilter;
 use App\Support\TicketMenus;
+use App\Support\Uploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {
-    /** Allowed attachment extensions (max 10 MB each). */
+    /** Allowed attachment extensions (size limit: App\Support\Uploads). */
     public const FILE_TYPES = [
         'pdf', 'doc', 'docx', 'odt', 'rtf', 'txt', 'log', 'md', 'csv', 'json', 'xml',
         'xls', 'xlsx', 'xlsm', 'xlsb', 'ods', 'ppt', 'pptx', 'odp',
@@ -324,7 +325,7 @@ class TicketController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['nullable', 'string', 'max:2000000'],
             'attachments' => ['nullable', 'array', 'max:10'],
-            'attachments.*' => ['file', 'max:10240', 'extensions:'.implode(',', self::FILE_TYPES)],
+            'attachments.*' => ['file', Uploads::maxRule(), 'extensions:'.implode(',', self::FILE_TYPES)],
         ];
 
         if ($user->isStaff()) {

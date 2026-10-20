@@ -207,7 +207,7 @@ HTTP 201
 The ticket reporter is the developer who logged in the bot. It is saved in the ticket history like a web edit.
 
 **With files.** Send the same fields as `multipart/form-data` (not JSON) and add each file as `attachments[]`.
-At most 10 files, 10 MB each. Allowed types (by file name extension), the same as the web form:
+At most 10 files. Size of one file: 30 MB by default; an admin changes it on *Admin > Settings* (at most what the web server accepts, now 100 MB). Allowed types (by file name extension), the same as the web form:
 pdf, doc(x), odt, rtf, txt, log, md, csv, json, xml, xls(x/m/b), ods, ppt(x), odp, zip, rar, 7z, tar, gz,
 jpg, jpeg, png, gif, webp, bmp, heic, mp4, mov, avi, mkv, webm, mp3, wav, ogg, m4a.
 Another type or a bigger file → `422 validation` (the whole ticket is not created).

@@ -78,6 +78,9 @@
                 <a href="{{ route('admin.users.index') }}" @class(['side-link', 'active' => request()->routeIs('admin.users.*')])>
                     <i class="bi bi-person-gear"></i><span>{{ __('app.users') }}</span>
                 </a>
+                <a href="{{ route('admin.settings.edit') }}" @class(['side-link', 'active' => request()->routeIs('admin.settings.*')])>
+                    <i class="bi bi-gear"></i><span>{{ __('settings.title') }}</span>
+                </a>
             @endif
         @elseif ($projectContext->current())
             <div class="nav-section">{{ __('app.project') }}</div>

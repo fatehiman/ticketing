@@ -21,6 +21,7 @@ use App\Support\Dates;
 use App\Support\Duration;
 use App\Support\Html;
 use App\Support\TicketFilter;
+use App\Support\Uploads;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -179,7 +180,7 @@ class TicketController extends Controller
             'estimated_time' => ['nullable', 'regex:'.Duration::PATTERN],
             'estimated_cost' => ['nullable', 'integer', 'min:0', 'max:9999999999999999'],
             'attachments' => ['nullable', 'array', 'max:10'],
-            'attachments.*' => ['file', 'max:10240', 'extensions:'.implode(',', WebTicketController::FILE_TYPES)],
+            'attachments.*' => ['file', Uploads::maxRule(), 'extensions:'.implode(',', WebTicketController::FILE_TYPES)],
         ]);
 
         $data = [

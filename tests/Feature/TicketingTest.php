@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\TicketStatus;
 use App\Models\Project;
+use App\Models\Setting;
 use App\Models\Sprint;
 use App\Models\Ticket;
 use App\Models\User;
@@ -12,6 +13,7 @@ use App\Support\ProjectContext;
 use App\Support\RevisionPresenter;
 use App\Support\TicketFilter;
 use App\Support\TicketMenus;
+use App\Support\Uploads;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -102,7 +104,7 @@ class TicketingTest extends TestCase
                         '/customers', '/customers/create', '/customers/'.$this->customer->id.'/edit']);
                 }
                 if ($user->isAdmin()) {
-                    $pages = array_merge($pages, ['/admin/users', '/admin/users/create', '/admin/users/'.$this->dev->id.'/edit']);
+                    $pages = array_merge($pages, ['/admin/users', '/admin/users/create', '/admin/users/'.$this->dev->id.'/edit', '/admin/settings']);
                 }
                 foreach ($pages as $page) {
                     $this->get($page)->assertOk();
@@ -117,6 +119,8 @@ class TicketingTest extends TestCase
         $this->actingAs($this->customer)->get('/sprints')->assertForbidden();
         $this->actingAs($this->customer)->get('/admin/users')->assertForbidden();
         $this->actingAs($this->dev)->get('/admin/users')->assertForbidden();
+        $this->actingAs($this->dev)->get('/admin/settings')->assertForbidden();
+        $this->actingAs($this->dev)->put('/admin/settings', ['attachment_max_mb' => 1])->assertForbidden();
         $this->actingAs($this->admin)->get('/customers')->assertForbidden();
     }
 
@@ -673,6 +677,27 @@ class TicketingTest extends TestCase
 
         $this->actingAs($this->dev)->post('/editor/upload', ['file' => UploadedFile::fake()->image('a.png')])
             ->assertOk()->assertJsonStructure(['location']);
+    }
+
+    public function test_admin_sets_the_attachment_size_limit_up_to_the_server_limit(): void
+    {
+        Storage::fake('local');
+        $this->assertSame(30, (int) Setting::get('attachment_max_mb'));
+
+        // The CLI php.ini of the test machine decides the server limit (often 2 MB).
+        $this->actingAs($this->admin)->put('/admin/settings', ['attachment_max_mb' => Uploads::serverMaxMb() + 1])
+            ->assertSessionHasErrors('attachment_max_mb');
+        $this->actingAs($this->admin)->put('/admin/settings', ['attachment_max_mb' => 1])
+            ->assertRedirect('/admin/settings')->assertSessionHasNoErrors();
+        $this->assertSame(1, Uploads::maxMb());
+
+        $this->actingAs($this->dev)->post('/tickets', $this->ticketData([
+            'attachments' => [UploadedFile::fake()->create('big.pdf', 1100, 'application/pdf')],
+        ]))->assertSessionHasErrors('attachments.0');
+        $this->actingAs($this->dev)->post('/tickets', $this->ticketData([
+            'attachments' => [UploadedFile::fake()->create('small.pdf', 900, 'application/pdf')],
+        ]))->assertSessionHasNoErrors();
+        $this->actingAs($this->dev)->get('/tickets/create')->assertSee(trans('tickets.attachments_hint', ['mb' => 1], $this->dev->locale));
     }
 
     public function test_profile_base_info_is_read_only_for_non_admins(): void

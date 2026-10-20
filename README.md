@@ -10,7 +10,7 @@ built with **Laravel 12**, Blade and Bootstrap 5.
   supervisor** — manages users and projects and reads all tickets, sprints and transactions, but never writes tickets,
   followups, sprints or payments (no *New ticket* button, no bot login).
 - Tickets with status, priority (Jira colours), type, sprint, story points, estimates, time logged, costs,
-  due date, rich-text content (TinyMCE with inline image upload) and attachments (10 MB each).
+  due date, rich-text content (TinyMCE with inline image upload) and attachments (size limit per file set by the admin on *Settings*, 30 MB by default).
   On desktop the ticket form has a **second Save button** under *Planning and estimates* (no long scroll to save a cost);
   on mobile the columns stack, so there is only the one at the bottom.
 - **Delivered** (تحویل شده) status comes after **Done**: the work is handed over (old / archived / paid tickets), so
@@ -155,6 +155,7 @@ php artisan test
 | Current sprint (by dates), green marker | `Sprint::scopeCurrent()`, `Sprint::isCurrent()`, `resources/views/components/sprint.blade.php` (`<x-sprint>`) |
 | New sprint defaults (number, start date per project) | `SprintController::newSprintDefaults()`, `initSprintForm()` in `resources/js/app.js` |
 | Order / show-hide of built-in folders | `TicketMenus::applySettings()`, `FolderSettingsController`, `users.folder_settings`, `resources/views/partials/folders-modal.blade.php`, `initFolders()` in `resources/js/app.js` |
+| Site settings (admin), attachment size limit | `app/Models/Setting.php` (`get()` / `put()`, cached), `settings` table, `Admin\SettingController`, `app/Support/Uploads.php` (`maxMb()`, `serverMaxMb()`, `maxRule()`) |
 | Bulk actions on tickets | `TicketController::bulk()`, bulk bar in `resources/views/tickets/index.blade.php`, `initBulk()` in `resources/js/app.js` |
 | Row actions (Actions column, modal + AJAX) | `TicketController::ROW_ACTIONS`, JSON answer of `bulk()`, `#row-action-modal` in `tickets/index.blade.php`, `initRowActions()` in `app.js` |
 | Followups, "waiting for reply", I read it | `app/Http/Controllers/FollowupController.php`, `TicketService::addFollowup()`, `tickets.awaiting_reply` |

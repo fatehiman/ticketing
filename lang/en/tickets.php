@@ -18,7 +18,7 @@ return [
     'people' => 'People',
     'content_placeholder' => 'Describe the request. You can paste or drop images here.',
     'time_hint' => 'HH:MM, e.g. 02:30',
-    'attachments_hint' => 'Up to 10 files, 10 MB each. PDF, Word, Excel, PowerPoint, ZIP, RAR, text, images, video and audio.',
+    'attachments_hint' => 'Up to 10 files, :mb MB each. PDF, Word, Excel, PowerPoint, ZIP, RAR, text, images, video and audio.',
     'no_attachments' => 'No attachments.',
     'history' => 'History',
     'no_history' => 'No changes yet.',

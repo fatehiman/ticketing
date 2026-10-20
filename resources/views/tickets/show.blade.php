@@ -172,7 +172,7 @@
                             <div class="mt-2">
                                 <input type="file" name="attachments[]" multiple class="form-control form-control-sm"
                                        accept=".{{ implode(',.', \App\Http\Controllers\TicketController::FILE_TYPES) }}">
-                                <div class="form-text">{{ __('tickets.attachments_hint') }}</div>
+                                <div class="form-text">{{ __('tickets.attachments_hint', ['mb' => \App\Support\Uploads::maxMb()]) }}</div>
                             </div>
                             <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
                                 <button class="btn btn-primary"><i class="bi bi-send"></i> {{ __('tickets.followup.send') }}</button>
